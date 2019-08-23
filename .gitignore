@@ -1,2 +1,5 @@
 .sonar/
 .scannerwork/
+
+node_modules/
+package-lock.json
