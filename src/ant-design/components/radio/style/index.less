@@ -1,91 +1,153 @@
-@import "../../style/themes/default";
-@import "../../style/mixins/index";
+@import '../../style/themes/index';
+@import '../../style/mixins/index';
 
-@radio-prefix-cls: ~"@{ant-prefix}-radio";
-@radio-group-prefix-cls: ~"@{radio-prefix-cls}-group";
-@radio-inner-prefix-cls: ~"@{radio-prefix-cls}-inner";
-@radio-duration: .3s;
+@radio-prefix-cls: ~'@{ant-prefix}-radio';
+@radio-group-prefix-cls: ~'@{radio-prefix-cls}-group';
+@radio-inner-prefix-cls: ~'@{radio-prefix-cls}-inner';
+@radio-duration: 0.3s;
+@radio-focus-shadow: 0 0 0 3px @primary-1;
+@radio-button-focus-shadow: @radio-focus-shadow;
 
 .@{radio-group-prefix-cls} {
+  .reset-component();
+
   display: inline-block;
-  font-size: @font-size-base;
+  font-size: 0;
+
+  .@{ant-prefix}-badge-count {
+    z-index: 1;
+  }
+
+  > .@{ant-prefix}-badge:not(:first-child) > .@{radio-prefix-cls}-button-wrapper {
+    border-left: none;
+  }
 }
 
 // 一般状态
 .@{radio-prefix-cls}-wrapper {
-  font-size: @font-size-base;
-  display: inline-block;
+  .reset-component();
   position: relative;
-  white-space: nowrap;
-  margin-right: 8px;
+  display: inline-flex;
+  align-items: baseline;
+  margin-right: @radio-wrapper-margin-right;
   cursor: pointer;
+
+  &-disabled {
+    cursor: not-allowed;
+  }
+
+  &::after {
+    display: inline-block;
+    width: 0;
+    overflow: hidden;
+    content: '\a0';
+  }
+
+  &&-in-form-item {
+    input[type='radio'] {
+      width: 14px;
+      height: 14px;
+    }
+  }
 }
 
 .@{radio-prefix-cls} {
-  white-space: nowrap;
-  outline: none;
-  display: inline-block;
+  .reset-component();
+
   position: relative;
-  line-height: 1;
-  vertical-align: text-bottom;
+  top: @radio-top;
+  display: inline-block;
+  outline: none;
   cursor: pointer;
+
   .@{radio-prefix-cls}-wrapper:hover &,
-  &:hover,
-  &-focused {
-    .@{radio-inner-prefix-cls} {
-      border-color: @primary-color;
-    }
+  &:hover .@{radio-inner-prefix-cls},
+  &-input:focus + .@{radio-inner-prefix-cls} {
+    border-color: @radio-dot-color;
   }
+
+  &-input:focus + .@{radio-inner-prefix-cls} {
+    box-shadow: @radio-focus-shadow;
+  }
+
+  &-checked::after {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 1px solid @radio-dot-color;
+    border-radius: 50%;
+    visibility: hidden;
+    animation: antRadioEffect 0.36s ease-in-out;
+    animation-fill-mode: both;
+    content: '';
+  }
+
+  &:hover::after,
+  .@{radio-prefix-cls}-wrapper:hover &::after {
+    visibility: visible;
+  }
+
   &-inner {
-    &:after {
+    &::after {
       position: absolute;
-      width: 6px;
-      height: 6px;
-      left: 3px;
-      top: 3px;
-      border-radius: @border-radius-base;
-      display: table;
+      top: 50%;
+      left: 50%;
+      display: block;
+      width: @radio-size;
+      height: @radio-size;
+      margin-top: -(@radio-size / 2);
+      margin-left: -(@radio-size / 2);
+      background-color: @radio-dot-color;
       border-top: 0;
       border-left: 0;
-      content: ' ';
-      background-color: @primary-color;
-      opacity: 0;
+      border-radius: @radio-size;
       transform: scale(0);
+      opacity: 0;
       transition: all @radio-duration @ease-in-out-circ;
+      content: ' ';
     }
 
     position: relative;
     top: 0;
     left: 0;
     display: block;
-    width: 14px;
-    height: 14px;
-    border-width: 1px;
-    border-style: solid;
-    border-radius: 14px;
-    border-color: @border-color-base;
+    width: @radio-size;
+    height: @radio-size;
     background-color: @radio-button-bg;
+    border-color: @border-color-base;
+    border-style: solid;
+    border-width: @radio-border-width;
+    border-radius: 50%;
     transition: all @radio-duration;
   }
 
   &-input {
     position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
     left: 0;
     z-index: 1;
     cursor: pointer;
     opacity: 0;
-    top: 0;
-    bottom: 0;
-    right: 0;
+  }
+
+  &&-disabled {
+    .@{radio-inner-prefix-cls} {
+      border-color: @border-color-base;
+    }
   }
 }
 
 // 选中状态
 .@{radio-prefix-cls}-checked {
   .@{radio-inner-prefix-cls} {
-    border-color: @primary-color;
-    &:after {
-      transform: scale(1);
+    border-color: @radio-dot-color;
+
+    &::after {
+      transform: scale((unit(@radio-dot-size) / unit(@radio-size)));
       opacity: 1;
       transition: all @radio-duration @ease-in-out-circ;
     }
@@ -93,11 +155,14 @@
 }
 
 .@{radio-prefix-cls}-disabled {
+  cursor: not-allowed;
+
   .@{radio-inner-prefix-cls} {
-    border-color: @border-color-base!important;
     background-color: @input-disabled-bg;
-    &:after {
-      background-color: #ccc;
+    cursor: not-allowed;
+
+    &::after {
+      background-color: @radio-dot-disabled-color;
     }
   }
 
@@ -112,54 +177,72 @@
 }
 
 span.@{radio-prefix-cls} + * {
-  padding-left: 8px;
   padding-right: 8px;
+  padding-left: 8px;
 }
 
 .@{radio-prefix-cls}-button-wrapper {
-  margin: 0;
-  height: @input-height-base;
-  line-height: @input-height-base - 2;
-  color: @radio-button-color;
+  position: relative;
   display: inline-block;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  border: @border-width-base @border-style-base @border-color-base;
-  border-left: 0;
+  height: @btn-height-base;
+  margin: 0;
+  padding: 0 @radio-button-padding-horizontal;
+  color: @radio-button-color;
+  font-size: @font-size-base;
+  line-height: @btn-height-base - 2px;
   background: @radio-button-bg;
-  padding: 0 16px;
+  border: @border-width-base @border-style-base @border-color-base;
+  // strange align fix for chrome but works
+  // https://gw.alipayobjects.com/zos/rmsportal/VFTfKXJuogBAXcvfAUWJ.gif
+  border-top-width: @border-width-base + 0.02px;
+  border-left-width: 0;
+  cursor: pointer;
+  transition: color 0.3s, background 0.3s, border-color 0.3s, box-shadow 0.3s;
 
   a {
     color: @radio-button-color;
   }
 
   > .@{radio-prefix-cls}-button {
-    margin-left: 0;
-    display: block;
-    width: 0;
-    height: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
   }
 
   .@{radio-group-prefix-cls}-large & {
     height: @input-height-lg;
+    font-size: @font-size-lg;
     line-height: @input-height-lg - 2px;
   }
 
   .@{radio-group-prefix-cls}-small & {
     height: @input-height-sm;
-    line-height: @input-height-sm - 2;
-    padding: 0 12px;
-    &:first-child {
-      border-radius: @border-radius-sm 0 0 @border-radius-sm;
-    }
-    &:last-child {
-      border-radius: 0 @border-radius-sm @border-radius-sm 0;
+    padding: 0 @control-padding-horizontal-sm - 1px;
+    line-height: @input-height-sm - 2px;
+  }
+
+  &:not(:first-child) {
+    &::before {
+      position: absolute;
+      top: @border-width-base * -1;
+      left: -1px;
+      display: block;
+      box-sizing: content-box;
+      width: 1px;
+      height: 100%;
+      padding: @border-width-base 0;
+      background-color: @border-color-base;
+      transition: background-color 0.3s;
+      content: '';
     }
   }
 
   &:first-child {
-    border-radius: @border-radius-base 0 0 @border-radius-base;
     border-left: @border-width-base @border-style-base @border-color-base;
+    border-radius: @border-radius-base 0 0 @border-radius-base;
   }
 
   &:last-child {
@@ -170,65 +253,119 @@ span.@{radio-prefix-cls} + * {
     border-radius: @border-radius-base;
   }
 
-  &:hover,
-  &-focused {
-    color: @primary-color;
+  &:hover {
     position: relative;
+    color: @radio-dot-color;
+  }
+
+  &:focus-within {
+    box-shadow: @radio-button-focus-shadow;
   }
 
   .@{radio-prefix-cls}-inner,
-  input[type="checkbox"],
-  input[type="radio"] {
-    .opacity(0);
+  input[type='checkbox'],
+  input[type='radio'] {
     width: 0;
     height: 0;
+    opacity: 0;
+    pointer-events: none;
   }
 
-  &-checked {
-    background: @radio-button-bg;
-    border-color: @primary-color;
-    color: @primary-color;
-    box-shadow: -1px 0 0 0 @primary-color;
+  &-checked:not(&-disabled) {
+    z-index: 1;
+    color: @radio-dot-color;
+    background: @radio-button-checked-bg;
+    border-color: @radio-dot-color;
+
+    &::before {
+      background-color: @radio-dot-color;
+    }
 
     &:first-child {
-      border-color: @primary-color;
-      box-shadow: none!important;
+      border-color: @radio-dot-color;
     }
 
     &:hover {
-      border-color: @primary-5;
-      box-shadow: -1px 0 0 0 @primary-5;
-      color: @primary-5;
+      color: @radio-button-hover-color;
+      border-color: @radio-button-hover-color;
+
+      &::before {
+        background-color: @radio-button-hover-color;
+      }
     }
 
     &:active {
-      border-color: @primary-7;
-      box-shadow: -1px 0 0 0 @primary-7;
-      color: @primary-7;
+      color: @radio-button-active-color;
+      border-color: @radio-button-active-color;
+
+      &::before {
+        background-color: @radio-button-active-color;
+      }
+    }
+
+    &:focus-within {
+      box-shadow: @radio-button-focus-shadow;
+    }
+  }
+
+  .@{radio-group-prefix-cls}-solid &-checked:not(&-disabled) {
+    color: @radio-solid-checked-color;
+    background: @radio-dot-color;
+    border-color: @radio-dot-color;
+
+    &:hover {
+      color: @radio-solid-checked-color;
+      background: @radio-button-hover-color;
+      border-color: @radio-button-hover-color;
+    }
+
+    &:active {
+      color: @radio-solid-checked-color;
+      background: @radio-button-active-color;
+      border-color: @radio-button-active-color;
+    }
+
+    &:focus-within {
+      box-shadow: @radio-button-focus-shadow;
     }
   }
 
   &-disabled {
-    border-color: @border-color-base;
-    background-color: @input-disabled-bg;
-    cursor: not-allowed;
     color: @disabled-color;
+    background-color: @input-disabled-bg;
+    border-color: @border-color-base;
+    cursor: not-allowed;
 
     &:first-child,
     &:hover {
-      border-color: @border-color-base;
-      background-color: @input-disabled-bg;
       color: @disabled-color;
+      background-color: @input-disabled-bg;
+      border-color: @border-color-base;
     }
+
     &:first-child {
       border-left-color: @border-color-base;
     }
   }
 
   &-disabled&-checked {
-    color: #fff;
-    background-color: #e6e6e6;
+    color: @radio-disabled-button-checked-color;
+    background-color: @radio-disabled-button-checked-bg;
     border-color: @border-color-base;
     box-shadow: none;
   }
 }
+
+@keyframes antRadioEffect {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@import './rtl';

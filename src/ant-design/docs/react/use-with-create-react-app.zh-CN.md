@@ -9,16 +9,14 @@ title: 在 create-react-app 中使用
 
 ## 安装和初始化
 
-我们需要在命令行中安装 create-react-app 工具，你可能还需要安装 [yarn](https://github.com/yarnpkg/yarn/)。
+在开始之前，你可能需要安装 [yarn](https://github.com/yarnpkg/yarn/)。
 
 ```bash
-$ npm install -g create-react-app yarn
-```
+$ yarn create react-app antd-demo
 
-然后新建一个项目。
+# or
 
-```bash
-$ create-react-app antd-demo
+$ npx create-react-app antd-demo
 ```
 
 工具会自动初始化一个脚手架并安装 React 项目的各种必要依赖，如果在过程中出现网络问题，请尝试配置代理或使用其他 npm registry。
@@ -55,25 +53,21 @@ $ yarn start
 现在从 yarn 或 npm 安装并引入 antd。
 
 ```bash
-$ yarn add antd --save
+$ yarn add antd
 ```
 
 修改 `src/App.js`，引入 antd 的按钮组件。
 
 ```jsx
-import React, { Component } from 'react';
+import React from 'react';
 import { Button } from 'antd';
 import './App.css';
 
-class App extends Component {
-  render() {
-    return (
-      <div className="App">
-        <Button type="primary">Button</Button>
-      </div>
-    );
-  }
-}
+const App = () => (
+  <div className="App">
+    <Button type="primary">Button</Button>
+  </div>
+);
 
 export default App;
 ```
@@ -82,120 +76,103 @@ export default App;
 
 ```css
 @import '~antd/dist/antd.css';
-
-.App {
-  text-align: center;
-}
-
-...
 ```
 
-好了，现在你应该能看到页面上已经有了 antd 的蓝色按钮组件，接下来就可以继续选用其他组件开发应用了。其他开发流程你可以参考 create-react-app 的[官方文档](https://github.com/facebookincubator/create-react-app/blob/master/packages/react-scripts/template/README.md)。
+好了，现在你应该能看到页面上已经有了 antd 的蓝色按钮组件，接下来就可以继续选用其他组件开发应用了。其他开发流程你可以参考 create-react-app 的[官方文档](https://create-react-app.dev/docs/getting-started)。
+
+我们现在已经把 antd 组件成功运行起来了，开始开发你的应用吧！
 
 ## 高级配置
 
-我们现在已经把组件成功运行起来了，但是在实际开发过程中还有很多问题，例如上面的例子实际上加载了全部的 antd 组件的代码（对前端性能是个隐患）。
+这个例子在实际开发中还有一些优化的空间，比如无法进行主题配置。
 
-> 你会在控制台看到如下警告。
-> ![](https://zos.alipayobjects.com/rmsportal/vgcHJRVZFmPjAawwVoXK.png)
+此时我们需要对 create-react-app 的默认配置进行自定义，这里我们使用 [craco](https://github.com/gsoft-inc/craco) （一个对 create-react-app 进行自定义配置的社区解决方案）。
 
-我们需要对 create-react-app 的默认配置进行自定义。可以使用 `eject` 命令将所有内建的配置暴露出来。
-
-```bash
-$ yarn run eject
-```
-
-### 按需加载
-
-[babel-plugin-import](https://github.com/ant-design/babel-plugin-import) 是一个用于按需加载组件代码和样式的 babel 插件（[原理](/docs/react/getting-started#按需加载)），现在我们尝试安装它并修改 `config/webpack.config.dev.js` 文件。
+现在我们安装 craco 并修改 `package.json` 里的 `scripts` 属性。
 
 ```bash
-$ yarn add babel-plugin-import --save-dev
+$ yarn add @craco/craco
 ```
 
 ```diff
-// Process JS with Babel.
-{
-  test: /\.(js|jsx)$/,
-  include: paths.appSrc,
-  loader: 'babel',
-  query: {
-+   plugins: [
-+     ['import', [{ libraryName: "antd", style: 'css' }]],
-+   ],
-    // This is a feature of `babel-loader` for webpack (not Babel itself).
-    // It enables caching results in ./node_modules/.cache/babel-loader/
-    // directory for faster rebuilds.
-    cacheDirectory: true
-  }
-},
+/* package.json */
+"scripts": {
+-   "start": "react-scripts start",
+-   "build": "react-scripts build",
+-   "test": "react-scripts test",
++   "start": "craco start",
++   "build": "craco build",
++   "test": "craco test",
+}
 ```
 
-> 注意，由于 create-react-app eject 之后的配置中没有 `.babelrc` 文件，所以需要把配置放到 `webpack.config.js` 或 `package.json` 的 `babel` 属性中。
+然后在项目根目录创建一个 `craco.config.js` 用于修改默认配置。
 
-然后移除前面在 `src/App.css` 里全量添加的 `@import '~antd/dist/antd.css';` 样式代码，现在 babel-plugin-import 会按需加载样式。
-
-最后重启 `yarn start` 访问页面，此时上面的警告信息应该没了，antd 组件的 js 和 css 代码都会按需加载。
+```js
+/* craco.config.js */
+module.exports = {
+  // ...
+};
+```
 
 ### 自定义主题
 
-按照 [配置主题](/docs/react/customize-theme) 的要求，自定义主题需要用到 less 变量覆盖功能，因此首先我们需要引入 [less-loader](https://github.com/webpack/less-loader) 来加载 less 样式，同时修改 `config/webpack.config.dev.js` 文件。
+按照 [配置主题](/docs/react/customize-theme) 的要求，自定义主题需要用到类似 [less-loader](https://github.com/webpack-contrib/less-loader/) 提供的 less 变量覆盖功能。我们可以引入 [craco-less](https://github.com/DocSpring/craco-less) 来帮助加载 less 样式和修改变量。
 
-```bash
-$ yarn add less less-loader --save-dev
+首先把 `src/App.css` 文件修改为 `src/App.less`，然后修改样式引用为 less 文件。
+
+```diff
+/* src/App.js */
+- import './App.css';
++ import './App.less';
 ```
 
 ```diff
-loaders: [
-  {
-    exclude: [
-      /\.html$/,
-      /\.(js|jsx)$/,
-+     /\.less$/,
-      /\.css$/,
-      /\.json$/,
-      /\.svg$/
-    ],
-    loader: 'url',
-  },
-
-...
-
-  // Process JS with Babel.
-  {
-    test: /\.(js|jsx)$/,
-    include: paths.appSrc,
-    loader: 'babel',
-    query: {
-      plugins: [
--       ['import', [{ libraryName: "antd", style: 'css' }]],
-+       ['import', [{ libraryName: "antd", style: true }]],  // 加载 less 文件
-      ],
-   },
-
-...
-
-+ // 解析 less 文件，并加入变量覆盖配置
-+ {
-+   test: /\.less$/,
-+   loader: 'style!css!postcss!less?{modifyVars:{"@primary-color":"#1DA57A"}}'
-+ },
-]
+/* src/App.less */
+- @import '~antd/dist/antd.css';
++ @import '~antd/dist/antd.less';
 ```
 
-这里利用了 [less-loader](https://github.com/webpack/less-loader#less-options) 的 `modifyVars` 来进行主题配置，
-变量和其他配置方式可以参考 [配置主题](/docs/react/customize-theme) 文档。
+然后安装 `craco-less` 并修改 `craco.config.js` 文件如下。
 
-修改后重启 `yarn start`，如果看到一个绿色的按钮就说明配置成功了。
+```bash
+$ yarn add craco-less
+```
 
-> 注意，上述示例只修改了 `webpack.config.dev.js`，如果需要在生产环境生效，你需要同步修改 `webpack.config.prod.js`。
+```js
+const CracoLessPlugin = require('craco-less');
 
-## 源码和其他脚手架
+module.exports = {
+  plugins: [
+    {
+      plugin: CracoLessPlugin,
+      options: {
+        lessLoaderOptions: {
+          lessOptions: {
+            modifyVars: { '@primary-color': '#1DA57A' },
+            javascriptEnabled: true,
+          },
+        },
+      },
+    },
+  ],
+};
+```
 
-以上是在 create-react-app 中使用 antd 的相关实践，你也可以借鉴此文的做法在自己的 webpack 工作流中使用 antd，更多 webpack 配置可参考 [atool-build](https://github.com/ant-tool/atool-build/blob/master/src/getWebpackCommonConfig.js)。（例如加入 [moment noParse](https://github.com/ant-tool/atool-build/blob/e4bd2959689b6a95cb5c1c854a5db8c98676bdb3/src/getWebpackCommonConfig.js#L90) 避免加载所有语言文件）
+这里利用了 [less-loader](https://github.com/webpack/less-loader#less-options) 的 `modifyVars` 来进行主题配置，变量和其他配置方式可以参考 [配置主题](/docs/react/customize-theme) 文档。修改后重启 `yarn start`，如果看到一个绿色的按钮就说明配置成功了。
 
-React 生态圈中还有很多优秀的脚手架，使用它们并引入 antd 时，你可能会遇到一些问题，下面是一些著名脚手架使用 antd 的范例，包括本文的 create-react-app。
+antd 内建了深色主题和紧凑主题，你可以参照 [使用暗色主题和紧凑主题](/docs/react/customize-theme#使用暗色主题和紧凑主题) 进行接入。
 
-- [react-boilerplate/react-boilerplate](https://github.com/ant-design/react-boilerplate)
-- [kriasoft/react-starter-kit](https://github.com/ant-design/react-starter-kit)
-- [create-react-app-antd](https://github.com/ant-design/create-react-app-antd)
+> 同样，你可以使用 [react-app-rewired](https://github.com/timarney/react-app-rewired) 和 [customize-cra](https://github.com/arackaf/customize-cra) 来自定义 create-react-app 的 webpack 配置。
+
+## eject
+
+你也可以使用 create-react-app 提供的 [yarn run eject](https://create-react-app.dev/docs/available-scripts/#npm-run-eject) 命令将所有内建的配置暴露出来。不过这种配置方式需要你自行探索，不在本文讨论范围内。
+
+## 小结
+
+以上是在 create-react-app 中使用 antd 的相关实践，你也可以借鉴此文的做法在自己的 webpack 工作流中使用 antd。
+
+上述教程的脚手架源码我们放在 [create-react-app-antd](https://github.com/ant-design/create-react-app-antd) 中，你可以直接下载使用。
+
+接下来我们会介绍如何在 [TypeScript](/docs/react/use-in-typescript) 和 [Umi](/docs/react/practical-projects) 中使用 antd，欢迎继续阅读。

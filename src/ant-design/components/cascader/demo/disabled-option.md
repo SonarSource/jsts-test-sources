@@ -13,39 +13,58 @@ title:
 
 Disable option by specifying the `disabled` property in `options`.
 
-````jsx
+```tsx
 import { Cascader } from 'antd';
+import React from 'react';
 
-const options = [{
-  value: 'zhejiang',
-  label: 'Zhejiang',
-  children: [{
-    value: 'hangzhou',
-    label: 'Hangzhou',
-    children: [{
-      value: 'xihu',
-      label: 'West Lake',
-    }],
-  }],
-}, {
-  value: 'jiangsu',
-  label: 'Jiangsu',
-  disabled: true,
-  children: [{
-    value: 'nanjing',
-    label: 'Nanjing',
-    children: [{
-      value: 'zhonghuamen',
-      label: 'Zhong Hua Men',
-    }],
-  }],
-}];
-
-function onChange(value) {
-  console.log(value);
+interface Option {
+  value: string;
+  label: string;
+  disabled?: boolean;
+  children?: Option[];
 }
 
-ReactDOM.render(
-  <Cascader options={options} onChange={onChange} />
-, mountNode);
-````
+const options: Option[] = [
+  {
+    value: 'zhejiang',
+    label: 'Zhejiang',
+    children: [
+      {
+        value: 'hangzhou',
+        label: 'Hangzhou',
+        children: [
+          {
+            value: 'xihu',
+            label: 'West Lake',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    value: 'jiangsu',
+    label: 'Jiangsu',
+    disabled: true,
+    children: [
+      {
+        value: 'nanjing',
+        label: 'Nanjing',
+        children: [
+          {
+            value: 'zhonghuamen',
+            label: 'Zhong Hua Men',
+          },
+        ],
+      },
+    ],
+  },
+];
+
+const onChange = (value: string[]) => {
+  console.log(value);
+};
+
+const App: React.FC = () => <Cascader options={options} onChange={onChange} />;
+
+export default App;
+```

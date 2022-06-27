@@ -1,8 +1,8 @@
 ---
 order: 8
 title:
-    zh-CN: 前缀和后缀
-    en-US: prefix and suffix
+  zh-CN: 前缀和后缀
+  en-US: prefix and suffix
 ---
 
 ## zh-CN
@@ -11,55 +11,32 @@ title:
 
 ## en-US
 
-Add prefix or suffix icons inside input.
+Add a prefix or suffix icons inside input.
 
-````jsx
-import { Input, Icon } from 'antd';
+```tsx
+import { InfoCircleOutlined, UserOutlined } from '@ant-design/icons';
+import { Input, Tooltip } from 'antd';
+import React from 'react';
 
-class App extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      userName: '',
-    };
-  }
-  emitEmpty = () => {
-    this.userNameInput.focus();
-    this.setState({ userName: '' });
-  }
-  onChangeUserName = (e) => {
-    this.setState({ userName: e.target.value });
-  }
-  render() {
-    const { userName } = this.state;
-    const suffix = userName ? <Icon type="close-circle" onClick={this.emitEmpty} /> : null;
-    return (
-      <Input
-        placeholder="Enter your userName"
-        prefix={<Icon type="user" />}
-        suffix={suffix}
-        value={userName}
-        onChange={this.onChangeUserName}
-        ref={node => this.userNameInput = node}
-      />
-    );
-  }
-}
+const App: React.FC = () => (
+  <>
+    <Input
+      placeholder="Enter your username"
+      prefix={<UserOutlined className="site-form-item-icon" />}
+      suffix={
+        <Tooltip title="Extra information">
+          <InfoCircleOutlined style={{ color: 'rgba(0,0,0,.45)' }} />
+        </Tooltip>
+      }
+    />
+    <br />
+    <br />
+    <Input prefix="￥" suffix="RMB" />
+    <br />
+    <br />
+    <Input prefix="￥" suffix="RMB" disabled />
+  </>
+);
 
-ReactDOM.render(<App />, mountNode);
-````
-
-````css
-.anticon-close-circle {
-  cursor: pointer;
-  color: #ccc;
-  transition: color 0.3s;
-  font-size: 12px;
-}
-.anticon-close-circle:hover {
-  color: #999;
-}
-.anticon-close-circle:active {
-  color: #666;
-}
-````
+export default App;
+```

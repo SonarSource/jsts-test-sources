@@ -13,46 +13,64 @@ title:
 
 A loading indicator can be added to a button by setting the `loading` property on the `Button`.
 
-````jsx
-import { Button } from 'antd';
+```tsx
+import { PoweroffOutlined } from '@ant-design/icons';
+import { Button, Space } from 'antd';
+import React, { useState } from 'react';
 
-class App extends React.Component {
-  state = {
-    loading: false,
-    iconLoading: false,
-  }
+const App: React.FC = () => {
+  const [loadings, setLoadings] = useState<boolean[]>([]);
 
-  enterLoading = () => {
-    this.setState({ loading: true });
-  }
+  const enterLoading = (index: number) => {
+    setLoadings(prevLoadings => {
+      const newLoadings = [...prevLoadings];
+      newLoadings[index] = true;
+      return newLoadings;
+    });
 
-  enterIconLoading = () => {
-    this.setState({ iconLoading: true });
-  }
+    setTimeout(() => {
+      setLoadings(prevLoadings => {
+        const newLoadings = [...prevLoadings];
+        newLoadings[index] = false;
+        return newLoadings;
+      });
+    }, 6000);
+  };
 
-  render() {
-    return (
-      <span>
+  return (
+    <>
+      <Space style={{ width: '100%' }}>
         <Button type="primary" loading>
           Loading
         </Button>
         <Button type="primary" size="small" loading>
           Loading
         </Button>
-        <br />
-        <Button type="primary" loading={this.state.loading} onClick={this.enterLoading}>
-          Click me!
-        </Button>
-        <Button type="primary" icon="poweroff" loading={this.state.iconLoading} onClick={this.enterIconLoading}>
-          Click me!
-        </Button>
-        <br />
-        <Button shape="circle" loading />
-        <Button type="primary" shape="circle" loading />
-      </span>
-    );
-  }
-}
+        <Button type="primary" icon={<PoweroffOutlined />} loading />
+      </Space>
 
-ReactDOM.render(<App />, mountNode);
-````
+      <Space style={{ width: '100%' }}>
+        <Button type="primary" loading={loadings[0]} onClick={() => enterLoading(0)}>
+          Click me!
+        </Button>
+        <Button
+          type="primary"
+          icon={<PoweroffOutlined />}
+          loading={loadings[1]}
+          onClick={() => enterLoading(1)}
+        >
+          Click me!
+        </Button>
+        <Button
+          type="primary"
+          icon={<PoweroffOutlined />}
+          loading={loadings[2]}
+          onClick={() => enterLoading(2)}
+        />
+      </Space>
+    </>
+  );
+};
+
+export default App;
+```

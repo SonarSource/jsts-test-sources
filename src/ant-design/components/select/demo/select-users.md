@@ -7,73 +7,101 @@ title:
 
 ## zh-CN
 
-一个带有远程搜索，节流控制，请求时序控制，加载状态的多选示例。
+一个带有远程搜索，防抖控制，请求时序控制，加载状态的多选示例。
 
 ## en-US
 
 A complete multiple select sample with remote search, debounce fetch, ajax callback order flow, and loading state.
 
-````jsx
+```tsx
 import { Select, Spin } from 'antd';
-import debounce from 'lodash.debounce';
-const Option = Select.Option;
+import type { SelectProps } from 'antd/es/select';
+import debounce from 'lodash/debounce';
+import React, { useMemo, useRef, useState } from 'react';
 
-class UserRemoteSelect extends React.Component {
-  constructor(props) {
-    super(props);
-    this.lastFetchId = 0;
-    this.fetchUser = debounce(this.fetchUser, 800);
-  }
-  state = {
-    data: [],
-    value: [],
-    fetching: false,
-  }
-  fetchUser = (value) => {
-    console.log('fetching user', value);
-    this.lastFetchId += 1;
-    const fetchId = this.lastFetchId;
-    this.setState({ fetching: true });
-    fetch('https://randomuser.me/api/?results=5')
-      .then(response => response.json())
-      .then((body) => {
-        if (fetchId !== this.lastFetchId) { // for fetch callback order
-          return;
-        }
-        const data = body.results.map(user => ({
-          text: `${user.name.first} ${user.name.last}`,
-          value: user.login.username,
-          fetching: false,
-        }));
-        this.setState({ data });
-      });
-  }
-  handleChange = (value) => {
-    this.setState({
-      value,
-      data: [],
-      fetching: false,
-    });
-  }
-  render() {
-    const { fetching, data, value } = this.state;
-    return (
-      <Select
-        mode="multiple"
-        labelInValue
-        value={value}
-        placeholder="Select users"
-        notFoundContent={fetching ? <Spin size="small" /> : null}
-        filterOption={false}
-        onSearch={this.fetchUser}
-        onChange={this.handleChange}
-        style={{ width: '100%' }}
-      >
-        {data.map(d => <Option key={d.value}>{d.text}</Option>)}
-      </Select>
-    );
-  }
+export interface DebounceSelectProps<ValueType = any>
+  extends Omit<SelectProps<ValueType | ValueType[]>, 'options' | 'children'> {
+  fetchOptions: (search: string) => Promise<ValueType[]>;
+  debounceTimeout?: number;
 }
 
-ReactDOM.render(<UserRemoteSelect />, mountNode);
-````
+function DebounceSelect<
+  ValueType extends { key?: string; label: React.ReactNode; value: string | number } = any,
+>({ fetchOptions, debounceTimeout = 800, ...props }: DebounceSelectProps<ValueType>) {
+  const [fetching, setFetching] = useState(false);
+  const [options, setOptions] = useState<ValueType[]>([]);
+  const fetchRef = useRef(0);
+
+  const debounceFetcher = useMemo(() => {
+    const loadOptions = (value: string) => {
+      fetchRef.current += 1;
+      const fetchId = fetchRef.current;
+      setOptions([]);
+      setFetching(true);
+
+      fetchOptions(value).then(newOptions => {
+        if (fetchId !== fetchRef.current) {
+          // for fetch callback order
+          return;
+        }
+
+        setOptions(newOptions);
+        setFetching(false);
+      });
+    };
+
+    return debounce(loadOptions, debounceTimeout);
+  }, [fetchOptions, debounceTimeout]);
+
+  return (
+    <Select
+      labelInValue
+      filterOption={false}
+      onSearch={debounceFetcher}
+      notFoundContent={fetching ? <Spin size="small" /> : null}
+      {...props}
+      options={options}
+    />
+  );
+}
+
+// Usage of DebounceSelect
+interface UserValue {
+  label: string;
+  value: string;
+}
+
+async function fetchUserList(username: string): Promise<UserValue[]> {
+  console.log('fetching user', username);
+
+  return fetch('https://randomuser.me/api/?results=5')
+    .then(response => response.json())
+    .then(body =>
+      body.results.map(
+        (user: { name: { first: string; last: string }; login: { username: string } }) => ({
+          label: `${user.name.first} ${user.name.last}`,
+          value: user.login.username,
+        }),
+      ),
+    );
+}
+
+const App: React.FC = () => {
+  const [value, setValue] = useState<UserValue[]>([]);
+
+  return (
+    <DebounceSelect
+      mode="multiple"
+      value={value}
+      placeholder="Select users"
+      fetchOptions={fetchUserList}
+      onChange={newValue => {
+        setValue(newValue as UserValue[]);
+      }}
+      style={{ width: '100%' }}
+    />
+  );
+};
+
+export default App;
+```

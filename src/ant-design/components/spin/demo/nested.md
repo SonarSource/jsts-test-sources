@@ -11,32 +11,35 @@ title:
 
 ## en-US
 
-Embedding content into `Spin` will alter it into loading state.
+Embedding content into `Spin` will set it into loading state.
 
-````jsx
-import { Spin, Switch, Alert } from 'antd';
+```tsx
+import { Alert, Spin, Switch } from 'antd';
+import React, { useState } from 'react';
 
-class Card extends React.Component {
-  state = { loading: false }
-  toggle = (value) => {
-    this.setState({ loading: value });
-  }
-  render() {
-    const container = (
-      <Alert
-        message="Alert message title"
-        description="Further details about the context of this alert."
-        type="info"
-      />
-    );
-    return (
-      <div>
-        <Spin spinning={this.state.loading}>{container}</Spin>
-        Loading state：<Switch checked={this.state.loading} onChange={this.toggle} />
+const App: React.FC = () => {
+  const [loading, setLoading] = useState(false);
+
+  const toggle = (checked: boolean) => {
+    setLoading(checked);
+  };
+
+  return (
+    <div>
+      <Spin spinning={loading}>
+        <Alert
+          message="Alert message title"
+          description="Further details about the context of this alert."
+          type="info"
+        />
+      </Spin>
+      <div style={{ marginTop: 16 }}>
+        Loading state：
+        <Switch checked={loading} onChange={toggle} />
       </div>
-    );
-  }
-}
+    </div>
+  );
+};
 
-ReactDOM.render(<Card />, mountNode);
-````
+export default App;
+```

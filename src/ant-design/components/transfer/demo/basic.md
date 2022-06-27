@@ -13,65 +13,60 @@ title:
 
 The most basic usage of `Transfer` involves providing the source data and target keys arrays, plus the rendering and some callback functions.
 
-````jsx
+```tsx
 import { Transfer } from 'antd';
+import type { TransferDirection } from 'antd/es/transfer';
+import React, { useState } from 'react';
 
-const mockData = [];
-for (let i = 0; i < 20; i++) {
-  mockData.push({
-    key: i.toString(),
-    title: `content${i + 1}`,
-    description: `description of content${i + 1}`,
-    disabled: i % 3 < 1,
-  });
+interface RecordType {
+  key: string;
+  title: string;
+  description: string;
 }
 
-const targetKeys = mockData
-        .filter(item => +item.key % 3 > 1)
-        .map(item => item.key);
+const mockData: RecordType[] = Array.from({ length: 20 }).map((_, i) => ({
+  key: i.toString(),
+  title: `content${i + 1}`,
+  description: `description of content${i + 1}`,
+}));
 
-class App extends React.Component {
-  state = {
-    targetKeys,
-    selectedKeys: [],
-  }
+const initialTargetKeys = mockData.filter(item => Number(item.key) > 10).map(item => item.key);
 
-  handleChange = (nextTargetKeys, direction, moveKeys) => {
-    this.setState({ targetKeys: nextTargetKeys });
+const App: React.FC = () => {
+  const [targetKeys, setTargetKeys] = useState(initialTargetKeys);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
 
-    console.log('targetKeys: ', targetKeys);
-    console.log('direction: ', direction);
-    console.log('moveKeys: ', moveKeys);
-  }
+  const onChange = (nextTargetKeys: string[], direction: TransferDirection, moveKeys: string[]) => {
+    console.log('targetKeys:', nextTargetKeys);
+    console.log('direction:', direction);
+    console.log('moveKeys:', moveKeys);
+    setTargetKeys(nextTargetKeys);
+  };
 
-  handleSelectChange = (sourceSelectedKeys, targetSelectedKeys) => {
-    this.setState({ selectedKeys: [...sourceSelectedKeys, ...targetSelectedKeys] });
+  const onSelectChange = (sourceSelectedKeys: string[], targetSelectedKeys: string[]) => {
+    console.log('sourceSelectedKeys:', sourceSelectedKeys);
+    console.log('targetSelectedKeys:', targetSelectedKeys);
+    setSelectedKeys([...sourceSelectedKeys, ...targetSelectedKeys]);
+  };
 
-    console.log('sourceSelectedKeys: ', sourceSelectedKeys);
-    console.log('targetSelectedKeys: ', targetSelectedKeys);
-  }
-
-  handleScroll = (direction, e) => {
+  const onScroll = (direction: TransferDirection, e: React.SyntheticEvent<HTMLUListElement>) => {
     console.log('direction:', direction);
     console.log('target:', e.target);
-  }
+  };
 
-  render() {
-    const state = this.state;
-    return (
-      <Transfer
-        dataSource={mockData}
-        titles={['Source', 'Target']}
-        targetKeys={state.targetKeys}
-        selectedKeys={state.selectedKeys}
-        onChange={this.handleChange}
-        onSelectChange={this.handleSelectChange}
-        onScroll={this.handleScroll}
-        render={item => item.title}
-      />
-    );
-  }
-}
+  return (
+    <Transfer
+      dataSource={mockData}
+      titles={['Source', 'Target']}
+      targetKeys={targetKeys}
+      selectedKeys={selectedKeys}
+      onChange={onChange}
+      onSelectChange={onSelectChange}
+      onScroll={onScroll}
+      render={item => item.title}
+    />
+  );
+};
 
-ReactDOM.render(<App />, mountNode);
-````
+export default App;
+```

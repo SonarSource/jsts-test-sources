@@ -1,58 +1,71 @@
-@import "../../style/themes/default";
-@import "../../style/mixins/index";
-@import "../../button/style/mixin";
-@import "./mixin";
+@import '../../style/themes/index';
+@import '../../style/mixins/index';
+@import '../../button/style/mixin';
+@import './mixin';
 
-.@{ant-prefix}-input-search-icon {
-  cursor: pointer;
-  transition: all .3s;
-  font-size: 14px;
-  &:hover {
-    color: @input-hover-border-color;
-  }
-}
+@search-prefix: ~'@{ant-prefix}-input-search';
 
-// code blow is keeped for compatibility
-// for this demo: http://1x.ant.design/components/select/#components-select-demo-search-box
-// do not delete until 3.x
-.@{ant-prefix}-search-input-wrapper {
-  display: inline-block;
-  vertical-align: middle;
-}
+.@{search-prefix} {
+  .@{ant-prefix}-input {
+    &:hover,
+    &:focus {
+      border-color: @input-hover-border-color;
 
-.@{ant-prefix}-search-input {
-  &.@{ant-prefix}-input-group .@{ant-prefix}-input:first-child,
-  &.@{ant-prefix}-input-group .@{ant-prefix}-select:first-child {
-    border-radius: @border-radius-base;
-    position: absolute;
-    top: -1px;
-    width: 100%;
-  }
-
-  &.@{ant-prefix}-input-group .@{ant-prefix}-input:first-child {
-    padding-right: 36px;
-  }
-
-  .@{ant-prefix}-search-btn {
-    .btn-default;
-    border-radius: 0 @border-radius-base - 1 @border-radius-base - 1 0;
-    left: -1px;
-    position: relative;
-    border-width: 0 0 0 1px;
-    z-index: 2;
-    padding-left: 8px;
-    padding-right: 8px;
-    &:hover {
-      border-color: @border-color-base;
+      + .@{ant-prefix}-input-group-addon .@{search-prefix}-button:not(.@{ant-prefix}-btn-primary) {
+        border-left-color: @input-hover-border-color;
+      }
     }
   }
-  &&-focus .@{ant-prefix}-search-btn-noempty,
-  &:hover .@{ant-prefix}-search-btn-noempty {
-    .btn-primary;
+
+  .@{ant-prefix}-input-affix-wrapper {
+    border-radius: 0;
   }
-  .@{ant-prefix}-select-combobox {
-    .@{ant-prefix}-select-selection__rendered {
-      margin-right: 29px;
+
+  // fix slight height diff in Firefox:
+  // https://ant.design/components/auto-complete-cn/#components-auto-complete-demo-certain-category
+  .@{ant-prefix}-input-lg {
+    line-height: @line-height-base - 0.0002;
+  }
+
+  > .@{ant-prefix}-input-group {
+    > .@{ant-prefix}-input-group-addon:last-child {
+      left: -1px;
+      padding: 0;
+      border: 0;
+
+      .@{search-prefix}-button {
+        padding-top: 0;
+        padding-bottom: 0;
+        border-radius: 0 @border-radius-base @border-radius-base 0;
+      }
+
+      .@{search-prefix}-button:not(.@{ant-prefix}-btn-primary) {
+        color: @text-color-secondary;
+
+        &.@{ant-prefix}-btn-loading::before {
+          top: 0;
+          right: 0;
+          bottom: 0;
+          left: 0;
+        }
+      }
     }
+  }
+
+  &-button {
+    height: @input-height-base;
+
+    &:hover,
+    &:focus {
+      z-index: 1;
+    }
+  }
+
+  &-large &-button {
+    height: @input-height-lg;
+  }
+
+  &-small &-button {
+    height: @input-height-sm;
   }
 }

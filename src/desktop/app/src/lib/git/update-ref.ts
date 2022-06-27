@@ -12,8 +12,18 @@ import { Repository } from '../../models/repository'
  * @param newValue   - The new value for the ref.
  * @param reason     - The reflog entry.
  */
-export async function updateRef(repository: Repository, ref: string, oldValue: string, newValue: string, reason: string): Promise<void> {
-  await git([ 'update-ref', ref, newValue, oldValue, '-m', reason ], repository.path, 'updateRef')
+export async function updateRef(
+  repository: Repository,
+  ref: string,
+  oldValue: string,
+  newValue: string,
+  reason: string
+): Promise<void> {
+  await git(
+    ['update-ref', ref, newValue, oldValue, '-m', reason],
+    repository.path,
+    'updateRef'
+  )
 }
 
 /**
@@ -21,14 +31,20 @@ export async function updateRef(repository: Repository, ref: string, oldValue: s
  *
  * @param repository - The repository in which the ref exists.
  * @param ref        - The ref to remove. Should be fully qualified, but may also be 'HEAD'.
- * @param reason     - The reflog entry.
+ * @param reason     - The reflog entry (optional). Note that this is only useful when
+ *                     deleting the HEAD reference as deleting any other reference will
+ *                     implicitly delete the reflog file for that reference as well.
  */
-export async function deleteRef(repository: Repository, ref: string, reason: string): Promise<true | undefined> {
-  const result = await git([ 'update-ref', '-m', reason, '-d', ref ], repository.path, 'deleteRef')
+export async function deleteRef(
+  repository: Repository,
+  ref: string,
+  reason?: string
+) {
+  const args = ['update-ref', '-d', ref]
 
-  if (result.exitCode === 0) {
-    return true
+  if (reason !== undefined) {
+    args.push('-m', reason)
   }
 
-  return undefined
+  await git(args, repository.path, 'deleteRef')
 }

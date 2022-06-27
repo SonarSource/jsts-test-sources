@@ -1,8 +1,8 @@
 ---
 order: 1
 title:
-    zh-CN: 不可用
-    en-US: Disabled
+  zh-CN: 不可用
+  en-US: Disabled
 ---
 
 ## zh-CN
@@ -13,14 +13,17 @@ checkbox 不可用。
 
 Disabled checkbox.
 
-````jsx
+```tsx
 import { Checkbox } from 'antd';
+import React from 'react';
 
-ReactDOM.render(
-  <div>
+const App: React.FC = () => (
+  <>
     <Checkbox defaultChecked={false} disabled />
     <br />
     <Checkbox defaultChecked disabled />
-  </div>
-  , mountNode);
-````
+  </>
+);
+
+export default App;
+```

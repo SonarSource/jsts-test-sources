@@ -7,83 +7,89 @@ title:
 
 ## zh-CN
 
-自动补全和远程数据结合。
+搜索和远程数据结合。
 
 ## en-US
 
-Autocomplete with remote ajax data.
+Search with remote data.
 
-````jsx
+```tsx
 import { Select } from 'antd';
 import jsonp from 'fetch-jsonp';
-import querystring from 'querystring';
-const Option = Select.Option;
+import qs from 'qs';
+import React, { useState } from 'react';
 
-let timeout;
-let currentValue;
+const { Option } = Select;
 
-function fetch(value, callback) {
+let timeout: ReturnType<typeof setTimeout> | null;
+let currentValue: string;
+
+const fetch = (value: string, callback: (data: { value: string; text: string }[]) => void) => {
   if (timeout) {
     clearTimeout(timeout);
     timeout = null;
   }
   currentValue = value;
 
-  function fake() {
-    const str = querystring.encode({
+  const fake = () => {
+    const str = qs.stringify({
       code: 'utf-8',
       q: value,
     });
     jsonp(`https://suggest.taobao.com/sug?${str}`)
-      .then(response => response.json())
-      .then((d) => {
+      .then((response: any) => response.json())
+      .then((d: any) => {
         if (currentValue === value) {
-          const result = d.result;
-          const data = [];
-          result.forEach((r) => {
-            data.push({
-              value: r[0],
-              text: r[0],
-            });
-          });
+          const { result } = d;
+          const data = result.map((item: any) => ({
+            value: item[0],
+            text: item[0],
+          }));
           callback(data);
         }
       });
-  }
+  };
 
   timeout = setTimeout(fake, 300);
-}
+};
 
-class SearchInput extends React.Component {
-  state = {
-    data: [],
-    value: '',
-  }
-  handleChange = (value) => {
-    this.setState({ value });
-    fetch(value, data => this.setState({ data }));
-  }
-  render() {
-    const options = this.state.data.map(d => <Option key={d.value}>{d.text}</Option>);
-    return (
-      <Select
-        mode="combobox"
-        value={this.state.value}
-        placeholder={this.props.placeholder}
-        notFoundContent=""
-        style={this.props.style}
-        defaultActiveFirstOption={false}
-        showArrow={false}
-        filterOption={false}
-        onChange={this.handleChange}
-      >
-        {options}
-      </Select>
-    );
-  }
-}
+const SearchInput: React.FC<{ placeholder: string; style: React.CSSProperties }> = props => {
+  const [data, setData] = useState<any[]>([]);
+  const [value, setValue] = useState<string>();
 
-ReactDOM.render(
-  <SearchInput placeholder="input search text" style={{ width: 200 }} />
-, mountNode);
-````
+  const handleSearch = (newValue: string) => {
+    if (newValue) {
+      fetch(newValue, setData);
+    } else {
+      setData([]);
+    }
+  };
+
+  const handleChange = (newValue: string) => {
+    setValue(newValue);
+  };
+
+  const options = data.map(d => <Option key={d.value}>{d.text}</Option>);
+
+  return (
+    <Select
+      showSearch
+      value={value}
+      placeholder={props.placeholder}
+      style={props.style}
+      defaultActiveFirstOption={false}
+      showArrow={false}
+      filterOption={false}
+      onSearch={handleSearch}
+      onChange={handleChange}
+      notFoundContent={null}
+    >
+      {options}
+    </Select>
+  );
+};
+
+const App: React.FC = () => <SearchInput placeholder="input search text" style={{ width: 200 }} />;
+
+export default App;
+```

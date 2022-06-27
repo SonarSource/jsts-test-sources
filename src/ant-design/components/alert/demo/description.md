@@ -13,29 +13,34 @@ title:
 
 Additional description for alert message.
 
-````jsx
+```tsx
 import { Alert } from 'antd';
+import React from 'react';
 
-ReactDOM.render(<div>
-  <Alert
-    message="Success Text"
-    description="Success Description Success Description Success Description"
-    type="success"
-  />
-  <Alert
-    message="Info Text"
-    description="Info Description Info Description Info Description Info Description"
-    type="info"
-  />
-  <Alert
-    message="Warning Text"
-    description="Warning Description Warning Description Warning Description Warning Description"
-    type="warning"
-  />
-  <Alert
-    message="Error Text"
-    description="Error Description Error Description Error Description Error Description"
-    type="error"
-  />
-</div>, mountNode);
-````
+const App: React.FC = () => (
+  <>
+    <Alert
+      message="Success Text"
+      description="Success Description Success Description Success Description"
+      type="success"
+    />
+    <Alert
+      message="Info Text"
+      description="Info Description Info Description Info Description Info Description"
+      type="info"
+    />
+    <Alert
+      message="Warning Text"
+      description="Warning Description Warning Description Warning Description Warning Description"
+      type="warning"
+    />
+    <Alert
+      message="Error Text"
+      description="Error Description Error Description Error Description Error Description"
+      type="error"
+    />
+  </>
+);
+
+export default App;
+```

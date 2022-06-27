@@ -1,0 +1,24 @@
+# CircleCI doesn't automatically run builds on the beta branch (only main and PRs)
+# so this is a github action to force it to do so.
+name: ZZ-Cross-CI Trigger beta iOS release
+
+on:
+  push:
+    branches: [beta-ios]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    permissions:
+      contents: none
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger release
+        run: |
+          curl \
+            -X POST \
+            --header "Content-Type: application/json" \
+            -d '{"branch": "beta-ios"}' \
+            https://circleci.com/api/v1.1/project/github/artsy/eigen/build?circle-token=${{ secrets.CircleToken }}

@@ -1,11 +1,7 @@
-import { shell } from 'electron'
+import { shell } from './app-shell'
 import { Account } from '../models/account'
 import { fatalError } from './fatal-error'
-import {
-  getOAuthAuthorizationURL,
-  requestOAuthToken,
-  fetchUser,
-} from './api'
+import { getOAuthAuthorizationURL, requestOAuthToken, fetchUser } from './api'
 import { uuid } from './uuid'
 
 interface IOAuthState {
@@ -27,9 +23,6 @@ let oauthState: IOAuthState | null = null
  * flow.
  */
 export function askUserToOAuth(endpoint: string) {
-  // Disable the lint warning since we're storing the `resolve` and `reject`
-  // functions.
-  // tslint:disable-next-line:promise-must-complete
   return new Promise<Account>((resolve, reject) => {
     oauthState = { state: uuid(), endpoint, resolve, reject }
 
@@ -41,13 +34,22 @@ export function askUserToOAuth(endpoint: string) {
 /**
  * Request the authenticated using, using the code given to us by the OAuth
  * callback.
+ *
+ * @returns `undefined` if there is no valid OAuth state to use, or `null` if
+ * the code cannot be used to retrieve a valid GitHub user.
  */
-export async function requestAuthenticatedUser(code: string): Promise<Account | null> {
-  if (!oauthState) {
-    return fatalError('`askUserToOAuth` must be called before requesting an authenticated user.')
+export async function requestAuthenticatedUser(
+  code: string,
+  state: string
+): Promise<Account | null | undefined> {
+  if (!oauthState || state !== oauthState.state) {
+    log.warn(
+      'requestAuthenticatedUser was not called with valid OAuth state. This is likely due to a browser reloading the callback URL. Contact GitHub Support if you believe this is an error'
+    )
+    return undefined
   }
 
-  const token = await requestOAuthToken(oauthState.endpoint, oauthState.state, code)
+  const token = await requestOAuthToken(oauthState.endpoint, code)
   if (token) {
     return fetchUser(oauthState.endpoint, token)
   } else {
@@ -63,7 +65,9 @@ export async function requestAuthenticatedUser(code: string): Promise<Account | 
  */
 export function resolveOAuthRequest(account: Account) {
   if (!oauthState) {
-    return fatalError('`askUserToOAuth` must be called before resolving an auth request.')
+    fatalError(
+      '`askUserToOAuth` must be called before resolving an auth request.'
+    )
   }
 
   oauthState.resolve(account)
@@ -79,7 +83,9 @@ export function resolveOAuthRequest(account: Account) {
  */
 export function rejectOAuthRequest(error: Error) {
   if (!oauthState) {
-    return fatalError('`askUserToOAuth` must be called before rejecting an auth request.')
+    fatalError(
+      '`askUserToOAuth` must be called before rejecting an auth request.'
+    )
   }
 
   oauthState.reject(error)

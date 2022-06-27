@@ -1,278 +1,297 @@
 ---
 order: 3
-title: Real project with dva
+title: Real project with umi
 ---
 
-[dva](https://github.com/dvajs/dva) is a React and redux based, lightweight and elm-style framework, which supports side effects, hot module replacement, dynamic on demand, react-native, SSR. And it has been widely used in production environment.
+In real project development, you may need data flow solutions such as Redux or MobX. Ant Design React is a UI library that can be used with data flow solutions and application frameworks in any React ecosystem. Based on the business scenario, we launched a pluggable enterprise-level application framework [Umi](https://umijs.org), which is recommended for use in the project.
 
-This article will guide you to create a simple application from zero using dva and antd.
+And [Umi](https://umijs.org) is a routing-based framework that supports [next.js-like conventional routing](https://umijs.org/docs/convention-routing) and various advanced routing functions, such as [routing-level on-demand loading](https://umijs.org/config#dynamicimport). With a complete [plugin system](https://umijs.org/plugins/api) that covers every life cycle from source code to build product, Umi is able to support various functional extensions and business needs; meanwhile [Umi UI](https://umijs.org/docs/use-umi-ui) is provided to enhance the development experience and development efficiency through Visual Aided Programming (VAP).
 
-Include the following:
+> You may also be interested in [Ant Design Pro](https://pro.ant.design/), an Out-of-box UI solution for enterprise applications based on Umi and antd.
 
----
+This article will guide you to create a simple application from zero using Umi and antd.
 
-## Install dva-cli
+## Install Umi
 
-Install dva-cli with npm, and make sure the version is larger then `0.7.0`.
-
-```bash
-$ npm install dva-cli -g
-$ dva -v
-0.7.0
-```
-
-## Create New App
-
-After installed dva-cli, you can have access to the `dva` command in terminal ([can't access?](http://stackoverflow.com/questions/15054388/global-node-modules-not-installing-correctly-command-not-found)). Now, create a new application with `dva new`.
+It is recommended to use yarn to create an application and execute the following command.
 
 ```bash
-$ dva new dva-quickstart
+$ mkdir myapp && cd myapp
+$ yarn create @umijs/umi-app
+$ yarn
 ```
 
-This creates `dva-quickstart` directory, that contains the project directories and files, and provides development server, build script, mock service, proxy server and so on.
+> If you use npm, you can execute `npx @umijs/create-umi-app` with the same effect.
 
-Then `cd` the `dva-quickstart` directory, and start the development server.
+> And if you want to use a fixed version of antd, you can install additional antd dependency in your project, and the antd dependencies declared in package.json will be used first.
 
-```bash
-$ cd dva-quickstart
-$ npm start
-```
-
-After a few seconds, you will see the following output:
-
-```bash
-Compiled successfully!
-
-The app is running at:
-
-  http://localhost:8000/
-
-Note that the development build is not optimized.
-To create a production build, use npm run build.
-```
-
-Open http://localhost:8000 in your browser, you will see dva welcome page.
-
-## Integrate antd
-
-Install `antd` and `babel-plugin-import` with npm. `babel-plugin-import` is used to automatically import scripts and stylesheets from antd in demand. See [repo](https://github.com/ant-design/babel-plugin-import) 。
-
-```bash
-$ npm install antd babel-plugin-import --save
-```
-
-Edit `.roadhogrc` to integrate `babel-plugin-import`.
-
-```diff
-  "extraBabelPlugins": [
--    "transform-runtime"
-+    "transform-runtime",
-+    ["import", { "libraryName": "antd", "style": "css" }]
-  ],
-```
-
-> Notice: dva-cli's build and server is bases on roadhog, view [roadhog#Configuration](https://github.com/sorrycc/roadhog/blob/master/README_en-us.md#configuration) for more `.roadhogrc` Configuration.
-
-## Define Router
+## Create Routes
 
 We need to write an application displaying the list of products. The first step is to create a route.
 
-Create a route component `routes/Products.js`:
+If you don't have npx, you need to install it first to execute the commands under node_modules.
 
-```javascript
-import React from 'react';
-
-const Products = (props) => (
-  <h2>List of Products</h2>
-);
-
-export default Products;
+```bash
+$ yarn global add npx
 ```
 
-Add routing information to router, edit `router.js`:
+Then create a `/products` route,
+
+```bash
+$ npx umi g page products --typescript
+
+Write: src/pages/products.tsx
+Write: src/pages/products.css
+```
+
+In `.umirc.ts` configured in routing, if there is need to internationalization, can configure `locale` enable antd internationalization:
 
 ```diff
-+ import Products from './routes/Products';
-...
-+ <Route path="/products" component={Products} />
+import { defineConfig } from 'umi';
+
+export default defineConfig({
++ locale: { antd: true },
+  routes: [
+    { path: '/', component: '@/pages/index' },
++   { path: '/products', component: '@/pages/products' },
+  ],
+});
 ```
 
-Then open http://localhost:8000/#/products in your browser, you should be able to see the `<h2>` tag defined before.
+run `yarn start` then open [http://localhost:8000/products](http://localhost:8000/products) in your browser and you should see the corresponding page.
 
 ## Write UI Components
 
-As your application grows and you notice you are sharing UI elements between multiple pages (or using them multiple times on the same page), in dva it's called reusable components.
+As your application grows and you notice you are sharing UI elements between multiple pages (or using them multiple times on the same page), in Umi it's called reusable components.
 
 Let's create a `ProductList` component that we can use in multiple places to show a list of products.
 
-Create `components/ProductList.js` and typing:
+Create `src/components/ProductList.tsx` by typing:
 
-```javascript
-import React from 'react';
-import PropTypes from 'prop-types';
+```js
 import { Table, Popconfirm, Button } from 'antd';
 
 const ProductList = ({ onDelete, products }) => {
-  const columns = [{
-    title: 'Name',
-    dataIndex: 'name',
-  }, {
-    title: 'Actions',
-    render: (text, record) => {
-      return (
-        <Popconfirm title="Delete?" onConfirm={() => onDelete(record.id)}>
-          <Button>Delete</Button>
-        </Popconfirm>
-      );
+  const columns = [
+    {
+      title: 'Name',
+      dataIndex: 'name',
     },
-  }];
-  return (
-    <Table
-      dataSource={products}
-      columns={columns}
-    />
-  );
-};
-
-ProductList.proptypes = {
-  onDelete: PropTypes.func.isRequired,
-  products: PropTypes.array.isRequired,
+    {
+      title: 'Actions',
+      render: (text, record) => {
+        return (
+          <Popconfirm title="Delete?" onConfirm={() => onDelete(record.id)}>
+            <Button>Delete</Button>
+          </Popconfirm>
+        );
+      },
+    },
+  ];
+  return <Table dataSource={products} columns={columns} />;
 };
 
 export default ProductList;
 ```
 
-## Define Model
+## Simple data management solution
 
-After complete the UI, we will begin processing the data and logic.
+`@umijs/plugin-model` is a simple data flow scheme based on the hooks paradigm, which can replace dva to perform global data flow in the middle stage under certain circumstances. We agree that the files in the `src/models` directory are the model files defined by the project. Each file needs to export a function by default, the function defines a hook, and files that do not meet the specifications will be filtered out.
 
-dva manages domain model with `model`, with reducers for synchronous state update, effects for async logic, and subscriptions for data source subscribe.
+The file name corresponds to the name of the final model, and you can consume the data in the model through the API provided by the plug-in.
 
-Let's create a model `models/products.js` and typing:
+Let's take a simple table as an example. First we create a new file `src/services/product.ts` for remote API.
 
-```javascript
-import dva from 'dva';
-
-export default {
-  namespace: 'products',
-  state: [],
-  reducers: {
-    'delete'(state, { payload: id }) {
-      return state.filter(item => item.id !== id);
-    },
-  },
-};
+```tsx
+/*
+export function queryProductList() {
+  return fetch('/api/products').then(res => res.json());
+}
+*/
+// mock request service by setTimeout
+export function queryProductList() {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve([
+        {
+          id: 1,
+          name: 'dva',
+        },
+        {
+          id: 2,
+          name: 'antd',
+        },
+      ]);
+    }, 2000);
+  });
+}
 ```
 
-In this model:
+Then you need to create a new file `src/models/useProductList.ts`.
 
-- `namespace` represent the key on global state
-- `state` is the initial value, here is an empty array
-- `reducers` is equal to reducer in redux, accepting action, and update state synchronously
+```tsx
+import { useRequest } from 'umi';
+import { queryProductList } from '@/services/product';
 
-Then don't forget to require it in `index.js`:
+export default function useProductList(params: { pageSize: number; current: number }) {
+  const msg = useRequest(() => queryUserList(params));
 
-```diff
-// 3. Model
-+ app.model(require('./models/products'));
+  const deleteProducts = async (id: string) => {
+    try {
+      await removeProducts(id);
+      message.success('success');
+      msg.run();
+    } catch (error) {
+      message.error('fail');
+    }
+  };
+
+  return {
+    dataSource: msg.data,
+    reload: msg.run,
+    loading: msg.loading,
+    deleteProducts,
+  };
+}
 ```
 
-## Connect
+Edit `src/pages/products.tsx` and replace with the following:
 
-So far, we have completed a separate model and component. Then how to connect these together?
+```tsx
+import { useModel } from 'umi';
+import ProductList from '@/components/ProductList';
 
-dva provides a `connect` method. If you are familiar with redux, this `connect` is from react-router.
-
-Edit `routes/Products.js` and replace with following:
-
-```javascript
-import React from 'react';
-import { connect } from 'dva';
-import ProductList from '../components/ProductList';
-
-const Products = ({ dispatch, products }) => {
-  function handleDelete(id) {
-    dispatch({
-      type: 'products/delete',
-      payload: id,
-    });
-  }
+const Products = () => {
+  const { dataSource, reload, deleteProducts } = useModel('useProductList');
   return (
     <div>
-      <h2>List of Products</h2>
-      <ProductList onDelete={handleDelete} products={products} />
+      <a onClick={() => reload()}>reload</a>
+      <ProductList onDelete={deleteProducts} products={dataSource} />
     </div>
   );
 };
 
-// export default Products;
-export default connect(({ products }) => ({
-  products,
-}))(Products);
-```
-
-Finally, we need some initial data to make the application run together. Edit `index.js`:
-
-```diff
-- const app = dva();
-+ const app = dva({
-+   initialState: {
-+     products: [
-+       { name: 'dva', id: 1 },
-+       { name: 'antd', id: 2 },
-+     ],
-+   },
-+ });
+export default Products;
 ```
 
 Refresh your browser, you should see the following result:
 
-<p style="text-align: center">
-  <img src="https://zos.alipayobjects.com/rmsportal/GQJeDDeUCSTRMMg.gif" />
-</p>
+<img src="https://gw.alipayobjects.com/zos/antfincdn/dPsy4tFHN3/umi.gif" />
+
+## ProLayout
+
+A standard mid-to-back page generally requires a layout. This layout is often highly similar. ProLayout encapsulates commonly used menus, breadcrumbs, page headers and other functions, provides an independent framework and works out of the box Advanced layout components.
+
+And supports three modes of `side`, `mix`, and `top`, and it also has built-in menu selection, the menu generates breadcrumbs, and automatically sets the logic of the page title. Can help you start a project quickly.
+
+![site](https://gw.alipayobjects.com/zos/antfincdn/gXkuc%26RmT7/64038246-E2BF-4840-8898-5AF531897A44.png)
+
+The method of use is also extremely simple, requiring only a few simple settings.
+
+```tsx
+import { Button } from 'antd';
+import ProLayout, { PageContainer } from '@ant-design/pro-layout';
+
+export default (
+  <ProLayout>
+    <PageContainer
+      extra={[
+        <Button key="3">Operating</Button>,
+        <Button key="2">Operating</Button>,
+        <Button key="1" type="primary">
+          Main Operating
+        </Button>,
+      ]}
+      footer={[<Button>reset</Button>, <Button type="primary">submit</Button>]}
+    >
+      {children}
+    </PageContainer>
+  </ProLayout>
+);
+```
+
+Click here [Quick Start](https://procomponents.ant.design/en-US/components/layout).
+
+## ProTable
+
+Many data in an admin page does not need to be shared across pages, and models are sometimes not needed.
+
+```tsx
+import ProTable from '@ant-design/pro-table';
+import { Popconfirm, Button } from 'antd';
+import { queryProductList } from '@/services/product';
+
+const Products = () => {
+  const actionRef = useRef<ActionType>();
+
+  const deleteProducts = async (id: string) => {
+    try {
+      await removeProducts(id);
+      message.success('success');
+      actionRef.current?.reload();
+    } catch (error) {
+      message.error('fail');
+    }
+  };
+
+  const columns = [
+    {
+      title: 'Name',
+      dataIndex: 'name',
+    },
+    {
+      title: 'Actions',
+      render: (text, record) => {
+        return (
+          <Popconfirm title="Delete?" onConfirm={() => onDelete(record.id)}>
+            <Button>Delete</Button>
+          </Popconfirm>
+        );
+      },
+    },
+  ];
+
+  return (
+    <ProTable<{ name: string }>
+      headerTitle="Query Table"
+      actionRef={actionRef}
+      rowKey="name"
+      request={(params, sorter, filter) => queryProductList({ ...params, sorter, filter })}
+      columns={columns}
+    />
+  );
+};
+```
+
+ProTable provides preset logic to handle loading, pagination and search forms, which can greatly reduce the amount of code, click here [ProTable](https://procomponents.ant.design/en-US/components/table).
 
 ## Build
 
-Now that we've written our application and verified that it works in development, it's time to get it ready to deploy to our users. To do so, run the following command:
+Now that we've written our application and verified that it works in development, it's time to get it ready for deployment to our users. To do so, execute the following command:
 
 ```bash
-$ npm run build
+$ yarn build
 ```
 
-After a few seconds, the output should be as follows:
+![](https://gw.alipayobjects.com/zos/antfincdn/Zd3f%242NdOK/b911d244-f1a5-4d61-adc5-3710cd86cd1b.png)
 
-```bash
-> @ build /private/tmp/myapp
-> roadhog build
-
-Creating an optimized production build...
-Compiled successfully.
-
-File sizes after gzip:
-
-  82.98 KB  dist/index.js
-  270 B     dist/index.css
-```
-
-The `build` command packages up all of the assets that make up your application —— JavaScript, templates, CSS, web fonts, images, and more. Then you can find these files in the `dist /` directory.
+The `build` command packages up all of the assets that make up your application —— JavaScript, templates, CSS, web fonts, images, and more. Then you can find these files in the `dist/` directory.
 
 ## What's Next
 
 We have completed a simple application, but you may still have lots of questions, such as:
 
-- How to dealing with async logic
-- How to load initial data elegantly
-- How to handle onError globally and locally
-- How to load Routes and Models on demand
-- How to implement HMR
-- How to mock data
-- and so on...
+- How to handle onError globally and locally?
+- How to handle routes?
+- How to mock data?
+- How to deploy?
+- ant so on...
 
 You can:
 
-- Visit [dva official website](https://github.com/dvajs/dva).
-- Be familiar with the [8 Conpects](https://github.com/dvajs/dva/blob/master/docs/Concepts.md), and understand how they are connected together
-- Know all [dva APIs](https://github.com/dvajs/dva/blob/master/docs/API.md)
-- Checkout [dva knowledgemap](https://github.com/dvajs/dva-knowledgemap), including all the basic knowledge with ES6, React, dva
-- Checkout [more FAQ](https://github.com/dvajs/dva/issues?q=is%3Aissue+is%3Aclosed+label%3Afaq)
-- If your project is created with [dva-cli](https://github.com/dvajs/dva-cli) , checkout how to [Configure it](https://github.com/sorrycc/roadhog#配置)
+- Visit [Umi official website](https://umijs.org/)
+- Know [Umi routes](https://umijs.org/docs/routing)
+- Know [how to deploy Umi application](https://umijs.org/docs/deployment)
+- Scaffolding out of the box [Ant Design Pro](https://pro.ant.design)
+- Advanced Layout [ProLayout](https://procomponents.ant.design/en-US/components/layout)
+- Advanced Table [ProTable](https://procomponents.ant.design/en-US/components/table)

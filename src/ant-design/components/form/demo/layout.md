@@ -1,5 +1,5 @@
 ---
-order: 12
+order: 3
 title:
   zh-CN: 表单布局
   en-US: Form Layout
@@ -13,62 +13,62 @@ title:
 
 There are three layout for form: `horizontal`, `vertical`, `inline`.
 
-````jsx
-import { Form, Input, Button, Radio } from 'antd';
-const FormItem = Form.Item;
+```tsx
+import { Button, Form, Input, Radio } from 'antd';
+import React, { useState } from 'react';
 
-class FormLayoutDemo extends React.Component {
-  constructor() {
-    super();
-    this.state = {
-      formLayout: 'horizontal',
-    };
-  }
-  handleFormLayoutChange = (e) => {
-    this.setState({ formLayout: e.target.value });
-  }
-  render() {
-    const { formLayout } = this.state;
-    const formItemLayout = formLayout === 'horizontal' ? {
-      labelCol: { span: 4 },
-      wrapperCol: { span: 14 },
-    } : null;
-    const buttonItemLayout = formLayout === 'horizontal' ? {
-      wrapperCol: { span: 14, offset: 4 },
-    } : null;
-    return (
-      <div>
-        <Form layout={formLayout}>
-          <FormItem
-            label="Form Layout"
-            {...formItemLayout}
-          >
-            <Radio.Group defaultValue="horizontal" onChange={this.handleFormLayoutChange}>
-              <Radio.Button value="horizontal">Horizontal</Radio.Button>
-              <Radio.Button value="vertical">Vertical</Radio.Button>
-              <Radio.Button value="inline">Inline</Radio.Button>
-            </Radio.Group>
-          </FormItem>
-          <FormItem
-            label="Field A"
-            {...formItemLayout}
-          >
-            <Input placeholder="input placeholder" />
-          </FormItem>
-          <FormItem
-            label="Field B"
-            {...formItemLayout}
-          >
-            <Input placeholder="input placeholder" />
-          </FormItem>
-          <FormItem {...buttonItemLayout}>
-            <Button type="primary" size="large">Submit</Button>
-          </FormItem>
-        </Form>
-      </div>
-    );
-  }
-}
+type LayoutType = Parameters<typeof Form>[0]['layout'];
 
-ReactDOM.render(<FormLayoutDemo />, mountNode);
-````
+const App: React.FC = () => {
+  const [form] = Form.useForm();
+  const [formLayout, setFormLayout] = useState<LayoutType>('horizontal');
+
+  const onFormLayoutChange = ({ layout }: { layout: LayoutType }) => {
+    setFormLayout(layout);
+  };
+
+  const formItemLayout =
+    formLayout === 'horizontal'
+      ? {
+          labelCol: { span: 4 },
+          wrapperCol: { span: 14 },
+        }
+      : null;
+
+  const buttonItemLayout =
+    formLayout === 'horizontal'
+      ? {
+          wrapperCol: { span: 14, offset: 4 },
+        }
+      : null;
+
+  return (
+    <Form
+      {...formItemLayout}
+      layout={formLayout}
+      form={form}
+      initialValues={{ layout: formLayout }}
+      onValuesChange={onFormLayoutChange}
+    >
+      <Form.Item label="Form Layout" name="layout">
+        <Radio.Group value={formLayout}>
+          <Radio.Button value="horizontal">Horizontal</Radio.Button>
+          <Radio.Button value="vertical">Vertical</Radio.Button>
+          <Radio.Button value="inline">Inline</Radio.Button>
+        </Radio.Group>
+      </Form.Item>
+      <Form.Item label="Field A">
+        <Input placeholder="input placeholder" />
+      </Form.Item>
+      <Form.Item label="Field B">
+        <Input placeholder="input placeholder" />
+      </Form.Item>
+      <Form.Item {...buttonItemLayout}>
+        <Button type="primary">Submit</Button>
+      </Form.Item>
+    </Form>
+  );
+};
+
+export default App;
+```

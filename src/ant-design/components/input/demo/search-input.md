@@ -1,27 +1,64 @@
 ---
 order: 4
 title:
-    zh-CN: 搜索框
-    en-US: Search box
+  zh-CN: 搜索框
+  en-US: Search box
 ---
 
 ## zh-CN
 
-带有搜索按钮的输入框，`2.5.0` 时新增。
+带有搜索按钮的输入框。
 
 ## en-US
 
-Example of creating a search box by grouping a standard input with a search button, added in `2.5.0`.
+Example of creating a search box by grouping a standard input with a search button.
 
-````jsx
-import { Input } from 'antd';
-const Search = Input.Search;
+```tsx
+import { AudioOutlined } from '@ant-design/icons';
+import { Input, Space } from 'antd';
+import React from 'react';
 
-ReactDOM.render(
-  <Search
-    placeholder="input search text"
-    style={{ width: 200 }}
-    onSearch={value => console.log(value)}
+const { Search } = Input;
+
+const suffix = (
+  <AudioOutlined
+    style={{
+      fontSize: 16,
+      color: '#1890ff',
+    }}
   />
-, mountNode);
-````
+);
+
+const onSearch = (value: string) => console.log(value);
+
+const App: React.FC = () => (
+  <Space direction="vertical">
+    <Search placeholder="input search text" onSearch={onSearch} style={{ width: 200 }} />
+    <Search placeholder="input search text" allowClear onSearch={onSearch} style={{ width: 200 }} />
+    <Search
+      addonBefore="https://"
+      placeholder="input search text"
+      allowClear
+      onSearch={onSearch}
+      style={{ width: 304 }}
+    />
+    <Search placeholder="input search text" onSearch={onSearch} enterButton />
+    <Search
+      placeholder="input search text"
+      allowClear
+      enterButton="Search"
+      size="large"
+      onSearch={onSearch}
+    />
+    <Search
+      placeholder="input search text"
+      enterButton="Search"
+      size="large"
+      suffix={suffix}
+      onSearch={onSearch}
+    />
+  </Space>
+);
+
+export default App;
+```

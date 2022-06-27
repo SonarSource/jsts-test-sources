@@ -1,15 +1,31 @@
-import { remote, ipcRenderer } from 'electron'
-
-// Given that `autoUpdater` is entirely async anyways, I *think* it's safe to
-// use with `remote`.
-const autoUpdater = remote.autoUpdater
 const lastSuccessfulCheckKey = 'last-successful-update-check'
 
 import { Emitter, Disposable } from 'event-kit'
 
-import { getVersion } from './app-proxy'
-import { sendWillQuitSync } from '../main-process-proxy'
+import {
+  checkForUpdates,
+  isRunningUnderARM64Translation,
+  onAutoUpdaterCheckingForUpdate,
+  onAutoUpdaterError,
+  onAutoUpdaterUpdateAvailable,
+  onAutoUpdaterUpdateDownloaded,
+  onAutoUpdaterUpdateNotAvailable,
+  quitAndInstallUpdate,
+  sendWillQuitSync,
+} from '../main-process-proxy'
 import { ErrorWithMetadata } from '../../lib/error-with-metadata'
+import { parseError } from '../../lib/squirrel-error-parser'
+
+import { ReleaseSummary } from '../../models/release-notes'
+import { generateReleaseSummary } from '../../lib/release-notes'
+import { setNumber, getNumber } from '../../lib/local-storage'
+import { enableUpdateFromEmulatedX64ToARM64 } from '../../lib/feature-flag'
+import { offsetFromNow } from '../../lib/offset-from'
+import { gte, SemVer } from 'semver'
+import { getRendererGUID } from '../../lib/get-renderer-guid'
+
+/** The last version a showcase was seen. */
+export const lastShowCaseVersionSeen = 'version-of-last-showcase'
 
 /** The states the auto updater can be in. */
 export enum UpdateStatus {
@@ -24,73 +40,56 @@ export enum UpdateStatus {
 
   /** An update has been downloaded and is ready to be installed. */
   UpdateReady,
+
+  /** We have not checked for an update yet. */
+  UpdateNotChecked,
 }
 
 export interface IUpdateState {
   status: UpdateStatus
   lastSuccessfulCheck: Date | null
+  newReleases: ReadonlyArray<ReleaseSummary> | null
 }
-
-const UpdatesURLBase = 'https://central.github.com/api/deployments/desktop/desktop/latest'
 
 /** A store which contains the current state of the auto updater. */
 class UpdateStore {
   private emitter = new Emitter()
-  private status = UpdateStatus.UpdateNotAvailable
+  private status = UpdateStatus.UpdateNotChecked
   private lastSuccessfulCheck: Date | null = null
+  private newReleases: ReadonlyArray<ReleaseSummary> | null = null
 
   /** Is the most recent update check user initiated? */
   private userInitiatedUpdate = true
 
   public constructor() {
+    const lastSuccessfulCheckTime = getNumber(lastSuccessfulCheckKey, 0)
 
-    const lastSuccessfulCheckValue = localStorage.getItem(lastSuccessfulCheckKey)
-
-    if (lastSuccessfulCheckValue) {
-      const lastSuccessfulCheckTime = parseInt(lastSuccessfulCheckValue, 10)
-
-      if (!isNaN(lastSuccessfulCheckTime)) {
-        this.lastSuccessfulCheck = new Date(lastSuccessfulCheckTime)
-      }
+    if (lastSuccessfulCheckTime > 0) {
+      this.lastSuccessfulCheck = new Date(lastSuccessfulCheckTime)
     }
 
-    // We're using our own error event instead of `autoUpdater`s so that we can
-    // properly serialize the `Error` object for transport over IPC. See
-    // https://github.com/desktop/desktop/issues/1266.
-    ipcRenderer.on('auto-updater-error', (event: Electron.IpcRendererEvent, error: Error) => {
-      this.onAutoUpdaterError(error)
-    })
-
-    autoUpdater.on('checking-for-update', this.onCheckingForUpdate)
-    autoUpdater.on('update-available', this.onUpdateAvailable)
-    autoUpdater.on('update-not-available', this.onUpdateNotAvailable)
-    autoUpdater.on('update-downloaded', this.onUpdateDownloaded)
-
-    // This seems to prevent tests from cleanly exiting on Appveyor (see
-    // https://ci.appveyor.com/project/github-windows/desktop/build/1466). So
-    // let's just avoid it.
-    if (!process.env.TEST_ENV) {
-      window.addEventListener('beforeunload', () => {
-        autoUpdater.removeListener('checking-for-update', this.onCheckingForUpdate)
-        autoUpdater.removeListener('update-available', this.onUpdateAvailable)
-        autoUpdater.removeListener('update-not-available', this.onUpdateNotAvailable)
-        autoUpdater.removeListener('update-downloaded', this.onUpdateDownloaded)
-      })
-    }
+    onAutoUpdaterError(this.onAutoUpdaterError)
+    onAutoUpdaterCheckingForUpdate(this.onCheckingForUpdate)
+    onAutoUpdaterUpdateAvailable(this.onUpdateAvailable)
+    onAutoUpdaterUpdateNotAvailable(this.onUpdateNotAvailable)
+    onAutoUpdaterUpdateDownloaded(this.onUpdateDownloaded)
   }
 
   private touchLastChecked() {
     const now = new Date()
-    const persistedValue = now.getTime().toString()
-
     this.lastSuccessfulCheck = now
-    localStorage.setItem(lastSuccessfulCheckKey, persistedValue)
+    setNumber(lastSuccessfulCheckKey, now.getTime())
   }
 
-  private onAutoUpdaterError = (error: Error) => {
-    // If we get an error during any stage of the update process we'll
+  private onAutoUpdaterError = (e: Electron.IpcRendererEvent, error: Error) => {
     this.status = UpdateStatus.UpdateNotAvailable
-    this.emitError(error)
+
+    if (__WIN32__) {
+      const parsedError = parseError(error)
+      this.emitError(parsedError || error)
+    } else {
+      this.emitError(error)
+    }
   }
 
   private onCheckingForUpdate = () => {
@@ -104,13 +103,16 @@ class UpdateStore {
     this.emitDidChange()
   }
 
-  private onUpdateNotAvailable = () => {
+  private onUpdateNotAvailable = async () => {
+    // This is so we can check for pretext changelog for showcasing a recent update
+    this.newReleases = await generateReleaseSummary()
     this.touchLastChecked()
     this.status = UpdateStatus.UpdateNotAvailable
     this.emitDidChange()
   }
 
-  private onUpdateDownloaded = () => {
+  private onUpdateDownloaded = async () => {
+    this.newReleases = await generateReleaseSummary()
     this.status = UpdateStatus.UpdateReady
     this.emitDidChange()
   }
@@ -130,7 +132,9 @@ class UpdateStore {
   }
 
   private emitError(error: Error) {
-    const updatedError = new ErrorWithMetadata(error, { backgroundTask: !this.userInitiatedUpdate })
+    const updatedError = new ErrorWithMetadata(error, {
+      backgroundTask: !this.userInitiatedUpdate,
+    })
     this.emitter.emit('error', updatedError)
   }
 
@@ -139,38 +143,112 @@ class UpdateStore {
     return {
       status: this.status,
       lastSuccessfulCheck: this.lastSuccessfulCheck,
+      newReleases: this.newReleases,
     }
-  }
-
-  private getFeedURL(username: string): string {
-    return `${UpdatesURLBase}?version=${getVersion()}&username=${username}`
   }
 
   /**
-   * Check for updates using the given username.
+   * Check for updates.
    *
-   * @param username     - The username used to check for updates.
    * @param inBackground - Are we checking for updates in the background, or was
    *                       this check user-initiated?
    */
-  public checkForUpdates(username: string, inBackground: boolean) {
+  public async checkForUpdates(inBackground: boolean) {
+    // An update has been downloaded and the app is waiting to be restarted.
+    // Checking for updates again may result in the running app being nuked
+    // when it finds a subsequent update.
+    if (__WIN32__ && this.status === UpdateStatus.UpdateReady) {
+      return
+    }
+
+    const updatesUrl = await this.getUpdatesUrl()
+
+    if (updatesUrl === null) {
+      return
+    }
+
     this.userInitiatedUpdate = !inBackground
 
-    try {
-      autoUpdater.setFeedURL(this.getFeedURL(username))
-      autoUpdater.checkForUpdates()
-    } catch (e) {
-      this.emitError(e)
+    const error = await checkForUpdates(updatesUrl)
+
+    if (error !== undefined) {
+      this.emitError(error)
     }
+  }
+
+  private async getUpdatesUrl() {
+    let url = null
+
+    try {
+      url = new URL(__UPDATES_URL__)
+    } catch (e) {
+      log.error('Error parsing updates url', e)
+      return __UPDATES_URL__
+    }
+
+    // Send the GUID to the update server for staggered release support
+    url.searchParams.set('guid', await getRendererGUID())
+
+    // If the app is running under arm64 to x64 translation, we need to tweak the
+    // update URL here to point at the arm64 binary.
+    if (
+      enableUpdateFromEmulatedX64ToARM64() &&
+      (await isRunningUnderARM64Translation()) === true
+    ) {
+      url.pathname = url.pathname.replace(
+        /\/desktop\/desktop\/(x64\/)?latest/,
+        '/desktop/desktop/arm64/latest'
+      )
+    }
+
+    return url.toString()
   }
 
   /** Quit and install the update. */
   public quitAndInstallUpdate() {
     // This is synchronous so that we can ensure the app will let itself be quit
     // before we call the function to quit.
-    // tslint:disable-next-line:no-sync-functions
+    // eslint-disable-next-line no-sync
     sendWillQuitSync()
-    autoUpdater.quitAndInstall()
+    quitAndInstallUpdate()
+  }
+
+  /**
+   * Method to determine if we should show an update showcase call to action.
+   *
+   * @returns true if there is a pretext on the latest releases and that release
+   * was published in the last 15 days.
+   */
+  public async isUpdateShowcase() {
+    if (
+      (__RELEASE_CHANNEL__ === 'development' ||
+        __RELEASE_CHANNEL__ === 'test') &&
+      this.newReleases === null &&
+      this.status === UpdateStatus.UpdateNotChecked
+    ) {
+      // On prod or with test manual check for updates, we are doing this during
+      // the automatic check for updates
+      this.newReleases = await generateReleaseSummary()
+    }
+
+    if (this.newReleases === null) {
+      return false
+    }
+
+    const lastShowCaseVersion = localStorage.getItem(lastShowCaseVersionSeen)
+    if (lastShowCaseVersion !== null) {
+      const lastShowCaseSemVersion = new SemVer(lastShowCaseVersion)
+      const latestRelease = new SemVer(this.newReleases[0].latestVersion)
+      if (gte(lastShowCaseSemVersion, latestRelease)) {
+        return false
+      }
+    }
+
+    return this.newReleases
+      .filter(
+        r => new Date(r.datePublished).getTime() > offsetFromNow(-15, 'days')
+      )
+      .some(r => r.pretext.length > 0)
   }
 }
 

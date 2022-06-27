@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euxo pipefail
+
+
+bundle check || bundle install
+brew bundle
+yarn install
+yarn pod-install

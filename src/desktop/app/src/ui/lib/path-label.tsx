@@ -1,16 +1,15 @@
 import * as React from 'react'
 
-import { FileStatus } from '../../models/status'
-import { Octicon, OcticonSymbol } from '../octicons'
+import { AppFileStatus, AppFileStatusKind } from '../../models/status'
+import { Octicon } from '../octicons'
+import * as OcticonSymbol from '../octicons/octicons.generated'
 import { PathText } from './path-text'
 
 interface IPathLabelProps {
   /** the current path of the file */
-  readonly path: string,
-  /** the previous path of the file, if applicable */
-  readonly oldPath?: string,
+  readonly path: string
   /** the type of change applied to the file */
-  readonly status: FileStatus
+  readonly status: AppFileStatus
 
   readonly availableWidth?: number
 }
@@ -25,28 +24,35 @@ const ResizeArrowPadding = 10
  * For other scenarios, only the current path is rendered.
  *
  */
-export class PathLabel extends React.Component<IPathLabelProps, void> {
+export class PathLabel extends React.Component<IPathLabelProps, {}> {
   public render() {
-
     const props: React.HTMLProps<HTMLLabelElement> = {
-      className: 'path',
+      className: 'path-label-component',
     }
 
-    const status = this.props.status
-    const renderBothPaths = status === FileStatus.Renamed || status === FileStatus.Copied
+    const { status } = this.props
 
     const availableWidth = this.props.availableWidth
-    if (renderBothPaths && this.props.oldPath) {
-      const segmentWidth = availableWidth ? (availableWidth / 2) - ResizeArrowPadding : undefined
+    if (
+      status.kind === AppFileStatusKind.Renamed ||
+      status.kind === AppFileStatusKind.Copied
+    ) {
+      const segmentWidth = availableWidth
+        ? availableWidth / 2 - ResizeArrowPadding
+        : undefined
       return (
         <label {...props}>
-          <PathText path={this.props.oldPath} availableWidth={segmentWidth} />
-          <Octicon className='rename-arrow' symbol={OcticonSymbol.arrowRight} />
+          <PathText path={status.oldPath} availableWidth={segmentWidth} />
+          <Octicon className="rename-arrow" symbol={OcticonSymbol.arrowRight} />
           <PathText path={this.props.path} availableWidth={segmentWidth} />
         </label>
       )
     } else {
-      return <label {...props}><PathText path={this.props.path} availableWidth={availableWidth} /></label>
+      return (
+        <label {...props}>
+          <PathText path={this.props.path} availableWidth={availableWidth} />
+        </label>
+      )
     }
   }
 }

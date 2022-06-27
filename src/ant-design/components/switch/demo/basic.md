@@ -13,21 +13,21 @@ title:
 
 The most basic usage.
 
-````jsx
+```tsx
 import { Switch } from 'antd';
+import React from 'react';
 
-function onChange(checked) {
+const onChange = (checked: boolean) => {
   console.log(`switch to ${checked}`);
-}
+};
 
-ReactDOM.render(
-  <Switch defaultChecked={false} onChange={onChange} />,
-  mountNode
-);
-````
+const App: React.FC = () => <Switch defaultChecked onChange={onChange} />;
+
+export default App;
+```
 
 <style>
-.ant-switch {
+.code-box-demo .ant-switch {
   margin-bottom: 8px;
 }
-<style>
+</style>

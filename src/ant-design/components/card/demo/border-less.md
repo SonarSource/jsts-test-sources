@@ -13,16 +13,32 @@ title:
 
 A borderless card on a gray background.
 
-````jsx
+```tsx
 import { Card } from 'antd';
+import React from 'react';
 
-ReactDOM.render(
-  <div style={{ background: '#ECECEC', padding: '30px' }}>
+const App: React.FC = () => (
+  <div className="site-card-border-less-wrapper">
     <Card title="Card title" bordered={false} style={{ width: 300 }}>
       <p>Card content</p>
       <p>Card content</p>
       <p>Card content</p>
     </Card>
   </div>
-, mountNode);
-````
+);
+
+export default App;
+```
+
+```css
+.site-card-border-less-wrapper {
+  padding: 30px;
+  background: #ececec;
+}
+```
+
+<style>
+  [data-theme="dark"] .site-card-border-less-wrapper {
+    background: #303030;
+  }
+</style>

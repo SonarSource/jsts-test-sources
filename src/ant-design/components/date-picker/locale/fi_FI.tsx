@@ -1,14 +1,17 @@
-import CalendarLocale from 'rc-calendar/lib/locale/fi_FI';
+import CalendarLocale from 'rc-picker/lib/locale/fi_FI';
 import TimePickerLocale from '../../time-picker/locale/fi_FI';
-import assign from 'object-assign';
+import type { PickerLocale } from '../generatePicker';
 
 // Merge into a locale object
-const locale = {
-  lang: assign({
+const locale: PickerLocale = {
+  lang: {
     placeholder: 'Valitse päivä',
-    rangePlaceholder: ['Alku päivä', 'Loppu päivä'],
-  }, CalendarLocale),
-  timePickerLocale: assign({}, TimePickerLocale),
+    rangePlaceholder: ['Alkamispäivä', 'Päättymispäivä'],
+    ...CalendarLocale,
+  },
+  timePickerLocale: {
+    ...TimePickerLocale,
+  },
 };
 
 // All settings at:

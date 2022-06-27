@@ -1,21 +1,14 @@
-/** The data-only interface for Owner for transport across IPC. */
-export interface IOwner {
-  readonly login: string
-  readonly endpoint: string
-}
+import { GitHubAccountType } from '../lib/api'
 
 /** The owner of a GitHubRepository. */
-export class Owner implements IOwner {
-  public readonly login: string
-  public readonly endpoint: string
-
-  /** Create a new Owner from a data-only representation. */
-  public static fromJSON(json: IOwner): Owner {
-    return new Owner(json.login, json.endpoint)
-  }
-
-  public constructor(login: string, endpoint: string) {
-    this.login = login
-    this.endpoint = endpoint
-  }
+export class Owner {
+  /**
+   * @param id The database ID. This may be null if the object wasn't retrieved from the database.
+   */
+  public constructor(
+    public readonly login: string,
+    public readonly endpoint: string,
+    public readonly id: number,
+    public readonly type?: GitHubAccountType
+  ) {}
 }

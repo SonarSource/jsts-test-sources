@@ -1,189 +1,92 @@
-import React, { cloneElement } from 'react';
-import { findDOMNode } from 'react-dom';
-import RcTabs, { TabPane } from 'rc-tabs';
-import ScrollableInkTabBar from 'rc-tabs/lib/ScrollableInkTabBar';
-import TabContent from 'rc-tabs/lib/TabContent';
+import CloseOutlined from '@ant-design/icons/CloseOutlined';
+import EllipsisOutlined from '@ant-design/icons/EllipsisOutlined';
+import PlusOutlined from '@ant-design/icons/PlusOutlined';
 import classNames from 'classnames';
-import Icon from '../icon';
+import type { TabsProps as RcTabsProps } from 'rc-tabs';
+import RcTabs, { TabPane, TabPaneProps } from 'rc-tabs';
+import type { EditableConfig } from 'rc-tabs/lib/interface';
+import * as React from 'react';
+
+import { ConfigContext } from '../config-provider';
+import type { SizeType } from '../config-provider/SizeContext';
+import SizeContext from '../config-provider/SizeContext';
 import warning from '../_util/warning';
-import isFlexSupported from '../_util/isFlexSupported';
 
 export type TabsType = 'line' | 'card' | 'editable-card';
 export type TabsPosition = 'top' | 'right' | 'bottom' | 'left';
 
-export interface TabsProps {
-  activeKey?: string;
-  defaultActiveKey?: string;
-  hideAdd?: boolean;
-  onChange?: (activeKey: string) => void;
-  onTabClick?: Function;
-  onPrevClick?: React.MouseEventHandler<any>;
-  onNextClick?: React.MouseEventHandler<any>;
-  tabBarExtraContent?: React.ReactNode | null;
-  tabBarStyle?: React.CSSProperties;
+export { TabPaneProps };
+
+export interface TabsProps extends Omit<RcTabsProps, 'editable'> {
   type?: TabsType;
-  tabPosition?: TabsPosition;
-  onEdit?: (targetKey: string, action: any) => void;
-  size?: 'default' | 'small';
-  style?: React.CSSProperties;
-  prefixCls?: string;
-  className?: string;
-  animated?: boolean | { inkBar: boolean; tabPane: boolean; };
+  size?: SizeType;
+  hideAdd?: boolean;
+  centered?: boolean;
+  addIcon?: React.ReactNode;
+  onEdit?: (e: React.MouseEvent | React.KeyboardEvent | string, action: 'add' | 'remove') => void;
 }
 
-// Tabs
-export interface TabPaneProps {
-  /** 选项卡头显示文字 */
-  tab?: React.ReactNode | string;
-  style?: React.CSSProperties;
-  closable?: boolean;
-  className?: string;
-  disabled?: boolean;
-}
+function Tabs({
+  type,
+  className,
+  size: propSize,
+  onEdit,
+  hideAdd,
+  centered,
+  addIcon,
+  ...props
+}: TabsProps) {
+  const { prefixCls: customizePrefixCls, moreIcon = <EllipsisOutlined /> } = props;
+  const { getPrefixCls, direction } = React.useContext(ConfigContext);
+  const prefixCls = getPrefixCls('tabs', customizePrefixCls);
 
-export default class Tabs extends React.Component<TabsProps, any> {
-  static TabPane = TabPane as React.ClassicComponentClass<TabPaneProps>;
-
-  static defaultProps = {
-    prefixCls: 'ant-tabs',
-    hideAdd: false,
-  };
-
-  createNewTab = (targetKey) => {
-    const onEdit = this.props.onEdit;
-    if (onEdit) {
-      onEdit(targetKey, 'add');
-    }
-  }
-
-  removeTab = (targetKey, e) => {
-    e.stopPropagation();
-    if (!targetKey) {
-      return;
-    }
-
-    const onEdit = this.props.onEdit;
-    if (onEdit) {
-      onEdit(targetKey, 'remove');
-    }
-  }
-
-  handleChange = (activeKey) => {
-    const onChange = this.props.onChange;
-    if (onChange) {
-      onChange(activeKey);
-    }
-  }
-
-  componentDidMount() {
-    const NO_FLEX = ' no-flex';
-    const tabNode = findDOMNode(this);
-    if (tabNode && !isFlexSupported() && tabNode.className.indexOf(NO_FLEX) === -1) {
-      tabNode.className += NO_FLEX;
-    }
-  }
-
-  render() {
-    let {
-      prefixCls,
-      className = '',
-      size,
-      type = 'line',
-      tabPosition,
-      children,
-      tabBarExtraContent,
-      tabBarStyle,
-      hideAdd,
-      onTabClick,
-      onPrevClick,
-      onNextClick,
-      animated = true,
-    } = this.props;
-
-    let { inkBarAnimated, tabPaneAnimated } = typeof animated === 'object' ? {
-      inkBarAnimated: animated.inkBar, tabPaneAnimated: animated.tabPane,
-    } : {
-      inkBarAnimated: animated, tabPaneAnimated: animated,
+  let editable: EditableConfig | undefined;
+  if (type === 'editable-card') {
+    editable = {
+      onEdit: (editType, { key, event }) => {
+        onEdit?.(editType === 'add' ? event : key!, editType);
+      },
+      removeIcon: <CloseOutlined />,
+      addIcon: addIcon || <PlusOutlined />,
+      showAdd: hideAdd !== true,
     };
-
-    // card tabs should not have animation
-    if (type !== 'line') {
-      tabPaneAnimated = 'animated' in this.props ? tabPaneAnimated : false;
-    }
-
-    warning(
-      !(type.indexOf('card') >= 0 && size === 'small'),
-      'Tabs[type=card|editable-card] doesn\'t have small size, it\'s by designed.',
-    );
-    let cls = classNames(className, {
-      [`${prefixCls}-mini`]: size === 'small' || size as string === 'mini',
-      [`${prefixCls}-vertical`]: tabPosition === 'left' || tabPosition === 'right',
-      [`${prefixCls}-card`]: type.indexOf('card') >= 0,
-      [`${prefixCls}-${type}`]: true,
-      [`${prefixCls}-no-animation`]: !animated,
-    });
-    // only card type tabs can be added and closed
-    let childrenWithClose;
-    if (type === 'editable-card') {
-      childrenWithClose = [];
-      React.Children.forEach(children as React.ReactNode, (child: React.ReactElement<any>, index) => {
-        let closable = child.props.closable;
-        closable = typeof closable === 'undefined' ? true : closable;
-        const closeIcon = closable ? (
-           <Icon
-             type="close"
-             onClick={e => this.removeTab(child.key, e)}
-           />
-        ) : null;
-        childrenWithClose.push(cloneElement(child, {
-          tab: (
-            <div className={closable ? undefined : `${prefixCls}-tab-unclosable`}>
-              {child.props.tab}
-              {closeIcon}
-            </div>
-          ),
-          key: child.key || index,
-        }));
-      });
-      // Add new tab handler
-      if (!hideAdd) {
-        tabBarExtraContent = (
-          <span>
-            <Icon type="plus" className={`${prefixCls}-new-tab`} onClick={this.createNewTab} />
-            {tabBarExtraContent}
-          </span>
-        );
-      }
-    }
-
-    tabBarExtraContent = tabBarExtraContent ? (
-      <div className={`${prefixCls}-extra-content`}>
-        {tabBarExtraContent}
-      </div>
-    ) : null;
-
-    const renderTabBar = () => (
-      <ScrollableInkTabBar
-        inkBarAnimated={inkBarAnimated}
-        extraContent={tabBarExtraContent}
-        onTabClick={onTabClick}
-        onPrevClick={onPrevClick}
-        onNextClick={onNextClick}
-        style={tabBarStyle}
-      />
-    );
-
-    return (
-      <RcTabs
-        {...this.props}
-        className={cls}
-        tabBarPosition={tabPosition}
-        renderTabBar={renderTabBar}
-        renderTabContent={() => <TabContent animated={tabPaneAnimated} animatedWithMargin />}
-        onChange={this.handleChange}
-      >
-        {childrenWithClose || children}
-      </RcTabs>
-    );
   }
+  const rootPrefixCls = getPrefixCls();
+
+  warning(
+    !('onPrevClick' in props) && !('onNextClick' in props),
+    'Tabs',
+    '`onPrevClick` and `onNextClick` has been removed. Please use `onTabScroll` instead.',
+  );
+
+  return (
+    <SizeContext.Consumer>
+      {contextSize => {
+        const size = propSize !== undefined ? propSize : contextSize;
+        return (
+          <RcTabs
+            direction={direction}
+            moreTransitionName={`${rootPrefixCls}-slide-up`}
+            {...props}
+            className={classNames(
+              {
+                [`${prefixCls}-${size}`]: size,
+                [`${prefixCls}-card`]: ['card', 'editable-card'].includes(type as string),
+                [`${prefixCls}-editable-card`]: type === 'editable-card',
+                [`${prefixCls}-centered`]: centered,
+              },
+              className,
+            )}
+            editable={editable}
+            moreIcon={moreIcon}
+            prefixCls={prefixCls}
+          />
+        );
+      }}
+    </SizeContext.Consumer>
+  );
 }
+
+Tabs.TabPane = TabPane;
+
+export default Tabs;

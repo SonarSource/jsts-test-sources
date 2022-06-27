@@ -1,0 +1,62 @@
+{
+  "files.associations": {
+    "*.podspec": "ruby",
+    "Podfile": "ruby",
+    "*.h": "objective-c",
+    "*.js": "javascriptreact",
+    "yarn.lock": "text",
+    "tslint.json": "jsonc"
+  },
+  "eslint.enable": false,
+  "editor.formatOnSave": true,
+  "files.trimTrailingWhitespace": true,
+  "prettier.singleQuote": false,
+  "prettier.trailingComma": "es5",
+  "prettier.semi": false,
+  "prettier.printWidth": 100,
+  "editor.rulers": [100],
+  "editor.tabSize": 2,
+  "files.exclude": {
+    "**/.git": true,
+    ".jest/": true,
+    "build": true,
+    ".awcache": true,
+    ".happypack": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "externals/**": true,
+    "Pod/Assets/Emission.*": true,
+    ".vscode/.react/*": true
+  },
+  "cSpell.ignoreWords": [
+    "orta",
+    "sarah",
+    "luc",
+    "mzikherman",
+    "CHANGELOG",
+    "Eigen",
+    "scrollview",
+    "blankspace",
+    "ESLint",
+    "GeneVC",
+    "keychain",
+    "linting",
+    "inline",
+    "iPad",
+    "iPhone",
+    "ListView",
+    "ARTemporaryAPIModule",
+    "Inbox",
+    "matt"
+  ],
+  "cSpell.diagnosticLevel": "Hint",
+  "typescript.tsdk": "./node_modules/typescript/lib",
+  "todohighlight.exclude": ["node_modules/**", ".vscode/**", "externals/**"],
+  "tslint.autoFixOnSave": true,
+  "typescript.format.enable": false,
+  "[json]": {
+    "editor.formatOnSave": false
+  },
+  "javascript.validate.enable": true
+}

@@ -1,128 +1,101 @@
-@dialog-prefix-cls: ~"@{ant-prefix}-modal";
+@dialog-prefix-cls: ~'@{ant-prefix}-modal';
 
 .@{dialog-prefix-cls} {
+  .reset-component();
+  .modal-mask();
+
   position: relative;
-  width: auto;
-  margin: 0 auto;
   top: 100px;
+  width: auto;
+  max-width: calc(100vw - 32px);
+  margin: 0 auto;
   padding-bottom: 24px;
 
   &-wrap {
-    position: fixed;
-    overflow: auto;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
     z-index: @zindex-modal;
-    -webkit-overflow-scrolling: touch;
-    outline: 0;
   }
 
   &-title {
     margin: 0;
-    font-size: @font-size-lg;
-    line-height: 21px;
+    color: @modal-heading-color;
     font-weight: 500;
-    color: @heading-color;
+    font-size: @modal-header-title-font-size;
+    line-height: @modal-header-title-line-height;
+    word-wrap: break-word;
   }
 
   &-content {
     position: relative;
-    background-color: @component-background;
+    background-color: @modal-content-bg;
+    background-clip: padding-box;
     border: 0;
     border-radius: @border-radius-base;
-    background-clip: padding-box;
     box-shadow: @shadow-2;
+    pointer-events: auto;
   }
 
   &-close {
-    cursor: pointer;
-    border: 0;
-    background: transparent;
     position: absolute;
-    right: 0;
     top: 0;
-    z-index: 10;
+    right: 0;
+    z-index: @zindex-popup-close;
+    padding: 0;
+    color: @modal-close-color;
     font-weight: 700;
     line-height: 1;
     text-decoration: none;
-    transition: color .3s ease;
-    color: @text-color-secondary;
+    background: transparent;
+    border: 0;
     outline: 0;
+    cursor: pointer;
+    transition: color 0.3s;
 
     &-x {
       display: block;
+      width: @modal-header-close-size;
+      height: @modal-header-close-size;
+      font-size: @font-size-lg;
       font-style: normal;
-      vertical-align: baseline;
+      line-height: @modal-header-close-size;
       text-align: center;
       text-transform: none;
       text-rendering: auto;
-      width: 48px;
-      height: 48px;
-      line-height: 48px;
-      font-size: @font-size-lg;
-
-      &:before {
-        content: "\e633";
-        display: block;
-        font-family: "anticon" !important;
-      }
     }
 
     &:focus,
     &:hover {
-      color: #444;
+      color: @icon-color-hover;
       text-decoration: none;
     }
   }
 
   &-header {
-    padding: 13px 16px;
-    border-radius: @border-radius-base @border-radius-base 0 0;
-    background: @component-background;
+    padding: @modal-header-padding;
     color: @text-color;
-    border-bottom: @border-width-base @border-style-base @border-color-split;
+    background: @modal-header-bg;
+    border-bottom: @modal-header-border-width @modal-header-border-style
+      @modal-header-border-color-split;
+    border-radius: @border-radius-base @border-radius-base 0 0;
   }
 
   &-body {
-    padding: 16px;
+    padding: @modal-body-padding;
     font-size: @font-size-base;
-    line-height: 1.5;
+    line-height: @line-height-base;
+    word-wrap: break-word;
   }
 
   &-footer {
-    border-top: @border-width-base @border-style-base @border-color-split;
-    padding: 10px 16px 10px 10px;
+    padding: @modal-footer-padding-vertical @modal-footer-padding-horizontal;
     text-align: right;
+    background: @modal-footer-bg;
+    border-top: @modal-footer-border-width @modal-footer-border-style
+      @modal-footer-border-color-split;
     border-radius: 0 0 @border-radius-base @border-radius-base;
-    button + button {
-      margin-left: 8px;
+
+    .@{ant-prefix}-btn + .@{ant-prefix}-btn:not(.@{ant-prefix}-dropdown-trigger) {
       margin-bottom: 0;
-    }
-  }
-
-  &.zoom-enter,
-  &.zoom-appear {
-    animation-duration: @animation-duration-slow;
-    transform: none; // reset scale avoid mousePosition bug
-    opacity: 0;
-  }
-
-  &-mask {
-    position: fixed;
-    top: 0;
-    right: 0;
-    left: 0;
-    bottom: 0;
-    background-color: #373737;
-    background-color: @modal-mask-bg; // lesshint duplicateProperty: false
-    height: 100%;
-    z-index: @zindex-modal-mask;
-    filter: ~"alpha(opacity=50)";
-
-    &-hidden {
-      display: none;
+      margin-left: 8px;
     }
   }
 
@@ -131,12 +104,31 @@
   }
 }
 
-@media (max-width: 768px) {
-  .@{dialog-prefix-cls} {
-    width: auto !important;
-    margin: 10px;
+.@{dialog-prefix-cls}-centered {
+  text-align: center;
+
+  &::before {
+    display: inline-block;
+    width: 0;
+    height: 100%;
+    vertical-align: middle;
+    content: '';
   }
-  .vertical-center-modal {
+  .@{dialog-prefix-cls} {
+    top: 0;
+    display: inline-block;
+    padding-bottom: 0;
+    text-align: left;
+    vertical-align: middle;
+  }
+}
+
+@media (max-width: @screen-sm-max) {
+  .@{dialog-prefix-cls} {
+    max-width: calc(100vw - 16px);
+    margin: 8px auto;
+  }
+  .@{dialog-prefix-cls}-centered {
     .@{dialog-prefix-cls} {
       flex: 1;
     }

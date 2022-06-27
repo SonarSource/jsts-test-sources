@@ -1,15 +1,9 @@
-import { git, envForAuthentication, IGitExecutionOptions, gitNetworkArguments } from './core'
-import { Account } from '../../models/account'
-import { ICloneProgress } from '../app-state'
+import { git, IGitExecutionOptions, gitNetworkArguments } from './core'
+import { ICloneProgress } from '../../models/progress'
+import { CloneOptions } from '../../models/clone-options'
 import { CloneProgressParser, executionOptionsWithProgress } from '../progress'
-
-/** Additional arguments to provide when cloning a repository */
-export type CloneOptions = {
-  /** The optional identity to provide when cloning. */
-  readonly account: Account | null,
-  /** The branch to checkout after the clone has completed. */
-  readonly branch?: string,
-}
+import { getDefaultBranch } from '../helpers/default-branch'
+import { envForRemoteOperation } from './environment'
 
 /**
  * Clones a repository from a given url into to the specified path.
@@ -31,13 +25,23 @@ export type CloneOptions = {
  *                           'git clone'.
  *
  */
-export async function clone(url: string, path: string, options: CloneOptions, progressCallback?: (progress: ICloneProgress) => void): Promise<void> {
-  const env = envForAuthentication(options.account)
+export async function clone(
+  url: string,
+  path: string,
+  options: CloneOptions,
+  progressCallback?: (progress: ICloneProgress) => void
+): Promise<void> {
+  const env = await envForRemoteOperation(options.account, url)
+
+  const defaultBranch = options.defaultBranch ?? (await getDefaultBranch())
 
   const args = [
-    ...gitNetworkArguments,
-    'clone', '--recursive', '--progress',
-]
+    ...gitNetworkArguments(),
+    '-c',
+    `init.defaultBranch=${defaultBranch}`,
+    'clone',
+    '--recursive',
+  ]
 
   let opts: IGitExecutionOptions = { env }
 
@@ -47,14 +51,17 @@ export async function clone(url: string, path: string, options: CloneOptions, pr
     const title = `Cloning into ${path}`
     const kind = 'clone'
 
-    opts = executionOptionsWithProgress(opts, new CloneProgressParser(), (progress) => {
-      const description = progress.kind === 'progress'
-        ? progress.details.text
-        : progress.text
-      const value = progress.percent
+    opts = await executionOptionsWithProgress(
+      { ...opts, trackLFSProgress: true },
+      new CloneProgressParser(),
+      progress => {
+        const description =
+          progress.kind === 'progress' ? progress.details.text : progress.text
+        const value = progress.percent
 
-      progressCallback({ kind, title, description, value })
-    })
+        progressCallback({ kind, title, description, value })
+      }
+    )
 
     // Initial progress
     progressCallback({ kind, title, value: 0 })

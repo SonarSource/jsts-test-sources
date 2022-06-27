@@ -1,54 +1,58 @@
-import React from 'react';
+import LeftOutlined from '@ant-design/icons/LeftOutlined';
+import RightOutlined from '@ant-design/icons/RightOutlined';
+import * as React from 'react';
 import Button from '../button';
-import Icon from '../icon';
-
-function noop() {
-}
+import type { DirectionType } from '../config-provider';
 
 export interface TransferOperationProps {
   className?: string;
   leftArrowText?: string;
   rightArrowText?: string;
-  moveToLeft?: React.FormEventHandler<any>;
-  moveToRight?: React.FormEventHandler<any>;
+  moveToLeft?: React.MouseEventHandler<HTMLButtonElement>;
+  moveToRight?: React.MouseEventHandler<HTMLButtonElement>;
   leftActive?: boolean;
   rightActive?: boolean;
+  style?: React.CSSProperties;
+  disabled?: boolean;
+  direction?: DirectionType;
+  oneWay?: boolean;
 }
 
-export default class TransferOperation extends React.Component<TransferOperationProps, any> {
-  static defaultProps = {
-    leftArrowText: '',
-    rightArrowText: '',
-    moveToLeft: noop,
-    moveToRight: noop,
-  };
-
-  render() {
-    const {
-      moveToLeft,
-      moveToRight,
-      leftArrowText,
-      rightArrowText,
-      leftActive,
-      rightActive,
-      className,
-    } = this.props;
-
-    const moveToLeftButton = (
-      <Button type="primary" size="small" disabled={!leftActive} onClick={moveToLeft}>
-        {<span><Icon type="left" />{leftArrowText}</span>}
+const Operation = ({
+  disabled,
+  moveToLeft,
+  moveToRight,
+  leftArrowText = '',
+  rightArrowText = '',
+  leftActive,
+  rightActive,
+  className,
+  style,
+  direction,
+  oneWay,
+}: TransferOperationProps) => (
+  <div className={className} style={style}>
+    <Button
+      type="primary"
+      size="small"
+      disabled={disabled || !rightActive}
+      onClick={moveToRight}
+      icon={direction !== 'rtl' ? <RightOutlined /> : <LeftOutlined />}
+    >
+      {rightArrowText}
+    </Button>
+    {!oneWay && (
+      <Button
+        type="primary"
+        size="small"
+        disabled={disabled || !leftActive}
+        onClick={moveToLeft}
+        icon={direction !== 'rtl' ? <LeftOutlined /> : <RightOutlined />}
+      >
+        {leftArrowText}
       </Button>
-    );
-    const moveToRightButton = (
-      <Button type="primary" size="small" disabled={!rightActive} onClick={moveToRight}>
-        {<span>{rightArrowText}<Icon type="right" /></span>}
-      </Button>
-    );
-    return (
-      <div className={className}>
-        {moveToLeftButton}
-        {moveToRightButton}
-      </div>
-    );
-  }
-}
+    )}
+  </div>
+);
+
+export default Operation;

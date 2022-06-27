@@ -3,25 +3,18 @@ category: Components
 type: Data Display
 cols: 1
 title: Calendar
+cover: https://gw.alipayobjects.com/zos/antfincdn/dPQmLq08DI/Calendar.svg
 ---
 
 Container for displaying data in calendar form.
 
 ## When To Use
 
-When data is in the form of date, such as schedule, timetable, prices calendar, Lunar calendar. This component also supports Year/Month switch.
+When data is in the form of dates, such as schedules, timetables, prices calendar, lunar calendar. This component also supports Year/Month switch.
 
 ## API
 
-**Note:** Part of locale of Calendar is read from value. So, please set the locale of moment correctly.
-
 ```jsx
-import moment from 'moment';
-
-// It's recommended to set locale in entry file globaly.
-import 'moment/locale/zh-cn';
-moment.locale('zh-cn');
-
 <Calendar
   dateCellRender={dateCellRender}
   monthCellRender={monthCellRender}
@@ -30,16 +23,25 @@ moment.locale('zh-cn');
 />
 ```
 
-| Property         | Description           | Type     | Default       |
-|--------------|----------------|----------|--------------|
-| value        | set date | [moment](http://momentjs.com/) | current date     |
-| defaultValue | set default date | [moment](http://momentjs.com/) | default date     |
-| mode         | can be set to month or year | string | month  |
-| fullscreen   | to set whether full-screen display   | boolean     | true         |
-| dateCellRender      | to set the way of renderer the date cell, the returned content will be appended to the cell | function(date: moment): ReactNode | - |
-| monthCellRender     | to set the way of renderer the month cell, the returned content will be appended to the cell | function(date: moment): ReactNode | - |
-| dateFullCellRender  | to set the way of renderer the date cell,the returned content will override the cell | function(date: moment): ReactNode | - |
-| monthFullCellRender | to set the way of renderer the month cell,the returned content will override the cell | function(date: moment): ReactNode | - |
-| locale       | set locale | object   | [default](https://github.com/ant-design/ant-design/blob/master/components/date-picker/locale/example.json)  |
-| onPanelChange| callback when panel change | function(date: moment, mode: string) | - |
-| onSelect     | callback when select date  | function(date: moment）              | - |
+| Property | Description | Type | Default | Version |
+| --- | --- | --- | --- | --- |
+| dateCellRender | Customize the display of the date cell, the returned content will be appended to the cell | function(date: Moment): ReactNode | - |  |
+| dateFullCellRender | Customize the display of the date cell, the returned content will override the cell | function(date: Moment): ReactNode | - |  |
+| defaultValue | The date selected by default | [moment](http://momentjs.com/) | - |  |
+| disabledDate | Function that specifies the dates that cannot be selected, `currentDate` is same moment object as `value` prop which you shouldn't mutate it](https://github.com/ant-design/ant-design/issues/30987) | (currentDate: Moment) => boolean | - |  |
+| fullscreen | Whether to display in full-screen | boolean | true |  |
+| headerRender | Render custom header in panel | function(object:{value: Moment, type: string, onChange: f(), onTypeChange: f()}) | - |  |
+| locale | The calendar's locale | object | [(default)](https://github.com/ant-design/ant-design/blob/master/components/date-picker/locale/example.json) |  |
+| mode | The display mode of the calendar | `month` \| `year` | `month` |  |
+| monthCellRender | Customize the display of the month cell, the returned content will be appended to the cell | function(date: Moment): ReactNode | - |  |
+| monthFullCellRender | Customize the display of the month cell, the returned content will override the cell | function(date: Moment): ReactNode | - |  |
+| validRange | To set valid range | \[[moment](http://momentjs.com/), [moment](http://momentjs.com/)] | - |  |
+| value | The current selected date | [moment](http://momentjs.com/) | - |  |
+| onChange | Callback for when date changes | function(date: Moment) | - |  |
+| onPanelChange | Callback for when panel changes | function(date: Moment, mode: string) | - |  |
+| onSelect | Callback for when a date is selected | function(date: Moment） | - |  |
+
+## FAQ
+
+- [How to use Calendar with customize date library like dayjs](/docs/react/replace-moment#Calendar)
+- [How to set locale for date-related components](/components/date-picker/#Localization)

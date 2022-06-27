@@ -1,58 +1,48 @@
-import { Owner, IOwner } from './owner'
-import { IAPIRepository } from '../lib/api'
-import { structuralEquals } from '../lib/equality'
+import { createEqualityHash } from './equality-hash'
+import { Owner } from './owner'
 
-/** The data-only interface for GitHubRepository for transport across IPC. */
-export interface IGitHubRepository {
-  readonly dbID: number | null
-  readonly name: string
-  readonly owner: IOwner
-  readonly private: boolean | null
-  readonly fork: boolean | null
-  readonly htmlURL: string | null
-  readonly defaultBranch: string | null
-  readonly cloneURL: string | null
-}
+export type GitHubRepositoryPermission = 'read' | 'write' | 'admin' | null
 
 /** A GitHub repository. */
-export class GitHubRepository implements IGitHubRepository {
+export class GitHubRepository {
   /**
-   * The ID of the repository in the app's local database. This is no relation
-   * to the API ID.
+   * A hash of the properties of the object.
    *
-   * May be `null` if it hasn't been inserted or retrieved from the database.
+   * Objects with the same hash are guaranteed to be structurally equal.
    */
-  public readonly dbID: number | null
+  public readonly hash: string
 
-  public readonly name: string
-  public readonly owner: Owner
-  public readonly private: boolean | null
-  public readonly fork: boolean | null
-  public readonly htmlURL: string | null
-  public readonly defaultBranch: string | null
-  public readonly cloneURL: string | null
-
-  /** Create a new GitHubRepository from its data-only representation. */
-  public static fromJSON(json: IGitHubRepository): GitHubRepository {
-    return new GitHubRepository(json.name, Owner.fromJSON(json.owner), json.dbID, json.private, json.fork, json.htmlURL, json.defaultBranch, json.cloneURL)
-  }
-
-  public constructor(name: string, owner: Owner, dbID: number | null, private_: boolean | null = null, fork: boolean | null = null, htmlURL: string | null = null, defaultBranch: string | null = 'master', cloneURL: string | null = null) {
-    this.name = name
-    this.owner = owner
-    this.dbID = dbID
-    this.private = private_
-    this.fork = fork
-    this.htmlURL = htmlURL
-    this.defaultBranch = defaultBranch
-    this.cloneURL = cloneURL
-  }
-
-  /** Create a new copy of the repository with the API information copied over. */
-  public withAPI(apiRepository: IAPIRepository): GitHubRepository {
-    const newRepository = new GitHubRepository(this.name, this.owner, this.dbID, apiRepository.private, apiRepository.fork, apiRepository.html_url, apiRepository.default_branch, apiRepository.clone_url)
-
-    return structuralEquals(newRepository, this) ? this : newRepository
+  public constructor(
+    public readonly name: string,
+    public readonly owner: Owner,
+    /**
+     * The ID of the repository in the app's local database. This is no relation
+     * to the API ID.
+     */
+    public readonly dbID: number,
+    public readonly isPrivate: boolean | null = null,
+    public readonly htmlURL: string | null = null,
+    public readonly defaultBranch: string | null = null,
+    public readonly cloneURL: string | null = null,
+    public readonly issuesEnabled: boolean | null = null,
+    public readonly isArchived: boolean | null = null,
+    /** The user's permissions for this github repository. `null` if unknown. */
+    public readonly permissions: GitHubRepositoryPermission = null,
+    public readonly parent: GitHubRepository | null = null
+  ) {
+    this.hash = createEqualityHash(
+      this.name,
+      this.owner.login,
+      this.dbID,
+      this.isPrivate,
+      this.htmlURL,
+      this.defaultBranch,
+      this.cloneURL,
+      this.issuesEnabled,
+      this.isArchived,
+      this.permissions,
+      this.parent?.hash
+    )
   }
 
   public get endpoint(): string {
@@ -63,4 +53,34 @@ export class GitHubRepository implements IGitHubRepository {
   public get fullName(): string {
     return `${this.owner.login}/${this.name}`
   }
+
+  /** Is the repository a fork? */
+  public get fork(): boolean {
+    return !!this.parent
+  }
+}
+
+/**
+ * Identical to `GitHubRepository`, except it **must** have a `parent`
+ * (i.e it's a fork).
+ *
+ * See `isRepositoryWithForkedGitHubRepository`
+ */
+export type ForkedGitHubRepository = GitHubRepository & {
+  readonly parent: GitHubRepository
+  readonly fork: true
+}
+
+/**
+ * Can the user push to this GitHub repository?
+ *
+ * (If their permissions are unknown, we assume they can.)
+ */
+export function hasWritePermission(
+  gitHubRepository: GitHubRepository
+): boolean {
+  return (
+    gitHubRepository.permissions === null ||
+    gitHubRepository.permissions !== 'read'
+  )
 }

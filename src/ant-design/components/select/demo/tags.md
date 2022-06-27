@@ -1,5 +1,5 @@
 ---
-order: 3
+order: 4
 title:
   zh-CN: 标签
   en-US: Tags
@@ -7,33 +7,32 @@ title:
 
 ## zh-CN
 
-tags select，随意输入的内容（scroll the menu）
+tags select，随意输入的内容（scroll the menu）。
 
 ## en-US
 
-Select with tags, transform input to tag (scroll the menu)
+Select with tags, transform input to tag (scroll the menu).
 
-````jsx
+```tsx
 import { Select } from 'antd';
-const Option = Select.Option;
+import React from 'react';
 
-const children = [];
+const { Option } = Select;
+
+const children: React.ReactNode[] = [];
 for (let i = 10; i < 36; i++) {
   children.push(<Option key={i.toString(36) + i}>{i.toString(36) + i}</Option>);
 }
 
-function handleChange(value) {
+const handleChange = (value: string) => {
   console.log(`selected ${value}`);
-}
+};
 
-ReactDOM.render(
-  <Select
-    mode="tags"
-    style={{ width: '100%' }}
-    searchPlaceholder="标签模式"
-    onChange={handleChange}
-  >
+const App: React.FC = () => (
+  <Select mode="tags" style={{ width: '100%' }} placeholder="Tags Mode" onChange={handleChange}>
     {children}
   </Select>
-, mountNode);
-````
+);
+
+export default App;
+```

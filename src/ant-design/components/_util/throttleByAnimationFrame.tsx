@@ -1,38 +1,47 @@
-import getRequestAnimationFrame, { cancelRequestAnimationFrame } from '../_util/getRequestAnimationFrame';
+import raf from 'rc-util/lib/raf';
 
-const reqAnimFrame = getRequestAnimationFrame();
+export function throttleByAnimationFrame<T extends unknown[]>(fn: (...args: T) => void) {
+  let requestId: number | null;
 
-export default function throttleByAnimationFrame(fn) {
-  let requestId;
-
-  const later = args => () => {
+  const later = (args: T) => () => {
     requestId = null;
     fn(...args);
   };
 
-  const throttled = (...args) => {
+  const throttled: {
+    (...args: T): void;
+    cancel: () => void;
+  } = (...args: T) => {
     if (requestId == null) {
-      requestId = reqAnimFrame(later(args));
+      requestId = raf(later(args));
     }
   };
 
-  (throttled as any).cancel = () => cancelRequestAnimationFrame(requestId);
+  throttled.cancel = () => {
+    raf.cancel(requestId!);
+    requestId = null;
+  };
 
   return throttled;
 }
 
 export function throttleByAnimationFrameDecorator() {
-  return function(target, key, descriptor) {
-    let fn = descriptor.value;
+  return function throttle(target: any, key: string, descriptor: any) {
+    const fn = descriptor.value;
     let definingProperty = false;
     return {
       configurable: true,
       get() {
+        // In IE11 calling Object.defineProperty has a side-effect of evaluating the
+        // getter for the property which is being replaced. This causes infinite
+        // recursion and an "Out of stack space" error.
+        // eslint-disable-next-line no-prototype-builtins
         if (definingProperty || this === target.prototype || this.hasOwnProperty(key)) {
+          /* istanbul ignore next */
           return fn;
         }
 
-        let boundFn = throttleByAnimationFrame(fn.bind(this));
+        const boundFn = throttleByAnimationFrame(fn.bind(this));
         definingProperty = true;
         Object.defineProperty(this, key, {
           value: boundFn,

@@ -1,8 +1,8 @@
 ---
 order: 3
 title:
-    zh-CN: Checkbox 组
-    en-US: Checkbox Group
+  zh-CN: Checkbox 组
+  en-US: Checkbox Group
 ---
 
 ## zh-CN
@@ -13,13 +13,14 @@ title:
 
 Generate a group of checkboxes from an array.
 
-````jsx
+```tsx
 import { Checkbox } from 'antd';
-const CheckboxGroup = Checkbox.Group;
+import type { CheckboxValueType } from 'antd/es/checkbox/Group';
+import React from 'react';
 
-function onChange(checkedValues) {
+const onChange = (checkedValues: CheckboxValueType[]) => {
   console.log('checked = ', checkedValues);
-}
+};
 
 const plainOptions = ['Apple', 'Pear', 'Orange'];
 const options = [
@@ -33,13 +34,22 @@ const optionsWithDisabled = [
   { label: 'Orange', value: 'Orange', disabled: false },
 ];
 
-ReactDOM.render(
-  <div>
-    <CheckboxGroup options={plainOptions} defaultValue={['Apple']} onChange={onChange} />
+const App: React.FC = () => (
+  <>
+    <Checkbox.Group options={plainOptions} defaultValue={['Apple']} onChange={onChange} />
     <br />
-    <CheckboxGroup options={options} defaultValue={['Pear']} onChange={onChange} />
     <br />
-    <CheckboxGroup options={optionsWithDisabled} disabled defaultValue={['Apple']} onChange={onChange} />
-  </div>
-, mountNode);
-````
+    <Checkbox.Group options={options} defaultValue={['Pear']} onChange={onChange} />
+    <br />
+    <br />
+    <Checkbox.Group
+      options={optionsWithDisabled}
+      disabled
+      defaultValue={['Apple']}
+      onChange={onChange}
+    />
+  </>
+);
+
+export default App;
+```

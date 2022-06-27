@@ -1,0 +1,58 @@
+{
+  %@
+  me {
+    id: internalID
+    paddle_number: paddleNumber
+    bidders(saleID: "%@") {
+      id: internalID
+      qualified_for_bidding: qualifiedForBidding
+    }
+  }
+  sale(id: "%@") {
+    _id: internalID
+    id: slug
+    start_at: startAt
+    bid_increments: bidIncrements {
+      from
+      amount
+    }
+    end_at: endAt
+    registration_ends_at: registrationEndsAt
+    name
+    is_with_buyers_premium: isWithBuyersPremium
+    description
+    sale_artworks: saleArtworksConnection(all: true) {
+      edges {
+        node {
+          _id: internalID
+          currency
+          symbol
+          reserve_status: reserveStatus
+          low_estimate: lowEstimate { cents }
+          high_estimate: highEstimate { cents }
+          lot_label: lotLabel
+          estimate
+          artwork {
+            title
+            blurb: description
+            medium
+            dimensions {
+              in
+              cm
+            }
+            edition_of: editionOf
+            artist_names: artistNames
+            artist {
+              blurb
+            }
+            image {
+              aspect_ratio: aspectRatio
+              large: url(version: "large")
+              thumb: url(version: "thumb")
+            }
+          }
+        }
+      }
+    }
+  }
+}

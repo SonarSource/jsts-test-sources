@@ -13,10 +13,11 @@ title:
 
 In the various types of information modal dialog, only one button to close dialog is provided.
 
-````jsx
-import { Modal, Button } from 'antd';
+```tsx
+import { Button, Modal, Space } from 'antd';
+import React from 'react';
 
-function info() {
+const info = () => {
   Modal.info({
     title: 'This is a notification message',
     content: (
@@ -27,36 +28,36 @@ function info() {
     ),
     onOk() {},
   });
-}
+};
 
-function success() {
+const success = () => {
   Modal.success({
-    title: 'This is a success message',
     content: 'some messages...some messages...',
   });
-}
+};
 
-function error() {
+const error = () => {
   Modal.error({
     title: 'This is an error message',
     content: 'some messages...some messages...',
   });
-}
+};
 
-function warning() {
+const warning = () => {
   Modal.warning({
     title: 'This is a warning message',
     content: 'some messages...some messages...',
   });
-}
+};
 
-ReactDOM.render(
-  <div>
+const App: React.FC = () => (
+  <Space wrap>
     <Button onClick={info}>Info</Button>
     <Button onClick={success}>Success</Button>
     <Button onClick={error}>Error</Button>
     <Button onClick={warning}>Warning</Button>
-  </div>,
-  mountNode
+  </Space>
 );
-````
+
+export default App;
+```

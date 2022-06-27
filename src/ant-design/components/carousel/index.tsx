@@ -1,128 +1,112 @@
-// matchMedia polyfill for
-// https://github.com/WickyNilliams/enquire.js/issues/82
-import assign from 'object-assign';
-import debounce from 'lodash.debounce';
-
-if (typeof window !== 'undefined') {
-  const matchMediaPolyfill = function matchMediaPolyfill(mediaQuery: string): MediaQueryList {
-    return {
-      media: mediaQuery,
-      matches: false,
-      addListener() {
-      },
-      removeListener() {
-      },
-    };
-  };
-  window.matchMedia = window.matchMedia || matchMediaPolyfill;
-}
-
-import SlickCarousel from 'react-slick';
-import React from 'react';
+import type { Settings } from '@ant-design/react-slick';
+import SlickCarousel from '@ant-design/react-slick';
+import classNames from 'classnames';
+import * as React from 'react';
+import { ConfigContext } from '../config-provider';
 
 export type CarouselEffect = 'scrollx' | 'fade';
+export type DotPosition = 'top' | 'bottom' | 'left' | 'right';
+
 // Carousel
-export interface CarouselProps {
+export interface CarouselProps extends Omit<Settings, 'dots' | 'dotsClass'> {
   effect?: CarouselEffect;
-  dots?: boolean;
-  vertical?: boolean;
-  autoplay?: boolean;
-  easing?: string;
-  beforeChange?: (from: number, to: number) => void;
-  afterChange?: (current: number) => void;
   style?: React.CSSProperties;
   prefixCls?: string;
-  accessibility?: boolean;
-  nextArrow?: HTMLElement | any;
-  prevArrow?: HTMLElement | any;
-  pauseOnHover?: boolean;
-  className?: string;
-  adaptiveHeight?: boolean;
-  arrows?: boolean;
-  autoplaySpeed?: number;
-  centerMode?: boolean;
-  centerPadding?: string | any;
-  cssEase?: string | any;
-  dotsClass?: string;
-  draggable?: boolean;
-  fade?: boolean;
-  focusOnSelect?: boolean;
-  infinite?: boolean;
-  initialSlide?: number;
-  lazyLoad?: boolean;
-  rtl?: boolean;
-  slide?: string;
-  slidesToShow?: number;
-  slidesToScroll?: number;
-  speed?: number;
-  swipe?: boolean;
-  swipeToSlide?: boolean;
-  touchMove?: boolean;
-  touchThreshold?: number;
-  variableWidth?: boolean;
-  useCSS?: boolean;
   slickGoTo?: number;
+  dotPosition?: DotPosition;
+  children?: React.ReactNode;
+  dots?:
+    | boolean
+    | {
+        className?: string;
+      };
 }
 
-export default class Carousel extends React.Component<CarouselProps, any> {
-  static defaultProps = {
-    dots: true,
-    arrows: false,
-    prefixCls: 'ant-carousel',
-    draggable: false,
-  };
+export interface CarouselRef {
+  goTo: (slide: number, dontAnimate?: boolean) => void;
+  next: () => void;
+  prev: () => void;
+  autoPlay: (palyType?: 'update' | 'leave' | 'blur') => void;
+  innerSlider: any;
+}
 
-  refs: {
-    slick: any,
-  };
+const Carousel = React.forwardRef<CarouselRef, CarouselProps>(
+  (
+    {
+      dots = true,
+      arrows = false,
+      draggable = false,
+      dotPosition = 'bottom',
+      vertical = dotPosition === 'left' || dotPosition === 'right',
+      ...props
+    },
+    ref,
+  ) => {
+    const { getPrefixCls, direction } = React.useContext(ConfigContext);
+    const slickRef = React.useRef<any>();
 
-  constructor() {
-    super();
-    this.onWindowResized = debounce(this.onWindowResized, 500, {
-      leading: false,
+    const goTo = (slide: number, dontAnimate = false) => {
+      slickRef.current.slickGoTo(slide, dontAnimate);
+    };
+
+    React.useImperativeHandle(
+      ref,
+      () => ({
+        goTo,
+        autoPlay: slickRef.current.innerSlider.autoPlay,
+        innerSlider: slickRef.current.innerSlider,
+        prev: slickRef.current.slickPrev,
+        next: slickRef.current.slickNext,
+      }),
+      [slickRef.current],
+    );
+
+    const prevCount = React.useRef(React.Children.count(props.children));
+
+    React.useEffect(() => {
+      if (prevCount.current !== React.Children.count(props.children)) {
+        goTo(props.initialSlide || 0, false);
+        prevCount.current = React.Children.count(props.children);
+      }
+    }, [props.children]);
+
+    const newProps = {
+      vertical,
+      ...props,
+    };
+
+    if (newProps.effect === 'fade') {
+      newProps.fade = true;
+    }
+
+    const prefixCls = getPrefixCls('carousel', newProps.prefixCls);
+    const dotsClass = 'slick-dots';
+
+    const enableDots = !!dots;
+    const dsClass = classNames(
+      dotsClass,
+      `${dotsClass}-${dotPosition}`,
+      typeof dots === 'boolean' ? false : dots?.className,
+    );
+
+    const className = classNames(prefixCls, {
+      [`${prefixCls}-rtl`]: direction === 'rtl',
+      [`${prefixCls}-vertical`]: dotPosition === 'left' || dotPosition === 'right',
     });
-  }
-
-  componentDidMount() {
-    const { autoplay } = this.props;
-    if (autoplay) {
-      window.addEventListener('resize', this.onWindowResized);
-    }
-  }
-
-  componentWillUnmount() {
-    const { autoplay } = this.props;
-    if (autoplay) {
-      window.removeEventListener('resize', this.onWindowResized);
-      (this.onWindowResized as any).cancel();
-    }
-  }
-
-  onWindowResized = () => {
-    // Fix https://github.com/ant-design/ant-design/issues/2550
-    const { slick } = this.refs;
-    const { autoplay } = this.props;
-    if (autoplay && slick && slick.innerSlider && slick.innerSlider.autoPlay) {
-      slick.innerSlider.autoPlay();
-    }
-  }
-
-  render() {
-    let props = assign({}, this.props);
-
-    if (props.effect === 'fade') {
-      props.fade = true;
-    }
-
-    let className = props.prefixCls;
-    if (props.vertical) {
-      className = `${className} ${className}-vertical`;
-    }
 
     return (
       <div className={className}>
-        <SlickCarousel ref="slick" {...props} />
+        <SlickCarousel
+          ref={slickRef}
+          {...newProps}
+          dots={enableDots}
+          dotsClass={dsClass}
+          arrows={arrows}
+          draggable={draggable}
+        />
       </div>
     );
-  }
-}
+  },
+);
+
+export default Carousel;

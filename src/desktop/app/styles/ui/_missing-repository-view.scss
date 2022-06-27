@@ -1,7 +1,6 @@
-@import "../mixins";
+@import '../mixins';
 
 #missing-repository-view {
-
   /* The view's position in relation to its parent, ie full
    * width, vertically centered...  */
   justify-content: center;
@@ -42,17 +41,15 @@
 
   /* xl-sized title */
   .title {
+    @include ellipsis;
     font-size: var(--font-size-xl);
     font-weight: var(--font-weight-light);
-
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
   }
 
   .details {
     margin-top: var(--spacing);
     margin-bottom: var(--spacing);
+    text-align: center;
 
     .path {
       font-family: var(--font-family-monospace);
@@ -65,6 +62,11 @@
 
   button {
     // the three buttons should rougly fill the width of the panel
-    width: 120px;
+    min-width: 120px;
+
+    .octicon.spin {
+      margin-right: var(--spacing-half);
+      height: 11px;
+    }
   }
 }

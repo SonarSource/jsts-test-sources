@@ -1,20 +1,32 @@
 ---
 order: 5
 title:
-    zh-CN: 文本域
-    en-US: Textarea
+  zh-CN: 文本域
+  en-US: TextArea
 ---
 
 ## zh-CN
 
-用于多行输入，指定 `type` 为一个特殊的 `textarea`。
+用于多行输入。
 
 ## en-US
 
-For multi-line user input cases, an input whose `type` prop has the value of `"textarea"` can be used.
+For multi-line input.
 
-````jsx
+```tsx
 import { Input } from 'antd';
+import React from 'react';
 
-ReactDOM.render(<Input type="textarea" rows={4} />, mountNode);
-````
+const { TextArea } = Input;
+
+const App: React.FC = () => (
+  <>
+    <TextArea rows={4} />
+    <br />
+    <br />
+    <TextArea rows={4} placeholder="maxLength is 6" maxLength={6} />
+  </>
+);
+
+export default App;
+```

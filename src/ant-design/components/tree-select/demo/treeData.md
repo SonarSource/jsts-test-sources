@@ -1,8 +1,8 @@
 ---
-order: 1
+order: 2
 title:
   zh-CN: 从数据直接生成
-  en-US: Generate form tree data
+  en-US: Generate from tree data
 ---
 
 ## zh-CN
@@ -13,51 +13,51 @@ title:
 
 The tree structure can be populated using `treeData` property. This is a quick and easy way to provide the tree content.
 
-
-````jsx
+```tsx
 import { TreeSelect } from 'antd';
+import React, { useState } from 'react';
 
-const treeData = [{
-  label: 'Node1',
-  value: '0-0',
-  key: '0-0',
-  children: [{
-    label: 'Child Node1',
-    value: '0-0-1',
-    key: '0-0-1',
-  }, {
-    label: 'Child Node2',
-    value: '0-0-2',
-    key: '0-0-2',
-  }],
-}, {
-  label: 'Node2',
-  value: '0-1',
-  key: '0-1',
-}];
+const treeData = [
+  {
+    title: 'Node1',
+    value: '0-0',
+    children: [
+      {
+        title: 'Child Node1',
+        value: '0-0-1',
+      },
+      {
+        title: 'Child Node2',
+        value: '0-0-2',
+      },
+    ],
+  },
+  {
+    title: 'Node2',
+    value: '0-1',
+  },
+];
 
-class Demo extends React.Component {
-  state = {
-    value: undefined,
-  }
-  onChange = (value) => {
-    console.log(arguments);
-    this.setState({ value });
-  }
-  render() {
-    return (
-      <TreeSelect
-        style={{ width: 300 }}
-        value={this.state.value}
-        dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
-        treeData={treeData}
-        placeholder="Please select"
-        treeDefaultExpandAll
-        onChange={this.onChange}
-      />
-    );
-  }
-}
+const App: React.FC = () => {
+  const [value, setValue] = useState<string>();
 
-ReactDOM.render(<Demo />, mountNode);
-````
+  const onChange = (newValue: string) => {
+    console.log(newValue);
+    setValue(newValue);
+  };
+
+  return (
+    <TreeSelect
+      style={{ width: '100%' }}
+      value={value}
+      dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
+      treeData={treeData}
+      placeholder="Please select"
+      treeDefaultExpandAll
+      onChange={onChange}
+    />
+  );
+};
+
+export default App;
+```

@@ -1,0 +1,16 @@
+
+#!/usr/bin/env bash
+set -euxo pipefail
+
+
+LOCAL_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+export LOCAL_BRANCH
+
+# ios
+export WORKSPACE="ios/Artsy.xcworkspace"
+export SCHEME="Artsy"
+export DEVICE_HOST_PLAT="iOS Simulator"
+export DEVICE_HOST_OS="15.2"
+export DEVICE_HOST_NAME="iPhone 13 Pro"
+export DERIVED_DATA_PATH="derived_data"
+export CONFIGURATION="Release"

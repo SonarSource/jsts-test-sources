@@ -1,4 +1,4 @@
 import Pagination from './Pagination';
 
-export { PaginationProps } from './Pagination';
+export { PaginationConfig, PaginationProps } from './Pagination';
 export default Pagination;

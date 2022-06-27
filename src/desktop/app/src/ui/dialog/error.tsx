@@ -1,9 +1,6 @@
 import * as React from 'react'
-import { Octicon, OcticonSymbol } from '../octicons'
-
-interface IDialogErrorProps {
-  readonly children?: ReadonlyArray<JSX.Element>
-}
+import { Octicon } from '../octicons'
+import * as OcticonSymbol from '../octicons/octicons.generated'
 
 /**
  * A component used for displaying short error messages inline
@@ -13,17 +10,15 @@ interface IDialogErrorProps {
  *
  * The content (error message) is paired with a stop icon and receive
  * special styling.
+ *
+ * Provide `children` to display content inside the error dialog.
  */
-export class DialogError extends React.Component<IDialogErrorProps, void> {
-
+export class DialogError extends React.Component {
   public render() {
-
     return (
-      <div className='dialog-error'>
+      <div className="dialog-error">
         <Octicon symbol={OcticonSymbol.stop} />
-        <div>
-          {this.props.children}
-        </div>
+        <div>{this.props.children}</div>
       </div>
     )
   }

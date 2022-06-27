@@ -13,14 +13,24 @@ title:
 
 With text and icon.
 
-````jsx
-import { Switch, Icon } from 'antd';
+```tsx
+import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { Switch } from 'antd';
+import React from 'react';
 
-ReactDOM.render(<div>
-  <Switch checkedChildren={'开'} unCheckedChildren={'关'} />
-  <br />
-  <Switch checkedChildren="1" unCheckedChildren="0" />
-  <br />
-  <Switch checkedChildren={<Icon type="check" />} unCheckedChildren={<Icon type="cross" />} />
-</div>, mountNode);
-````
+const App: React.FC = () => (
+  <>
+    <Switch checkedChildren="开启" unCheckedChildren="关闭" defaultChecked />
+    <br />
+    <Switch checkedChildren="1" unCheckedChildren="0" />
+    <br />
+    <Switch
+      checkedChildren={<CheckOutlined />}
+      unCheckedChildren={<CloseOutlined />}
+      defaultChecked
+    />
+  </>
+);
+
+export default App;
+```

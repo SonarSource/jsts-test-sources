@@ -13,28 +13,60 @@ title:
 
 The most basic dropdown menu.
 
-````jsx
-import { Menu, Dropdown, Icon } from 'antd';
+```tsx
+import { DownOutlined, SmileOutlined } from '@ant-design/icons';
+import { Dropdown, Menu, Space } from 'antd';
+import React from 'react';
 
 const menu = (
-  <Menu>
-    <Menu.Item>
-      <a target="_blank" rel="noopener noreferrer" href="http://www.alipay.com/">1st menu item</a>
-    </Menu.Item>
-    <Menu.Item>
-      <a target="_blank" rel="noopener noreferrer" href="http://www.taobao.com/">2nd menu item</a>
-    </Menu.Item>
-    <Menu.Item>
-      <a target="_blank" rel="noopener noreferrer" href="http://www.tmall.com/">3d menu item</a>
-    </Menu.Item>
-  </Menu>
+  <Menu
+    items={[
+      {
+        key: '1',
+        label: (
+          <a target="_blank" rel="noopener noreferrer" href="https://www.antgroup.com">
+            1st menu item
+          </a>
+        ),
+      },
+      {
+        key: '2',
+        label: (
+          <a target="_blank" rel="noopener noreferrer" href="https://www.aliyun.com">
+            2nd menu item (disabled)
+          </a>
+        ),
+        icon: <SmileOutlined />,
+        disabled: true,
+      },
+      {
+        key: '3',
+        label: (
+          <a target="_blank" rel="noopener noreferrer" href="https://www.luohanacademy.com">
+            3rd menu item (disabled)
+          </a>
+        ),
+        disabled: true,
+      },
+      {
+        key: '4',
+        danger: true,
+        label: 'a danger item',
+      },
+    ]}
+  />
 );
 
-ReactDOM.render(
+const App: React.FC = () => (
   <Dropdown overlay={menu}>
-    <a className="ant-dropdown-link" href="#">
-      Hover me <Icon type="down" />
+    <a onClick={e => e.preventDefault()}>
+      <Space>
+        Hover me
+        <DownOutlined />
+      </Space>
     </a>
   </Dropdown>
-, mountNode);
-````
+);
+
+export default App;
+```

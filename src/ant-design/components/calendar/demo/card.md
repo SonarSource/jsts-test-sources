@@ -1,6 +1,6 @@
 ---
 order: 2
-title: 
+title:
   zh-CN: 卡片模式
   en-US: Card
 ---
@@ -13,16 +13,37 @@ title:
 
 Nested inside a container element for rendering in limited space.
 
-````jsx
+```tsx
 import { Calendar } from 'antd';
+import type { CalendarMode } from 'antd/lib/calendar/generateCalendar';
+import type { Moment } from 'moment';
+import React from 'react';
 
-function onPanelChange(value, mode) {
-  console.log(value, mode);
+const App: React.FC = () => {
+  const onPanelChange = (value: Moment, mode: CalendarMode) => {
+    console.log(value.format('YYYY-MM-DD'), mode);
+  };
+
+  return (
+    <div className="site-calendar-demo-card">
+      <Calendar fullscreen={false} onPanelChange={onPanelChange} />
+    </div>
+  );
+};
+
+export default App;
+```
+
+```css
+.site-calendar-demo-card {
+  width: 300px;
+  border: 1px solid #f0f0f0;
+  border-radius: 2px;
 }
+```
 
-ReactDOM.render(
-  <div style={{ width: 290, border: '1px solid #d9d9d9', borderRadius: 4 }}>
-    <Calendar fullscreen={false} onPanelChange={onPanelChange} />
-  </div>
-, mountNode);
-````
+<style>
+  [data-theme="dark"] .site-calendar-demo-card {
+    border: 1px solid #303030;
+  }
+</style>

@@ -1,6 +1,6 @@
 ---
 order: 0
-title: 
+title:
   zh-CN: 折叠面板
   en-US: Collapse
 ---
@@ -11,15 +11,13 @@ title:
 
 ## en-US
 
-More than one panel can be expanded at a time, the first panel is initialized to be active in this case.
+By default, any number of panels can be expanded at a time. The first panel is expanded in this example.
 
-````jsx
+```tsx
 import { Collapse } from 'antd';
-const Panel = Collapse.Panel;
+import React from 'react';
 
-function callback(key) {
-  console.log(key);
-}
+const { Panel } = Collapse;
 
 const text = `
   A dog is a type of domesticated animal.
@@ -27,17 +25,31 @@ const text = `
   it can be found as a welcome guest in many households across the world.
 `;
 
-ReactDOM.render(
-  <Collapse defaultActiveKey={['1']} onChange={callback}>
-    <Panel header="This is panel header 1" key="1">
-      <p>{text}</p>
-    </Panel>
-    <Panel header="This is panel header 2" key="2">
-      <p>{text}</p>
-    </Panel>
-    <Panel header="This is panel header 3" key="3">
-      <p>{text}</p>
-    </Panel>
-  </Collapse>
-, mountNode);
-````
+const App: React.FC = () => {
+  const onChange = (key: string | string[]) => {
+    console.log(key);
+  };
+
+  return (
+    <Collapse defaultActiveKey={['1']} onChange={onChange}>
+      <Panel header="This is panel header 1" key="1">
+        <p>{text}</p>
+      </Panel>
+      <Panel header="This is panel header 2" key="2">
+        <p>{text}</p>
+      </Panel>
+      <Panel header="This is panel header 3" key="3">
+        <p>{text}</p>
+      </Panel>
+    </Collapse>
+  );
+};
+
+export default App;
+```
+
+<style>
+[data-theme="compact"] p, p {
+  margin: 0;
+}
+</style>

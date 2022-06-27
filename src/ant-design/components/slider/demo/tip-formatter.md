@@ -2,7 +2,7 @@
 order: 3
 title:
   zh-CN: 自定义提示
-  en-US: Customerize tooltip
+  en-US: Customize tooltip
 ---
 
 ## zh-CN
@@ -11,20 +11,20 @@ title:
 
 ## en-US
 
-Use `tipFormatter` to format content of `Toolip`. If `tipFormatter` is null, hide it.
+Use `tipFormatter` to format content of `Tooltip`. If `tipFormatter` is null, hide it.
 
-````jsx
+```tsx
 import { Slider } from 'antd';
+import React from 'react';
 
-function formatter(value) {
-  return `${value}%`;
-}
+const formatter = (value: number) => `${value}%`;
 
-ReactDOM.render(
-  <div>
+const App: React.FC = () => (
+  <>
     <Slider tipFormatter={formatter} />
     <Slider tipFormatter={null} />
-  </div>,
-  mountNode
+  </>
 );
-````
+
+export default App;
+```

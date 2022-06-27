@@ -2,9 +2,10 @@
 category: Components
 type: Data Entry
 title: Checkbox
+cover: https://gw.alipayobjects.com/zos/alicdn/8nbVbHEm_/CheckBox.svg
 ---
 
-Checkbox.
+Checkbox component.
 
 ## When To Use
 
@@ -13,19 +14,35 @@ Checkbox.
 
 ## API
 
-### Checkbox
+### Props
 
-| Property      | Description             | Type      | Default  |
-|----------|------------------|----------|--------|
-| checked | Specifies whether the checkbox is selected. | boolean | false |
-| defaultChecked | Specifies the initial state: whether or not the checkbox is selected. | boolean | false |
-| onChange | The callback function that is triggered when the state changes. | Function(e:Event) | - |
+#### Checkbox
 
-### Checkbox Group
+| Property | Description | Type | Default | Version |
+| --- | --- | --- | --- | --- |
+| autoFocus | If get focus when component mounted | boolean | false |  |
+| checked | Specifies whether the checkbox is selected | boolean | false |  |
+| defaultChecked | Specifies the initial state: whether or not the checkbox is selected | boolean | false |  |
+| disabled | If disable checkbox | boolean | false |  |
+| indeterminate | The indeterminate checked state of checkbox | boolean | false |  |
+| onChange | The callback function that is triggered when the state changes | function(e:Event) | - |  |
 
-| Property      | Description             | Type      | Default  |
-|----------|------------------|----------|--------|
-| defaultValue | Default selected value | string[] | [] |
-| value | Used for setting the currently selected value. | string[] | [] |
-| options  | Specifies options | string[] | [] |
-| onChange | The callback function that is triggered when the state changes. | Function(checkedValue) | - |
+#### Checkbox Group
+
+| Property | Description | Type | Default | Version |
+| --- | --- | --- | --- | --- |
+| defaultValue | Default selected value | string\[] | \[] |  |
+| disabled | If disable all checkboxes | boolean | false |  |
+| name | The `name` property of all `input[type="checkbox"]` children | string | - |  |
+| options | Specifies options | string\[] \| number\[] \| Option\[] | \[] |  |
+| value | Used for setting the currently selected value | string\[] | \[] |  |
+| onChange | The callback function that is triggered when the state changes | function(checkedValue) | - |  |
+
+### Methods
+
+#### Checkbox
+
+| Name    | Description  | Version |
+| ------- | ------------ | ------- |
+| blur()  | Remove focus |         |
+| focus() | Get focus    |         |

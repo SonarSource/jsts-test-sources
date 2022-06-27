@@ -13,88 +13,94 @@ title:
 
 If you want to use a customized trigger, you can hide the default one by setting `trigger={null}`.
 
-````jsx
-import { Layout, Menu, Icon } from 'antd';
+```tsx
+import {
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  UploadOutlined,
+  UserOutlined,
+  VideoCameraOutlined,
+} from '@ant-design/icons';
+import { Layout, Menu } from 'antd';
+import React, { useState } from 'react';
+
 const { Header, Sider, Content } = Layout;
 
-class SiderDemo extends React.Component {
-  state = {
-    collapsed: false,
-  };
-  toggle = () => {
-    this.setState({
-      collapsed: !this.state.collapsed,
-    });
-  }
-  render() {
-    return (
-      <Layout>
-        <Sider
-          trigger={null}
-          collapsible
-          collapsed={this.state.collapsed}
+const App: React.FC = () => {
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+    <Layout>
+      <Sider trigger={null} collapsible collapsed={collapsed}>
+        <div className="logo" />
+        <Menu
+          theme="dark"
+          mode="inline"
+          defaultSelectedKeys={['1']}
+          items={[
+            {
+              key: '1',
+              icon: <UserOutlined />,
+              label: 'nav 1',
+            },
+            {
+              key: '2',
+              icon: <VideoCameraOutlined />,
+              label: 'nav 2',
+            },
+            {
+              key: '3',
+              icon: <UploadOutlined />,
+              label: 'nav 3',
+            },
+          ]}
+        />
+      </Sider>
+      <Layout className="site-layout">
+        <Header className="site-layout-background" style={{ padding: 0 }}>
+          {React.createElement(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
+            className: 'trigger',
+            onClick: () => setCollapsed(!collapsed),
+          })}
+        </Header>
+        <Content
+          className="site-layout-background"
+          style={{
+            margin: '24px 16px',
+            padding: 24,
+            minHeight: 280,
+          }}
         >
-          <div className="logo" />
-          <Menu theme="dark" mode="inline" defaultSelectedKeys={['1']}>
-            <Menu.Item key="1">
-              <Icon type="user" />
-              <span className="nav-text">nav 1</span>
-            </Menu.Item>
-            <Menu.Item key="2">
-              <Icon type="video-camera" />
-              <span className="nav-text">nav 2</span>
-            </Menu.Item>
-            <Menu.Item key="3">
-              <Icon type="upload" />
-              <span className="nav-text">nav 3</span>
-            </Menu.Item>
-          </Menu>
-        </Sider>
-        <Layout>
-          <Header style={{ background: '#fff', padding: 0 }}>
-            <Icon
-              className="trigger"
-              type={this.state.collapsed ? 'menu-unfold' : 'menu-fold'}
-              onClick={this.toggle}
-            />
-          </Header>
-          <Content style={{ margin: '24px 16px', padding: 24, background: '#fff', minHeight: 280 }}>
-            Content
-          </Content>
-        </Layout>
+          Content
+        </Content>
       </Layout>
-    );
-  }
-}
+    </Layout>
+  );
+};
 
-ReactDOM.render(<SiderDemo />, mountNode);
-````
+export default App;
+```
 
-````css
+```css
 #components-layout-demo-custom-trigger .trigger {
+  padding: 0 24px;
   font-size: 18px;
   line-height: 64px;
-  padding: 0 16px;
   cursor: pointer;
-  transition: color .3s;
+  transition: color 0.3s;
 }
 
 #components-layout-demo-custom-trigger .trigger:hover {
-  color: #108ee9;
+  color: #1890ff;
 }
 
 #components-layout-demo-custom-trigger .logo {
   height: 32px;
-  background: #333;
-  border-radius: 6px;
   margin: 16px;
+  background: rgba(255, 255, 255, 0.3);
 }
 
-#components-layout-demo-custom-trigger .ant-layout-sider-collapsed .anticon {
-  font-size: 16px;
+.site-layout .site-layout-background {
+  background: #fff;
 }
-
-#components-layout-demo-custom-trigger .ant-layout-sider-collapsed .nav-text {
-  display: none;
-}
-````
+```

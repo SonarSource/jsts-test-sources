@@ -1,5 +1,5 @@
 import * as React from 'react'
-import * as classNames from 'classnames'
+import classNames from 'classnames'
 
 interface IFormProps {
   /** The class name for the form. */
@@ -10,7 +10,7 @@ interface IFormProps {
 }
 
 /** A form element with app-standard styles. */
-export class Form extends React.Component<IFormProps, void> {
+export class Form extends React.Component<IFormProps, {}> {
   public render() {
     const className = classNames('form-component', this.props.className)
     return (

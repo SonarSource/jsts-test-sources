@@ -2,6 +2,7 @@
 category: Components
 type: Data Entry
 title: Upload
+cover: https://gw.alipayobjects.com/zos/alicdn/QaeBt_ZMg/Upload.svg
 ---
 
 Upload file by selecting or dragging.
@@ -16,32 +17,54 @@ Uploading is the process of publishing information (web pages, text, pictures, v
 
 ## API
 
-> You can consult [jQuery-File-Upload](https://github.com/blueimp/jQuery-File-Upload/wiki) about how to implement server side upload interface.
+| Property | Description | Type | Default | Version |
+| --- | --- | --- | --- | --- |
+| accept | File types that can be accepted. See [input accept Attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/file#accept) | string | - |  |
+| action | Uploading URL | string \| (file) => Promise&lt;string> | - |  |
+| beforeUpload | Hook function which will be executed before uploading. Uploading will be stopped with `false` or a rejected Promise returned. When returned value is `Upload.LIST_IGNORE`, the list of files that have been uploaded will ignore it. **Warning：this function is not supported in IE9** | (file, fileList) => boolean \| Promise&lt;File> \| `Upload.LIST_IGNORE` | - |  |
+| customRequest | Override for the default xhr behavior allowing for additional customization and ability to implement your own XMLHttpRequest | function | - |  |
+| data | Uploading extra params or function which can return uploading extra params | object \| (file) => object \| Promise&lt;object> | - |  |
+| defaultFileList | Default list of files that have been uploaded | object\[] | - |  |
+| directory | Support upload whole directory ([caniuse](https://caniuse.com/#feat=input-file-directory)) | boolean | false |  |
+| disabled | Disable upload button | boolean | false |  |
+| fileList | List of files that have been uploaded (controlled). Here is a common issue [#2423](https://github.com/ant-design/ant-design/issues/2423) when using it | [UploadFile](#UploadFile)\[] | - |  |
+| headers | Set request headers, valid above IE10 | object | - |  |
+| iconRender | Custom show icon | (file: UploadFile, listType?: UploadListType) => ReactNode | - |  |
+| isImageUrl | Customize if render &lt;img /> in thumbnail | (file: UploadFile) => boolean | [(inside implementation)](https://github.com/ant-design/ant-design/blob/4ad5830eecfb87471cd8ac588c5d992862b70770/components/upload/utils.tsx#L47-L68) |  |
+| itemRender | Custom item of uploadList | (originNode: ReactElement, file: UploadFile, fileList: object\[], actions: { download: function, preview: function, remove: function }) => React.ReactNode | - | 4.16.0 |
+| listType | Built-in stylesheets, support for three types: `text`, `picture` or `picture-card` | string | `text` |  |
+| maxCount | Limit the number of uploaded files. Will replace current one when `maxCount` is `1` | number | - | 4.10.0 |
+| method | The http method of upload request | string | `post` |  |
+| multiple | Whether to support selected multiple file. `IE10+` supported. You can select multiple files with CTRL holding down while multiple is set to be true | boolean | false |  |
+| name | The name of uploading file | string | `file` |  |
+| openFileDialogOnClick | Click open file dialog | boolean | true |  |
+| previewFile | Customize preview file logic | (file: File \| Blob) => Promise&lt;dataURL: string> | - |  |
+| progress | Custom progress bar | [ProgressProps](/components/progress/#API) (support `type="line"` only) | { strokeWidth: 2, showInfo: false } | 4.3.0 |
+| showUploadList | Whether to show default upload list, could be an object to specify `showPreviewIcon`, `showRemoveIcon`, `showDownloadIcon`, `removeIcon` and `downloadIcon` individually | boolean \| { showPreviewIcon?: boolean, showDownloadIcon?: boolean, showRemoveIcon?: boolean, previewIcon?: ReactNode \| (file: UploadFile) => ReactNode, removeIcon?: ReactNode \| (file: UploadFile) => ReactNode, downloadIcon?: ReactNode \| (file: UploadFile) => ReactNode } | true | function: 4.7.0 |
+| withCredentials | The ajax upload with cookie sent | boolean | false |  |
+| onChange | A callback function, can be executed when uploading state is changing, see [onChange](#onChange) | function | - |  |
+| onDrop | A callback function executed when files are dragged and dropped into upload area | (event: React.DragEvent) => void | - | 4.16.0 |
+| onDownload | Click the method to download the file, pass the method to perform the method logic, do not pass the default jump to the new TAB | function(file): void | (Jump to new TAB) |  |
+| onPreview | A callback function, will be executed when file link or preview icon is clicked | function(file) | - |  |
+| onRemove | A callback function, will be executed when removing file button is clicked, remove event will be prevented when return value is false or a Promise which resolve(false) or reject | function(file): boolean \| Promise | - |  |
 
-| Property       | Description                                    | Type        | Default|
-|------------|----------------------------------------------------| ----------- |--------|
-| name       | The name of uploading file               | string      | 'file' |
-| defaultFileList | Default list of files that have been uploaded.                   | object[] | -  |
-| fileList   | List of files that have been uploaded (controlled). Here is a common issue [#2423](https://github.com/ant-design/ant-design/issues/2423) when using it | object[] | - |
-| action     | Required. Uploading URL                            | string      | -    |
-| data       | Uploading params or function which can return uploading params. | object\|function(file) | - |
-| headers    | Set request headers, valid above IE10.   | object      | -    |
-| showUploadList | Whether to show default upload list, could be an object to specify `showPreviewIcon` and `showRemoveIcon` individually | Boolean or { showPreviewIcon?: boolean, showRemoveIcon?: boolean } | true |
-| multiple   | Whether to support selected multiple file. `IE10+` supported. You can select multiple files with CTRL holding down while multiple is set to be true  | boolean     | false |
-| accept     | File types that can be accepted. See [input accept Attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#attr-accept)    | string      | -   |
-| beforeUpload | Hook function which will be executed before uploading. Uploading will be stopped with `false` or a rejected Promise returned. **Warning：this function is not supported by old IE**。 | (file, fileList) => `boolean | Promise`    | -    |
-| customRequest | override for the default xhr behavior allowing for additional customization and ability to implement your own XMLHttpRequest | Function | - |
-| onChange   | A callback function, can be executed when uploading state is changing. See [onChange](#onChange)                | Function    | -   |
-| listType   | Built-in stylesheets, support for two types: `text` or `picture`     | string      | 'text'|
-| onPreview  | A callback function, will be executed when file link or preview icon is clicked.  | Function(file) | -  |
-| onRemove   | A callback function, will be executed when removing file button is clicked, remove event will be prevented when return value is `false` or a Promise which resolve(false) or reject. | Function(file): `boolean | Promise` | -   |
-| supportServerRender | Need to be turned on while the server side is rendering.| boolean | false    |
-| disabled | disable upload button | boolean | false    |
-| withCredentials | ajax upload with cookie sent | boolean | false |
+### UploadFile
+
+Extends File with additional props.
+
+| Property | Description | Type | Default | Version |
+| --- | --- | --- | --- | --- |
+| crossOrigin | CORS settings attributes | `'anonymous'` \| `'use-credentials'` \| `''` | - | 4.20.0 |
+| name | File name | string | - | - |
+| percent | Upload progress percent | number | - | - |
+| status | Upload status. Show different style when configured | `error` \| `success` \| `done` \| `uploading` \| `removed` | - | - |
+| thumbUrl | Thumb image url | string | - | - |
+| uid | unique id. Will auto generate when not provided | string | - | - |
+| url | Download url | string | - | - |
 
 ### onChange
 
-> The function will be called when uploading is in progress, completed or  failed
+> The function will be called when uploading is in progress, completed or failed.
 
 When uploading state change, it returns:
 
@@ -57,26 +80,46 @@ When uploading state change, it returns:
 
    ```js
    {
-      uid: 'uid',      // unique identifier，negative is recommend，to prevent interference with internal generated id
-      name: 'xx.png'   // file name
-      status: 'done',  // options：uploading, done, error, removed
-      response: '{"status": "success"}',  // response from server
+      uid: 'uid',      // unique identifier, negative is recommend, to prevent interference with internal generated id
+      name: 'xx.png',   // file name
+      status: 'done', // options：uploading, done, error, removed. Intercepted file by beforeUpload don't have status field.
+      response: '{"status": "success"}', // response from server
+      linkProps: '{"download": "image"}', // additional html props of file link
+      xhr: 'XMLHttpRequest{ ... }', // XMLHttpRequest Header
    }
    ```
 
-   > Before `antd@1.9.0`, this parameter will be Array Object `[file, ...]` in multiple mode, while in `antd@1.9.0+`, it will always be an Object.
-
 2. `fileList` current list of files
+
 3. `event` response from server, including uploading progress, supported by advanced browsers.
 
-## show download links
+## FAQ
 
-Please set property `url` of property `fileList` to control content of link
+### How do I implement upload server side?
 
-## customRequest
+- You can consult [jQuery-File-Upload](https://github.com/blueimp/jQuery-File-Upload/wiki#server-side) about how to implement server side upload interface.
+- There is a mock example of [express](https://github.com/react-component/upload/blob/master/server.js) in rc-upload.
 
-* https://github.com/react-component/upload#customrequest
+### I want to display download links.
 
-## IE note
+Please set property `url` of each item in `fileList` to control content of link.
 
-- [https://github.com/react-component/upload#ie89-note](https://github.com/react-component/upload#ie89-note)
+### How to use `customRequest`?
+
+See <https://github.com/react-component/upload#customrequest>.
+
+### Why will the `fileList` that's in control not trigger `onChange` `status` update when the file is not in the list?
+
+`onChange` will only trigger when the file is in the list, it will ignore any events removed from the list. Please note that there does exist a bug which makes an event still trigger even when the file is not in the list before `4.13.0`.
+
+### Why does `onChange` sometimes return File object and other times return { originFileObj: File }?
+
+For compatible case, we return File object when `beforeUpload` return `false`. It will merge to `{ originFileObj: File }` in next major version. Current version is compatible to get origin file by `info.file.originFileObj`. You can change this before major release.
+
+### Why sometime Chrome can not upload?
+
+Chrome update will also break native upload. Please restart chrome to finish the upload work. Ref:
+
+- [#32672](https://github.com/ant-design/ant-design/issues/32672)
+- [#32913](https://github.com/ant-design/ant-design/issues/32913)
+- [#33988](https://github.com/ant-design/ant-design/issues/33988)

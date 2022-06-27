@@ -1,5 +1,5 @@
 ---
-order: 5
+order: 6
 title:
   zh-CN: 分组
   en-US: Option Group
@@ -13,20 +13,18 @@ title:
 
 Using `OptGroup` to group the options.
 
-````jsx
+```tsx
 import { Select } from 'antd';
+import React from 'react';
+
 const { Option, OptGroup } = Select;
 
-function handleChange(value) {
+const handleChange = (value: string) => {
   console.log(`selected ${value}`);
-}
+};
 
-ReactDOM.render(
-  <Select
-    defaultValue="lucy"
-    style={{ width: 200 }}
-    onChange={handleChange}
-  >
+const App: React.FC = () => (
+  <Select defaultValue="lucy" style={{ width: 200 }} onChange={handleChange}>
     <OptGroup label="Manager">
       <Option value="jack">Jack</Option>
       <Option value="lucy">Lucy</Option>
@@ -35,5 +33,7 @@ ReactDOM.render(
       <Option value="Yiminghe">yiminghe</Option>
     </OptGroup>
   </Select>
-, mountNode);
-````
+);
+
+export default App;
+```

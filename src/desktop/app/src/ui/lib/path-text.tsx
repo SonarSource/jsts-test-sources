@@ -1,6 +1,8 @@
 import * as React from 'react'
 import * as Path from 'path'
 import { clamp } from '../../lib/clamp'
+import { Tooltip } from './tooltip'
+import { createObservableRef } from './observable-ref'
 
 interface IPathTextProps {
   /**
@@ -25,7 +27,7 @@ interface IPathDisplayState {
    */
   readonly normalizedPath: string
 
-  readonly directoryText: string,
+  readonly directoryText: string
   readonly fileText: string
 
   /**
@@ -84,8 +86,8 @@ export function truncateMid(value: string, length: number) {
   }
 
   const mid = (length - 1) / 2
-  const pre = value.substr(0, Math.floor(mid))
-  const post = value.substr(value.length - Math.ceil(mid))
+  const pre = value.substring(0, Math.floor(mid))
+  const post = value.substring(value.length - Math.ceil(mid))
 
   return `${pre}…${post}`
 }
@@ -98,7 +100,6 @@ export function truncateMid(value: string, length: number) {
  * parameter.
  */
 export function truncatePath(path: string, length: number) {
-
   if (path.length <= length) {
     return path
   }
@@ -126,8 +127,8 @@ export function truncatePath(path: string, length: number) {
     return truncateMid(path, length)
   }
 
-  const pre = path.substr(0, length - filenameLength - 2)
-  const post = path.substr(lastSeparator)
+  const pre = path.substring(0, length - filenameLength - 2)
+  const post = path.substring(lastSeparator)
 
   return `${pre}…${post}`
 }
@@ -137,19 +138,30 @@ export function truncatePath(path: string, length: number) {
  *
  * @param normalizedPath The normalized path (i.e. no '.' or '..' characters in path)
  */
-export function extract(normalizedPath: string): { normalizedFileName: string, normalizedDirectory: string } {
-  // for untracked submodules, the status entry is returned as a directory,
-  // with a trailing / which causes the directory to be trimmed in a weird way
-  // below. let's try and resolve this here
-  normalizedPath = normalizedPath.endsWith('/') ? normalizedPath.substr(0, normalizedPath.length - 1) : normalizedPath
+export function extract(normalizedPath: string): {
+  normalizedFileName: string
+  normalizedDirectory: string
+} {
+  // for untracked submodules the status entry is returned as a path with a
+  // trailing path separator which causes the directory to be trimmed in a weird
+  // way below. let's try to resolve this here
+  normalizedPath = normalizedPath.endsWith(Path.sep)
+    ? normalizedPath.substring(0, normalizedPath.length - 1)
+    : normalizedPath
 
   const normalizedFileName = Path.basename(normalizedPath)
-  const normalizedDirectory = normalizedPath.substr(0, normalizedPath.length - normalizedFileName.length)
+  const normalizedDirectory = normalizedPath.substring(
+    0,
+    normalizedPath.length - normalizedFileName.length
+  )
 
   return { normalizedFileName, normalizedDirectory }
 }
 
-function createPathDisplayState(normalizedPath: string, length?: number): IPathDisplayState {
+function createPathDisplayState(
+  normalizedPath: string,
+  length?: number
+): IPathDisplayState {
   length = length === undefined ? normalizedPath.length : length
 
   if (length <= 0) {
@@ -175,7 +187,11 @@ function createPathDisplayState(normalizedPath: string, length?: number): IPathD
   // vs the filename (basename). It does so by comparing each character in the
   // normalized directory prefix to the truncated path, as long as it's a match
   // we know that it's a directory name.
-  for (let i = 0; i < truncatedPath.length && i < normalizedDirectory.length; i++) {
+  for (
+    let i = 0;
+    i < truncatedPath.length && i < normalizedDirectory.length;
+    i++
+  ) {
     const normalizedChar = normalizedDirectory[i]
     const truncatedChar = truncatedPath[i]
 
@@ -200,8 +216,8 @@ function createPathDisplayState(normalizedPath: string, length?: number): IPathD
     }
   }
 
-  const fileText = truncatedPath.substr(directoryLength)
-  const directoryText = truncatedPath.substr(0, directoryLength)
+  const fileText = truncatedPath.substring(directoryLength)
+  const directoryText = truncatedPath.substring(0, directoryLength)
 
   return { normalizedPath, directoryText, fileText, length }
 }
@@ -209,7 +225,6 @@ function createPathDisplayState(normalizedPath: string, length?: number): IPathD
 function createState(path: string, length?: number): IPathTextState {
   const normalizedPath = Path.normalize(path)
   return {
-    normalizedPath,
     longestFit: 0,
     shortestNonFit: undefined,
     availableWidth: undefined,
@@ -225,9 +240,11 @@ function createState(path: string, length?: number): IPathTextState {
  * If the path needs to be truncated this component will set its title element
  * to the full path such that it can be seen by hovering the path text.
  */
-export class PathText extends React.PureComponent<IPathTextProps, IPathTextState> {
-
-  private pathElement: HTMLDivElement | null = null
+export class PathText extends React.PureComponent<
+  IPathTextProps,
+  IPathTextState
+> {
+  private pathElementRef = createObservableRef<HTMLDivElement>()
   private pathInnerElement: HTMLSpanElement | null = null
 
   public constructor(props: IPathTextProps) {
@@ -243,14 +260,28 @@ export class PathText extends React.PureComponent<IPathTextProps, IPathTextState
 
   public componentDidMount() {
     this.resizeIfNecessary()
+    document.addEventListener('dialog-show', this.onDialogShow)
+  }
+
+  public componentWillUnmount() {
+    document.removeEventListener('dialog-show', this.onDialogShow)
   }
 
   public componentDidUpdate() {
     this.resizeIfNecessary()
   }
 
-  private onPathElementRef = (element: HTMLDivElement | null) => {
-    this.pathElement = element
+  // In case this component is contained within a <dialog>, make sure to resize
+  // it after the dialog element is shown in order to apply correct layout.
+  // https://github.com/desktop/desktop/issues/6666
+  private onDialogShow = (event: Event) => {
+    const dialogElement = event.target
+    if (
+      dialogElement instanceof Element &&
+      dialogElement.contains(this.pathElementRef.current)
+    ) {
+      this.resizeIfNecessary()
+    }
   }
 
   private onPathInnerElementRef = (element: HTMLSpanElement | null) => {
@@ -258,38 +289,49 @@ export class PathText extends React.PureComponent<IPathTextProps, IPathTextState
   }
 
   public render() {
-
-    const directoryElement = this.state.directoryText && this.state.directoryText.length
-      ? <span className='dirname'>{this.state.directoryText}</span>
-      : null
+    const directoryElement =
+      this.state.directoryText && this.state.directoryText.length ? (
+        <span className="dirname">{this.state.directoryText}</span>
+      ) : null
 
     const truncated = this.state.length < this.state.normalizedPath.length
-    const title = truncated ? this.state.normalizedPath : undefined
 
     return (
-      <div className='path-text-component' ref={this.onPathElementRef} title={title}>
+      <div className="path-text-component" ref={this.pathElementRef}>
         <span ref={this.onPathInnerElementRef}>
           {directoryElement}
-          <span className='filename'>{this.state.fileText}</span>
+          <span className="filename">{this.state.fileText}</span>
         </span>
+        {truncated && (
+          <Tooltip
+            target={this.pathElementRef}
+            interactive={true}
+            className="selectable"
+          >
+            {this.state.normalizedPath}
+          </Tooltip>
+        )}
       </div>
     )
   }
 
   private resizeIfNecessary() {
-    if (!this.pathElement || !this.pathInnerElement) {
+    if (!this.pathElementRef.current || !this.pathInnerElement) {
       return
     }
 
-    const computedAvailableWidth = this.props.availableWidth !== undefined
+    const computedAvailableWidth =
+      this.props.availableWidth !== undefined
         ? this.props.availableWidth
-        : this.pathElement.getBoundingClientRect().width
+        : this.pathElementRef.current.getBoundingClientRect().width
 
     const availableWidth = Math.max(computedAvailableWidth, 0)
 
     // Can we fit the entire path in the available width?
-    if (this.state.fullTextWidth !== undefined && this.state.fullTextWidth <= availableWidth) {
-
+    if (
+      this.state.fullTextWidth !== undefined &&
+      this.state.fullTextWidth <= availableWidth
+    ) {
       // Are we already doing so?
       if (this.state.length === this.state.normalizedPath.length) {
         // Yeay, happy path, we're already displaying the full path and it
@@ -318,7 +360,10 @@ export class PathText extends React.PureComponent<IPathTextProps, IPathTextState
     }
 
     // The available width has changed from underneath us
-    if (this.state.availableWidth !== undefined && this.state.availableWidth !== availableWidth) {
+    if (
+      this.state.availableWidth !== undefined &&
+      this.state.availableWidth !== availableWidth
+    ) {
       // Keep the current length as that's likely a good starting point
       const resetState = createState(this.props.path, this.state.length)
 
@@ -364,19 +409,17 @@ export class PathText extends React.PureComponent<IPathTextProps, IPathTextState
 
     // Did we just measure the full path? If so let's persist it in state, if
     // not we'll just take what we've got (could be nothing) and persist that
-    const fullTextWidth = this.state.length === this.state.normalizedPath.length
-      ? actualWidth
-      : this.state.fullTextWidth
+    const fullTextWidth =
+      this.state.length === this.state.normalizedPath.length
+        ? actualWidth
+        : this.state.fullTextWidth
 
     // We shouldn't get into this state but if we do, guard against division by zero
     // and use a normal binary search ratio.
-    const ratio = actualWidth === 0
-      ? 0.5
-      : availableWidth / actualWidth
+    const ratio = actualWidth === 0 ? 0.5 : availableWidth / actualWidth
 
     // It fits!
     if (actualWidth <= availableWidth) {
-
       // We're done, the entire path fits
       if (this.state.length === this.state.normalizedPath.length) {
         this.setState({ ...this.state, availableWidth, fullTextWidth })
@@ -384,16 +427,22 @@ export class PathText extends React.PureComponent<IPathTextProps, IPathTextState
       } else {
         // There might be more space to fill
         const longestFit = this.state.length
-        const maxChars = this.state.shortestNonFit !== undefined
-          ? this.state.shortestNonFit - 1
-          : this.state.normalizedPath.length
+        const maxChars =
+          this.state.shortestNonFit !== undefined
+            ? this.state.shortestNonFit - 1
+            : this.state.normalizedPath.length
 
         const minChars = longestFit + 1
 
         // We've run out of options, it fits here but we can't grow any further, i.e
         // we're done.
         if (minChars >= maxChars) {
-          this.setState({ ...this.state, longestFit, availableWidth, fullTextWidth })
+          this.setState({
+            ...this.state,
+            longestFit,
+            availableWidth,
+            fullTextWidth,
+          })
           return
         }
 
@@ -405,11 +454,20 @@ export class PathText extends React.PureComponent<IPathTextProps, IPathTextState
         // width and use that instead but this works pretty well for now and lets us
         // avoid one more measure phase.
         if (availableWidth - actualWidth < 3) {
-          this.setState({ ...this.state, longestFit, availableWidth, fullTextWidth })
+          this.setState({
+            ...this.state,
+            longestFit,
+            availableWidth,
+            fullTextWidth,
+          })
           return
         }
 
-        const length = clamp(Math.floor(this.state.length * ratio), minChars, maxChars)
+        const length = clamp(
+          Math.floor(this.state.length * ratio),
+          minChars,
+          maxChars
+        )
 
         // We could potentially fit more characters, there's room to try so we'll go for it
         this.setState({
@@ -427,7 +485,11 @@ export class PathText extends React.PureComponent<IPathTextProps, IPathTextState
       const maxChars = shortestNonFit - 1
       const minChars = this.state.longestFit || 0
 
-      const length = clamp(Math.floor(this.state.length * ratio), minChars, maxChars)
+      const length = clamp(
+        Math.floor(this.state.length * ratio),
+        minChars,
+        maxChars
+      )
 
       this.setState({
         ...this.state,

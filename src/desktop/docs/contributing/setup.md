@@ -2,79 +2,80 @@
 
 ## Setup
 
-You will need to install these tools on your machine:
+Refer to the specific instructions for each platform:
 
- - [Nodejs](https://nodejs.org) - v7 is preferred as it's the version embedded into Electron
-    - **Windows developers**: *Make sure you allow the Node.js installer to add
-      node to the PATH, it makes life much easier.*
- - Python 2.7 - [Windows](https://www.python.org/downloads/windows/), [macOS](https://www.python.org/downloads/mac-osx/)
-    - **Windows developers**: *Let Python install into the default suggested path
-      (`c:\Python27`), otherwise you'll have to configure node-gyp manually with
-      the path which is annoying.*
- - **macOS:** Xcode and Xcode Command Line Tools (Xcode -> Preferences -> Downloads)
- - **Windows:** Visual Studio 2015 or [Visual C++ Build Tools](http://go.microsoft.com/fwlink/?LinkId=691126)
-    - Run `npm config set msvs_version 2015` after installing the build tools.
-    - *Visual Studio 2017 support has not been tested yet - waiting on
-      `node-gyp` support to be generally available.*
+ - [macOS](./setup-macos.md)
+ - [Windows](./setup-windows.md)
+ - [Linux](./setup-linux.md)
 
-With these things installed, open a shell and validate you have these commands
-available and that the versions look similar:
+Experimental support for building Desktop is also available for these platforms:
 
-```
-> node -v
-v7.8.0
+ - [ARM64](./building-arm64.md)
 
-> npm -v
-4.2.0
+## Verification
 
-> python --version
-Python 2.7.13
+Verify you have these commands available in your shell and that the found
+versions look similar to the below output:
+
+```shellsession
+$ node -v
+v10.15.4
+
+$ yarn -v
+1.15.2
+
+$ python --version
+Python 2.7.15
 ```
 
-There are also [additional resources](./docs/contributing/tooling.md) to
-configure your favourite editor to work nicely with the GitHub Desktop
-repository.
+There are also [additional resources](tooling.md) to configure your favorite
+editor to work nicely with the GitHub Desktop repository.
 
 ## Building Desktop
 
-After cloning the repository, the typical workflow to get up running
-is as follows:
+First, create a fork of `desktop/desktop` and then clone the repository to your local machine. You'll need to be inside the repository in order to build the application locally.
 
-* Run `npm install` to get all required dependencies on your machine.
-* Run `npm run build:dev` to create a development build of the app.
-* Run `npm start` to launch the application. Changes will be compiled in the
-  background. The app can then be reloaded to see the changes (Ctrl/Command+R).
+The typical workflow to get up running is as follows:
 
-If you've made changes in the `main-process` folder you need to run `npm run
-build:dev` to rebuild the package, and then `npm start` for these changes to be
+* Run `yarn` to get all required dependencies on your machine.
+* Run `yarn build:dev` to create a development build of the app.
+* Run `yarn start` to launch the application. Changes will be compiled in the
+  background. The app can then be reloaded to see the changes (<kbd>Ctrl/Command+Alt+R</kbd>).
+
+**Optional Tip**: On macOS and Linux, you can use `screen` to avoid filling your terminal with logging output:
+
+```shellsession
+$ screen -S "desktop" yarn start # -S sets the name of the session; you can pick anything
+$ # Your screen clears and shows logs. Press Ctrl+A then D to exit.
+[detached]
+$ screen -R "desktop" # to reopen the session, read the logs, and exit (Ctrl+C)
+[screen is terminating]
+```
+
+If you've made changes in the `main-process` folder you need to run `yarn
+build:dev` to rebuild the package, and then `yarn start` for these changes to be
 reflected in the running app.
 
+If you are using GitHub Enterprise with your development build of GitHub Desktop, you will need to follow a few extra steps to [authenticate properly](github-enterprise-auth-from-dev-build.md).
+
 If you're still encountering issues with building, refer to our
-[troubleshooting](./docs/contributing/troubleshooting.md) guide for more common
+[troubleshooting](troubleshooting.md) guide for more common
 problems.
 
 ## Running tests
 
-- `npm test` - Runs all unit and integration tests
-- `npm run test:unit` - Runs all unit tests
-- `npm run test:integration` - Runs all integration tests
-
-**Pro Tip:** If you're only interested in the results of a single test and don't
-wish to run the entire test suite to see it you can pass along a search string
-in order to only run the tests that match that string.
-
-```
-npm run test:unit -- --grep CloneProgressParser
-```
-
-This example will run all test names containing `CloneProgressParser`.
+- `yarn test` - Runs all unit and integration tests
+- `yarn test:unit` - Runs all unit tests
+  - Add `<file>` or `<pattern>` argument to only run tests in the specified file or files matching a pattern
+  - Add `-t <regex>` to only match tests whose name matches a regex
+  - For more information on these and other arguments, see [Jest CLI options](https://jestjs.io/docs/en/23.x/cli)
 
 ## Debugging
 
 Electron ships with Chrome Dev Tools to assist with debugging, profiling and
 other measurement tools.
 
-1. Run the command `npm start` to launch the app
+1. Run the command `yarn start` to launch the app
 2. Under the **View** menu, select **Toggle Developer Tools**
 
 When running the app in development mode,
@@ -93,7 +94,7 @@ require('devtron').install()
 
 You're almost there! Here's a couple of things we recommend you read next:
 
- - [Up for Grabs](./docs/process/up-for-grabs.md) - we've marked some tasks in
-   the backlog that are ideal for external contributors
- - [Code Reviews](./docs/process/reviews.md) - some notes on how the team does
-   code reviews
+ - [Help Wanted](../../.github/CONTRIBUTING.md#help-wanted) - we've marked some
+   tasks in the backlog that are ideal for external contributors
+ - [Notes for Contributors](../process/notes-for-contributors.md) - some notes
+   for new contributors getting started

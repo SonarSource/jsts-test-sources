@@ -1,14 +1,17 @@
-import CalendarLocale from 'rc-calendar/lib/locale/ko_KR';
+import CalendarLocale from 'rc-picker/lib/locale/ko_KR';
 import TimePickerLocale from '../../time-picker/locale/ko_KR';
-import assign from 'object-assign';
+import type { PickerLocale } from '../generatePicker';
 
 // Merge into a locale object
-const locale = {
-  lang: assign({
+const locale: PickerLocale = {
+  lang: {
     placeholder: '날짜 선택',
     rangePlaceholder: ['시작일', '종료일'],
-  }, CalendarLocale),
-  timePickerLocale: assign({}, TimePickerLocale),
+    ...CalendarLocale,
+  },
+  timePickerLocale: {
+    ...TimePickerLocale,
+  },
 };
 
 // All settings at:

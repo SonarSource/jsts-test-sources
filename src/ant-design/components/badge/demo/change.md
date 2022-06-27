@@ -13,59 +13,62 @@ title:
 
 The count will be animated as it changes.
 
-````jsx
-import { Badge, Button, Icon, Switch } from 'antd';
+```tsx
+import { MinusOutlined, PlusOutlined, QuestionOutlined } from '@ant-design/icons';
+import { Avatar, Badge, Button, Divider, Switch } from 'antd';
+import React, { useState } from 'react';
+
 const ButtonGroup = Button.Group;
 
-class Demo extends React.Component {
-  state = {
-    count: 5,
-    show: true,
-  }
+const App: React.FC = () => {
+  const [count, setCount] = useState(5);
+  const [show, setShow] = useState(true);
 
-  increase = () => {
-    const count = this.state.count + 1;
-    this.setState({ count });
-  }
+  const increase = () => {
+    setCount(count + 1);
+  };
 
-  decline = () => {
-    let count = this.state.count - 1;
-    if (count < 0) {
-      count = 0;
+  const decline = () => {
+    let newCount = count - 1;
+    if (newCount < 0) {
+      newCount = 0;
     }
-    this.setState({ count });
-  }
+    setCount(newCount);
+  };
 
-  onChange = (show) => {
-    this.setState({ show });
-  }
+  const random = () => {
+    const newCount = Math.floor(Math.random() * 100);
+    setCount(newCount);
+  };
 
-  render() {
-    return (
-      <div>
-        <div>
-          <Badge count={this.state.count}>
-            <a href="#" className="head-example" />
-          </Badge>
-          <ButtonGroup>
-            <Button onClick={this.decline}>
-              <Icon type="minus" />
-            </Button>
-            <Button onClick={this.increase}>
-              <Icon type="plus" />
-            </Button>
-          </ButtonGroup>
-        </div>
-        <div style={{ marginTop: 10 }}>
-          <Badge dot={this.state.show}>
-            <a href="#" className="head-example" />
-          </Badge>
-          <Switch onChange={this.onChange} />
-        </div>
-      </div>
-    );
-  }
-}
+  const onChange = (checked: boolean) => {
+    setShow(checked);
+  };
 
-ReactDOM.render(<Demo />, mountNode);
-````
+  return (
+    <>
+      <Badge count={count}>
+        <Avatar shape="square" size="large" />
+      </Badge>
+      <ButtonGroup>
+        <Button onClick={decline}>
+          <MinusOutlined />
+        </Button>
+        <Button onClick={increase}>
+          <PlusOutlined />
+        </Button>
+        <Button onClick={random}>
+          <QuestionOutlined />
+        </Button>
+      </ButtonGroup>
+      <Divider />
+      <Badge dot={show}>
+        <Avatar shape="square" size="large" />
+      </Badge>
+      <Switch onChange={onChange} checked={show} />
+    </>
+  );
+};
+
+export default App;
+```

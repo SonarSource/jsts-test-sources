@@ -1,274 +1,274 @@
-import React from 'react';
-import { Component, PropTypes, cloneElement } from 'react';
+import CloseCircleFilled from '@ant-design/icons/CloseCircleFilled';
 import classNames from 'classnames';
-import calculateNodeHeight from './calculateNodeHeight';
-import assign from 'object-assign';
-import omit from 'omit.js';
+import type { InputProps as RcInputProps, InputRef } from 'rc-input';
+import RcInput from 'rc-input';
+import { composeRef } from 'rc-util/lib/ref';
+import React, { forwardRef, useContext, useEffect, useRef } from 'react';
+import { ConfigContext } from '../config-provider';
+import DisabledContext from '../config-provider/DisabledContext';
+import type { SizeType } from '../config-provider/SizeContext';
+import SizeContext from '../config-provider/SizeContext';
+import { FormItemInputContext, NoFormStyle } from '../form/context';
+import type { InputStatus } from '../_util/statusUtils';
+import { getMergedStatus, getStatusClassNames } from '../_util/statusUtils';
+import warning from '../_util/warning';
+import { hasPrefixSuffix } from './utils';
 
-function fixControlledValue(value) {
+export interface InputFocusOptions extends FocusOptions {
+  cursor?: 'start' | 'end' | 'all';
+}
+
+export type { InputRef };
+
+export function fixControlledValue<T>(value: T) {
   if (typeof value === 'undefined' || value === null) {
     return '';
   }
-  return value;
+  return String(value);
 }
 
-function onNextFrame(cb) {
-  if (window.requestAnimationFrame) {
-    return window.requestAnimationFrame(cb);
+export function resolveOnChange<E extends HTMLInputElement | HTMLTextAreaElement>(
+  target: E,
+  e:
+    | React.ChangeEvent<E>
+    | React.MouseEvent<HTMLElement, MouseEvent>
+    | React.CompositionEvent<HTMLElement>,
+  onChange: undefined | ((event: React.ChangeEvent<E>) => void),
+  targetValue?: string,
+) {
+  if (!onChange) {
+    return;
   }
-  return window.setTimeout(cb, 1);
-}
+  let event = e;
 
-function clearNextFrameAction(nextFrameId) {
-  if (window.cancelAnimationFrame) {
-    window.cancelAnimationFrame(nextFrameId);
-  } else {
-    window.clearTimeout(nextFrameId);
-  }
-}
+  if (e.type === 'click') {
+    // Clone a new target for event.
+    // Avoid the following usage, the setQuery method gets the original value.
+    //
+    // const [query, setQuery] = React.useState('');
+    // <Input
+    //   allowClear
+    //   value={query}
+    //   onChange={(e)=> {
+    //     setQuery((prevStatus) => e.target.value);
+    //   }}
+    // />
 
-export interface AutoSizeType {
-  minRows?: number;
-  maxRows?: number;
-};
+    const currentTarget = target.cloneNode(true) as E;
 
-export interface InputProps {
-  prefixCls?: string;
-  className?: string;
-  type?: string;
-  id?: number | string;
-  name?: string;
-  value?: any;
-  defaultValue?: any;
-  placeholder?: string;
-  size?: 'large' | 'default' | 'small';
-  disabled?: boolean;
-  readOnly?: boolean;
-  addonBefore?: React.ReactNode;
-  addonAfter?: React.ReactNode;
-  onPressEnter?: React.FormEventHandler<any>;
-  onClick?: React.FormEventHandler<any>;
-  onFocus?: React.FormEventHandler<any>;
-  onBlur?: React.FormEventHandler<any>;
-  autosize?: boolean | AutoSizeType;
-  style?: React.CSSProperties;
-  prefix?: React.ReactNode;
-  suffix?: React.ReactNode;
-}
-
-export type HTMLInputProps = React.HTMLProps<HTMLInputElement>;
-
-export default class Input extends Component<InputProps & HTMLInputProps, any> {
-  static Group: any;
-  static Search: any;
-  static defaultProps = {
-    disabled: false,
-    prefixCls: 'ant-input',
-    type: 'text',
-    autosize: false,
-  };
-
-  static propTypes = {
-    type: PropTypes.string,
-    id: PropTypes.oneOfType([
-      PropTypes.string,
-      PropTypes.number,
-    ]),
-    size: PropTypes.oneOf(['small', 'default', 'large']),
-    disabled: PropTypes.bool,
-    value: PropTypes.any,
-    defaultValue: PropTypes.any,
-    className: PropTypes.string,
-    addonBefore: PropTypes.node,
-    addonAfter: PropTypes.node,
-    prefixCls: PropTypes.string,
-    autosize: PropTypes.oneOfType([PropTypes.bool, PropTypes.object]),
-    onPressEnter: PropTypes.func,
-    onKeyDown: PropTypes.func,
-    onFocus: PropTypes.func,
-    onBlur: PropTypes.func,
-    prefix: PropTypes.node,
-    suffix: PropTypes.node,
-  };
-
-  nextFrameActionId: number;
-  refs: {
-    input: any;
-  };
-
-  state = {
-    textareaStyles: null,
-    isFocus: false,
-  };
-
-  componentDidMount() {
-    this.resizeTextarea();
-  }
-
-  componentWillReceiveProps(nextProps) {
-    // Re-render with the new content then recalculate the height as required.
-    if (this.props.value !== nextProps.value) {
-      if (this.nextFrameActionId) {
-        clearNextFrameAction(this.nextFrameActionId);
-      }
-      this.nextFrameActionId = onNextFrame(this.resizeTextarea);
-    }
-  }
-
-  handleKeyDown = (e) => {
-    const { onPressEnter, onKeyDown } = this.props;
-    if (e.keyCode === 13 && onPressEnter) {
-      onPressEnter(e);
-    }
-    if (onKeyDown) {
-      onKeyDown(e);
-    }
-  }
-
-  handleTextareaChange = (e) => {
-    if (!('value' in this.props)) {
-      this.resizeTextarea();
-    }
-    const onChange = this.props.onChange;
-    if (onChange) {
-      onChange(e);
-    }
-  }
-
-  resizeTextarea = () => {
-    const { type, autosize } = this.props;
-    if (type !== 'textarea' || !autosize || !this.refs.input) {
-      return;
-    }
-    const minRows = autosize ? (autosize as AutoSizeType).minRows : null;
-    const maxRows = autosize ? (autosize as AutoSizeType).maxRows : null;
-    const textareaStyles = calculateNodeHeight(this.refs.input, false, minRows, maxRows);
-    this.setState({ textareaStyles });
-  }
-
-  focus() {
-    this.refs.input.focus();
-  }
-
-  renderLabeledInput(children) {
-    const props = this.props;
-
-    // Not wrap when there is not addons
-    if (props.type === 'textarea' || (!props.addonBefore && !props.addonAfter)) {
-      return children;
-    }
-
-    const wrapperClassName = `${props.prefixCls}-group`;
-    const addonClassName = `${wrapperClassName}-addon`;
-    const addonBefore = props.addonBefore ? (
-      <span className={addonClassName}>
-        {props.addonBefore}
-      </span>
-    ) : null;
-
-    const addonAfter = props.addonAfter ? (
-      <span className={addonClassName}>
-        {props.addonAfter}
-      </span>
-    ) : null;
-
-    const className = classNames({
-      [`${props.prefixCls}-wrapper`]: true,
-      [wrapperClassName]: (addonBefore || addonAfter),
+    // click clear icon
+    event = Object.create(e, {
+      target: { value: currentTarget },
+      currentTarget: { value: currentTarget },
     });
 
-    return (
-      <span className={className}>
-        {addonBefore}
-        {children}
-        {addonAfter}
-      </span>
-    );
+    currentTarget.value = '';
+    onChange(event as React.ChangeEvent<E>);
+    return;
   }
 
-  renderLabeledIcon(children) {
-    const { props } = this;
+  // Trigger by composition event, this means we need force change the input value
+  if (targetValue !== undefined) {
+    event = Object.create(e, {
+      target: { value: target },
+      currentTarget: { value: target },
+    });
 
-    if (props.type === 'textarea' || !('prefix' in props || 'suffix' in props)) {
-      return children;
-    }
-
-    const prefix = props.prefix ? (
-      <span className={`${props.prefixCls}-prefix`}>
-        {props.prefix}
-      </span>
-    ) : null;
-
-    const suffix = props.suffix ? (
-      <span className={`${props.prefixCls}-suffix`}>
-        {props.suffix}
-      </span>
-    ) : null;
-
-    return (
-      <span className={`${props.prefixCls}-affix-wrapper`} style={props.style}>
-        {prefix}
-        {cloneElement(children, { style: null })}
-        {suffix}
-      </span>
-    );
+    target.value = targetValue;
+    onChange(event as React.ChangeEvent<E>);
+    return;
   }
+  onChange(event as React.ChangeEvent<E>);
+}
 
-  renderInput() {
-    const props = assign({}, this.props);
-    // Fix https://fb.me/react-unknown-prop
-    const otherProps = omit(this.props, [
-      'prefixCls',
-      'onPressEnter',
-      'autosize',
-      'addonBefore',
-      'addonAfter',
-      'prefix',
-      'suffix',
-    ]);
+export function triggerFocus(
+  element?: HTMLInputElement | HTMLTextAreaElement,
+  option?: InputFocusOptions,
+) {
+  if (!element) return;
 
-    const prefixCls = props.prefixCls;
-    if (!props.type) {
-      return props.children;
-    }
+  element.focus(option);
 
-    const inputClassName = classNames(prefixCls, {
-      [`${prefixCls}-sm`]: props.size === 'small',
-      [`${prefixCls}-lg`]: props.size === 'large',
-    }, props.className);
+  // Selection content
+  const { cursor } = option || {};
+  if (cursor) {
+    const len = element.value.length;
 
-    if ('value' in props) {
-      otherProps.value = fixControlledValue(props.value);
-      // Input elements must be either controlled or uncontrolled,
-      // specify either the value prop, or the defaultValue prop, but not both.
-      delete otherProps.defaultValue;
-    }
+    switch (cursor) {
+      case 'start':
+        element.setSelectionRange(0, 0);
+        break;
 
-    switch (props.type) {
-      case 'textarea':
-        return (
-          <textarea
-            {...otherProps}
-            style={assign({}, props.style, this.state.textareaStyles)}
-            className={inputClassName}
-            onKeyDown={this.handleKeyDown}
-            onChange={this.handleTextareaChange}
-            ref="input"
-          />
-        );
+      case 'end':
+        element.setSelectionRange(len, len);
+        break;
+
       default:
-        return this.renderLabeledIcon(
-          <input
-            {...otherProps}
-            className={inputClassName}
-            onKeyDown={this.handleKeyDown}
-            ref="input"
-          />,
-        );
+        element.setSelectionRange(0, len);
     }
-  }
-
-  render() {
-    return this.renderLabeledInput(this.renderInput());
   }
 }
+
+export interface InputProps
+  extends Omit<
+    RcInputProps,
+    'wrapperClassName' | 'groupClassName' | 'inputClassName' | 'affixWrapperClassName'
+  > {
+  size?: SizeType;
+  disabled?: boolean;
+  status?: InputStatus;
+  bordered?: boolean;
+  [key: `data-${string}`]: string;
+}
+
+const Input = forwardRef<InputRef, InputProps>((props, ref) => {
+  const {
+    prefixCls: customizePrefixCls,
+    bordered = true,
+    status: customStatus,
+    size: customSize,
+    disabled: customDisabled,
+    onBlur,
+    onFocus,
+    suffix,
+    allowClear,
+    addonAfter,
+    addonBefore,
+    ...rest
+  } = props;
+  const { getPrefixCls, direction, input } = React.useContext(ConfigContext);
+
+  const prefixCls = getPrefixCls('input', customizePrefixCls);
+  const inputRef = useRef<InputRef>(null);
+
+  // ===================== Size =====================
+  const size = React.useContext(SizeContext);
+  const mergedSize = customSize || size;
+
+  // ===================== Disabled =====================
+  const disabled = React.useContext(DisabledContext);
+  const mergedDisabled = customDisabled || disabled;
+
+  // ===================== Status =====================
+  const { status: contextStatus, hasFeedback, feedbackIcon } = useContext(FormItemInputContext);
+  const mergedStatus = getMergedStatus(contextStatus, customStatus);
+
+  // ===================== Focus warning =====================
+  const inputHasPrefixSuffix = hasPrefixSuffix(props) || !!hasFeedback;
+  const prevHasPrefixSuffix = useRef<boolean>(inputHasPrefixSuffix);
+  useEffect(() => {
+    if (inputHasPrefixSuffix && !prevHasPrefixSuffix.current) {
+      warning(
+        document.activeElement === inputRef.current?.input,
+        'Input',
+        `When Input is focused, dynamic add or remove prefix / suffix will make it lose focus caused by dom structure change. Read more: https://ant.design/components/input/#FAQ`,
+      );
+    }
+    prevHasPrefixSuffix.current = inputHasPrefixSuffix;
+  }, [inputHasPrefixSuffix]);
+
+  // ===================== Remove Password value =====================
+  const removePasswordTimeoutRef = useRef<number[]>([]);
+  const removePasswordTimeout = () => {
+    removePasswordTimeoutRef.current.push(
+      window.setTimeout(() => {
+        if (
+          inputRef.current?.input &&
+          inputRef.current?.input.getAttribute('type') === 'password' &&
+          inputRef.current?.input.hasAttribute('value')
+        ) {
+          inputRef.current?.input.removeAttribute('value');
+        }
+      }),
+    );
+  };
+
+  useEffect(() => {
+    removePasswordTimeout();
+    return () => removePasswordTimeoutRef.current.forEach(item => window.clearTimeout(item));
+  }, []);
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    removePasswordTimeout();
+    onBlur?.(e);
+  };
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    removePasswordTimeout();
+    onFocus?.(e);
+  };
+
+  const suffixNode = (hasFeedback || suffix) && (
+    <>
+      {suffix}
+      {hasFeedback && feedbackIcon}
+    </>
+  );
+
+  // Allow clear
+  let mergedAllowClear;
+  if (typeof allowClear === 'object' && allowClear?.clearIcon) {
+    mergedAllowClear = allowClear;
+  } else if (allowClear) {
+    mergedAllowClear = { clearIcon: <CloseCircleFilled /> };
+  }
+
+  return (
+    <RcInput
+      ref={composeRef(ref, inputRef)}
+      prefixCls={prefixCls}
+      autoComplete={input?.autoComplete}
+      {...rest}
+      disabled={mergedDisabled || undefined}
+      onBlur={handleBlur}
+      onFocus={handleFocus}
+      suffix={suffixNode}
+      allowClear={mergedAllowClear}
+      addonAfter={
+        addonAfter && (
+          <NoFormStyle override status>
+            {addonAfter}
+          </NoFormStyle>
+        )
+      }
+      addonBefore={
+        addonBefore && (
+          <NoFormStyle override status>
+            {addonBefore}
+          </NoFormStyle>
+        )
+      }
+      inputClassName={classNames(
+        {
+          [`${prefixCls}-sm`]: mergedSize === 'small',
+          [`${prefixCls}-lg`]: mergedSize === 'large',
+          [`${prefixCls}-rtl`]: direction === 'rtl',
+          [`${prefixCls}-borderless`]: !bordered,
+        },
+        !inputHasPrefixSuffix && getStatusClassNames(prefixCls, mergedStatus),
+      )}
+      affixWrapperClassName={classNames(
+        {
+          [`${prefixCls}-affix-wrapper-sm`]: mergedSize === 'small',
+          [`${prefixCls}-affix-wrapper-lg`]: mergedSize === 'large',
+          [`${prefixCls}-affix-wrapper-rtl`]: direction === 'rtl',
+          [`${prefixCls}-affix-wrapper-borderless`]: !bordered,
+        },
+        getStatusClassNames(`${prefixCls}-affix-wrapper`, mergedStatus, hasFeedback),
+      )}
+      wrapperClassName={classNames({
+        [`${prefixCls}-group-rtl`]: direction === 'rtl',
+      })}
+      groupClassName={classNames(
+        {
+          [`${prefixCls}-group-wrapper-sm`]: mergedSize === 'small',
+          [`${prefixCls}-group-wrapper-lg`]: mergedSize === 'large',
+          [`${prefixCls}-group-wrapper-rtl`]: direction === 'rtl',
+        },
+        getStatusClassNames(`${prefixCls}-group-wrapper`, mergedStatus, hasFeedback),
+      )}
+    />
+  );
+});
+
+export default Input;

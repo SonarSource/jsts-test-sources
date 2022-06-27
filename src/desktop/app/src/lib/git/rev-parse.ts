@@ -1,37 +1,58 @@
-import * as Path from 'path'
-
 import { git } from './core'
-import { Repository } from '../../models/repository'
+import { directoryExists } from '../directory-exists'
+import { resolve } from 'path'
 
-/** Get the git dir of the path. */
-export async function getGitDir(path: string): Promise<string | null> {
-  const result = await git([ 'rev-parse', '--git-dir' ], path, 'getGitDir', { successExitCodes: new Set([ 0, 128 ]) })
-  // Exit code 128 means it was run in a directory that's not a git
-  // repository.
-  if (result.exitCode === 128) {
-    return null
-  }
-
-  const gitDir = result.stdout
-  const trimmedDir = gitDir.trim()
-  return Path.join(path, trimmedDir)
-}
+export type RepositoryType =
+  | { kind: 'bare' }
+  | { kind: 'regular'; topLevelWorkingDirectory: string }
+  | { kind: 'missing' }
+  | { kind: 'unsafe'; path: string }
 
 /**
- * Attempts to dereference the HEAD symbolic link to a commit sha.
- * Returns null if HEAD is unborn.
+ * Attempts to fulfill the work of isGitRepository and isBareRepository while
+ * requiring only one Git process to be spawned.
+ *
+ * Returns 'bare', 'regular', or 'missing' if the repository couldn't be
+ * found.
  */
-export async function resolveHEAD(repository: Repository): Promise<string | null> {
-  const result = await git([ 'rev-parse', '--verify', 'HEAD^{commit}' ], repository.path, 'resolveHEAD', { successExitCodes: new Set([ 0, 128 ]) })
-  if (result.exitCode === 0) {
-    return result.stdout
-  } else {
-    return null
+export async function getRepositoryType(path: string): Promise<RepositoryType> {
+  if (!(await directoryExists(path))) {
+    return { kind: 'missing' }
   }
-}
 
-/** Is the path a git repository? */
-export async function isGitRepository(path: string): Promise<boolean> {
-  const result = await getGitDir(path)
-  return !!result
+  try {
+    const result = await git(
+      ['rev-parse', '--is-bare-repository', '--show-cdup'],
+      path,
+      'getRepositoryType',
+      { successExitCodes: new Set([0, 128]) }
+    )
+
+    if (result.exitCode === 0) {
+      const [isBare, cdup] = result.stdout.split('\n', 2)
+
+      return isBare === 'true'
+        ? { kind: 'bare' }
+        : { kind: 'regular', topLevelWorkingDirectory: resolve(path, cdup) }
+    }
+
+    const unsafeMatch =
+      /fatal: unsafe repository \('(.+)\' is owned by someone else\)/.exec(
+        result.stderr
+      )
+    if (unsafeMatch) {
+      return { kind: 'unsafe', path: unsafeMatch[1] }
+    }
+
+    return { kind: 'missing' }
+  } catch (err) {
+    // This could theoretically mean that the Git executable didn't exist but
+    // in reality it's almost always going to be that the process couldn't be
+    // launched inside of `path` meaning it didn't exist. This would constitute
+    // a race condition given that we stat the path before executing Git.
+    if (err.code === 'ENOENT') {
+      return { kind: 'missing' }
+    }
+    throw err
+  }
 }

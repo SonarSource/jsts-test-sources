@@ -23,37 +23,41 @@ enum SignInType {
   Enterprise,
 }
 
-export class Accounts extends React.Component<IAccountsProps, void> {
+export class Accounts extends React.Component<IAccountsProps, {}> {
   public render() {
     return (
-      <DialogContent className='accounts-tab'>
+      <DialogContent className="accounts-tab">
         <h2>GitHub.com</h2>
-        {this.props.dotComAccount ? this.renderAccount(this.props.dotComAccount) : this.renderSignIn(SignInType.DotCom)}
+        {this.props.dotComAccount
+          ? this.renderAccount(this.props.dotComAccount)
+          : this.renderSignIn(SignInType.DotCom)}
 
-        <h2>Enterprise</h2>
-        {this.props.enterpriseAccount ? this.renderAccount(this.props.enterpriseAccount) : this.renderSignIn(SignInType.Enterprise)}
+        <h2>GitHub Enterprise</h2>
+        {this.props.enterpriseAccount
+          ? this.renderAccount(this.props.enterpriseAccount)
+          : this.renderSignIn(SignInType.Enterprise)}
       </DialogContent>
     )
   }
 
   private renderAccount(account: Account) {
-    const found = lookupPreferredEmail(account.emails)
-    const email = found ? found.email : ''
-
     const avatarUser: IAvatarUser = {
       name: account.name,
-      email: email,
+      email: lookupPreferredEmail(account),
       avatarURL: account.avatarURL,
+      endpoint: account.endpoint,
     }
 
     return (
-      <Row className='account-info'>
+      <Row className="account-info">
         <Avatar user={avatarUser} />
-        <div className='user-info'>
-          <div className='name'>{account.name}</div>
-          <div className='login'>@{account.login}</div>
+        <div className="user-info">
+          <div className="name">{account.name}</div>
+          <div className="login">@{account.login}</div>
         </div>
-        <Button onClick={this.logout(account)}>{__DARWIN__ ? 'Sign Out' : 'Sign out'}</Button>
+        <Button onClick={this.logout(account)}>
+          {__DARWIN__ ? 'Sign Out' : 'Sign out'}
+        </Button>
       </Row>
     )
   }
@@ -70,17 +74,27 @@ export class Accounts extends React.Component<IAccountsProps, void> {
     const signInTitle = __DARWIN__ ? 'Sign In' : 'Sign in'
     switch (type) {
       case SignInType.DotCom: {
-
         return (
-          <CallToAction actionTitle={signInTitle} onAction={this.onDotComSignIn}>
-            <div>Sign in to your GitHub.com account to access your repositories.</div>
+          <CallToAction
+            actionTitle={signInTitle}
+            onAction={this.onDotComSignIn}
+          >
+            <div>
+              Sign in to your GitHub.com account to access your repositories.
+            </div>
           </CallToAction>
         )
       }
       case SignInType.Enterprise:
         return (
-          <CallToAction actionTitle={signInTitle} onAction={this.onEnterpriseSignIn}>
-            <div>If you have a GitHub Enterprise account at work, sign in to it to get access to your repositories.</div>
+          <CallToAction
+            actionTitle={signInTitle}
+            onAction={this.onEnterpriseSignIn}
+          >
+            <div>
+              If you have a GitHub Enterprise or AE account at work, sign in to
+              it to get access to your repositories.
+            </div>
           </CallToAction>
         )
       default:

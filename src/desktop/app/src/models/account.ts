@@ -1,15 +1,15 @@
-import { IEmail } from './email'
-import { getDotComAPIEndpoint } from '../lib/api'
+import { getDotComAPIEndpoint, IAPIEmail } from '../lib/api'
 
-/** The data-only interface for Account for transport across IPC. */
-export interface IAccount {
-  readonly token: string
-  readonly login: string
-  readonly endpoint: string
-  readonly emails: ReadonlyArray<IEmail>
-  readonly avatarURL: string
-  readonly id: number
-  readonly name: string
+/**
+ * Returns a value indicating whether two account instances
+ * can be considered equal. Equality is determined by comparing
+ * the two instances' endpoints and user id. This allows
+ * us to keep receiving updated Account details from the API
+ * while still maintaining the association between repositories
+ * and a particular account.
+ */
+export function accountEquals(x: Account, y: Account) {
+  return x.endpoint === y.endpoint && x.id === y.id
 }
 
 /**
@@ -17,43 +17,52 @@ export interface IAccount {
  *
  * This contains a token that will be used for operations that require authentication.
  */
-export class Account implements IAccount {
-  /** The access token used to perform operations on behalf of this account */
-  public readonly token: string
-  /** The login name for this account  */
-  public readonly login: string
-  /** The server for this account - GitHub or a GitHub Enterprise instance */
-  public readonly endpoint: string
-  /** The current list of email addresses associated with the account */
-  public readonly emails: ReadonlyArray<IEmail>
-  /** The profile URL to render for this account */
-  public readonly avatarURL: string
-  /** The database id for this account */
-  public readonly id: number
-  /** The friendly name associated with this account */
-  public readonly name: string
-
-  /** Create a new Account from some JSON. */
-  public static fromJSON(obj: IAccount): Account {
-    return new Account(obj.login, obj.endpoint, obj.token, obj.emails, obj.avatarURL, obj.id, obj.name)
-  }
-
+export class Account {
   /** Create an account which can be used to perform unauthenticated API actions */
   public static anonymous(): Account {
-    return new Account('', getDotComAPIEndpoint(), '', [ ], '', -1, '')
+    return new Account('', getDotComAPIEndpoint(), '', [], '', -1, '')
   }
 
-  public constructor(login: string, endpoint: string, token: string, emails: ReadonlyArray<IEmail>, avatarURL: string, id: number, name: string) {
-    this.login = login
-    this.endpoint = endpoint
-    this.token = token
-    this.emails = emails
-    this.avatarURL = avatarURL
-    this.id = id
-    this.name = name
-  }
+  /**
+   * Create an instance of an account
+   *
+   * @param login The login name for this account
+   * @param endpoint The server for this account - GitHub or a GitHub Enterprise instance
+   * @param token The access token used to perform operations on behalf of this account
+   * @param emails The current list of email addresses associated with the account
+   * @param avatarURL The profile URL to render for this account
+   * @param id The GitHub.com or GitHub Enterprise database id for this account.
+   * @param name The friendly name associated with this account
+   */
+  public constructor(
+    public readonly login: string,
+    public readonly endpoint: string,
+    public readonly token: string,
+    public readonly emails: ReadonlyArray<IAPIEmail>,
+    public readonly avatarURL: string,
+    public readonly id: number,
+    public readonly name: string
+  ) {}
 
   public withToken(token: string): Account {
-    return new Account(this.login, this.endpoint, token, this.emails, this.avatarURL, this.id, this.name)
+    return new Account(
+      this.login,
+      this.endpoint,
+      token,
+      this.emails,
+      this.avatarURL,
+      this.id,
+      this.name
+    )
+  }
+
+  /**
+   * Get a name to display
+   *
+   * This will by default return the 'name' as it is the friendly name.
+   * However, if not defined, we return the login
+   */
+  public get friendlyName(): string {
+    return this.name !== '' ? this.name : this.login
   }
 }

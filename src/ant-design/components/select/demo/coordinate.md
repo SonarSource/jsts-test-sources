@@ -1,5 +1,5 @@
 ---
-order: 6
+order: 7
 title:
   zh-CN: 联动
   en-US: coordinate
@@ -17,48 +17,47 @@ Coordinating the selection of provinces and cities is a common use case and demo
 
 Using the [Cascader](/components/cascader) component is strongly recommended instead as it is more flexible and capable.
 
-
-````jsx
+```tsx
 import { Select } from 'antd';
-const Option = Select.Option;
+import React, { useState } from 'react';
 
+const { Option } = Select;
 const provinceData = ['Zhejiang', 'Jiangsu'];
 const cityData = {
   Zhejiang: ['Hangzhou', 'Ningbo', 'Wenzhou'],
   Jiangsu: ['Nanjing', 'Suzhou', 'Zhenjiang'],
 };
 
-class App extends React.Component {
-  state = {
-    cities: cityData[provinceData[0]],
-    secondCity: cityData[provinceData[0]][0],
-  }
-  handleProvinceChange = (value) => {
-    this.setState({
-      cities: cityData[value],
-      secondCity: cityData[value][0],
-    });
-  }
-  onSecondCityChange = (value) => {
-    this.setState({
-      secondCity: value,
-    });
-  }
-  render() {
-    const provinceOptions = provinceData.map(province => <Option key={province}>{province}</Option>);
-    const cityOptions = this.state.cities.map(city => <Option key={city}>{city}</Option>);
-    return (
-      <div>
-        <Select defaultValue={provinceData[0]} style={{ width: 90 }} onChange={this.handleProvinceChange}>
-          {provinceOptions}
-        </Select>
-        <Select value={this.state.secondCity} style={{ width: 90 }} onChange={this.onSecondCityChange}>
-          {cityOptions}
-        </Select>
-      </div>
-    );
-  }
-}
+type CityName = keyof typeof cityData;
 
-ReactDOM.render(<App />, mountNode);
-````
+const App: React.FC = () => {
+  const [cities, setCities] = useState(cityData[provinceData[0] as CityName]);
+  const [secondCity, setSecondCity] = useState(cityData[provinceData[0] as CityName][0]);
+
+  const handleProvinceChange = (value: CityName) => {
+    setCities(cityData[value]);
+    setSecondCity(cityData[value][0]);
+  };
+
+  const onSecondCityChange = (value: CityName) => {
+    setSecondCity(value);
+  };
+
+  return (
+    <>
+      <Select defaultValue={provinceData[0]} style={{ width: 120 }} onChange={handleProvinceChange}>
+        {provinceData.map(province => (
+          <Option key={province}>{province}</Option>
+        ))}
+      </Select>
+      <Select style={{ width: 120 }} value={secondCity} onChange={onSecondCityChange}>
+        {cities.map(city => (
+          <Option key={city}>{city}</Option>
+        ))}
+      </Select>
+    </>
+  );
+};
+
+export default App;
+```

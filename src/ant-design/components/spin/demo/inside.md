@@ -1,6 +1,6 @@
 ---
 order: 2
-title: 
+title:
   zh-CN: 容器
   en-US: Inside a container
 ---
@@ -13,23 +13,32 @@ title:
 
 Spin in a container.
 
-````jsx
+```tsx
 import { Spin } from 'antd';
+import React from 'react';
 
-ReactDOM.render(
+const App: React.FC = () => (
   <div className="example">
     <Spin />
   </div>
-, mountNode);
-````
+);
 
-````css
+export default App;
+```
+
+```css
 .example {
-  text-align: center;
-  background: rgba(0,0,0,0.05);
-  border-radius: 4px;
+  margin: 20px 0;
   margin-bottom: 20px;
   padding: 30px 50px;
-  margin: 20px 0;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
 }
-````
+```
+
+<style>
+  .example {
+    background: rgba(255,255,255,0.08);
+  }
+</style>

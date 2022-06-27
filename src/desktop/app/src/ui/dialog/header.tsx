@@ -1,12 +1,20 @@
 import * as React from 'react'
-import { Octicon, OcticonSymbol } from '../octicons'
-import { assertNever } from '../../lib/fatal-error'
+import { Octicon, syncClockwise } from '../octicons'
+import * as OcticonSymbol from '../octicons/octicons.generated'
 
 interface IDialogHeaderProps {
   /**
    * The dialog title text. Will be rendered top and center in a dialog.
+   * You can also pass JSX for custom styling
    */
-  readonly title: string
+  readonly title: string | JSX.Element
+
+  /**
+   * An optional id for the h1 element that contains the title of this
+   * dialog. Used to aid in accessibility by allowing the h1 to be referenced
+   * in an aria-labeledby/aria-describedby attributed
+   */
+  readonly titleId?: string
 
   /**
    * Whether or not the implementing dialog is dismissable. This controls
@@ -19,14 +27,6 @@ interface IDialogHeaderProps {
    * ways described in the dismissable prop.
    */
   readonly onDismissed?: () => void
-
-  /**
-   * An optional type of dialog header. If the type is error or warning
-   * an applicable icon will be rendered top left in the dialog.
-   *
-   * Defaults to 'normal' if omitted.
-   */
-  readonly type?: 'normal' | 'warning' | 'error'
 
   /**
    * Whether or not the dialog contents are currently involved in processing
@@ -46,8 +46,7 @@ interface IDialogHeaderProps {
  * custom content needs to be rendered in a dialog and in that scenario it
  * might be necessary to use this component directly.
  */
-export class DialogHeader extends React.Component<IDialogHeaderProps, void> {
-
+export class DialogHeader extends React.Component<IDialogHeaderProps, {}> {
   private onCloseButtonClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (this.props.onDismissed) {
       this.props.onDismissed()
@@ -65,35 +64,32 @@ export class DialogHeader extends React.Component<IDialogHeaderProps, void> {
     // I don't know and we may want to revisit it at some point but for
     // now an anchor will have to do.
     return (
-      <a className='close' onClick={this.onCloseButtonClick}>
+      <a
+        className="close"
+        onClick={this.onCloseButtonClick}
+        aria-label="close"
+        role="button"
+      >
         <Octicon symbol={OcticonSymbol.x} />
       </a>
     )
   }
 
-  private renderIcon() {
-
-    if (this.props.loading === true) {
-      return <Octicon className='icon spin' symbol={OcticonSymbol.sync} />
-    }
-
-    if (this.props.type === undefined || this.props.type === 'normal') {
-      return null
-    } else if (this.props.type === 'error') {
-      return <Octicon className='icon' symbol={OcticonSymbol.stop} />
-    } else if (this.props.type === 'warning') {
-      return <Octicon className='icon' symbol={OcticonSymbol.alert} />
-    }
-
-    return assertNever(this.props.type, `Unknown dialog header type ${this.props.type}`)
+  private renderTitle() {
+    return <h1 id={this.props.titleId}>{this.props.title}</h1>
   }
 
   public render() {
+    const spinner = this.props.loading ? (
+      <Octicon className="icon spin" symbol={syncClockwise} />
+    ) : null
+
     return (
-      <header className='dialog-header'>
-        {this.renderIcon()}
-        <h1>{this.props.title}</h1>
+      <header className="dialog-header">
+        {this.renderTitle()}
+        {spinner}
         {this.renderCloseButton()}
+        {this.props.children}
       </header>
     )
   }

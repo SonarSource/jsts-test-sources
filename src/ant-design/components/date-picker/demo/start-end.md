@@ -1,99 +1,83 @@
 ---
-order: 6
+order: 99
 title:
   zh-CN: 自定义日期范围选择
   en-US: Customized Range Picker
+debug: true
 ---
 
 ## zh-CN
 
 当 `RangePicker` 无法满足业务需求时，可以使用两个 `DatePicker` 实现类似的功能。
-> * 通过设置 `disabledDate` 方法，来约束开始和结束日期。
-> * 通过 `open` `onOpenChange` 来优化交互。
+
+> - 通过设置 `disabledDate` 方法，来约束开始和结束日期。
+> - 通过 `open` `onOpenChange` 来优化交互。
 
 ## en-US
 
-When `RangePicker` is not satisfied your requirements, try to implement similar functionality with two `DatePicker`.
-> * Use the `disabledDate` property to limit the start and end dates.
-> * Imporve user experience with `open` `onOpenChange`.
+When `RangePicker` does not satisfied your requirements, try to implement similar functionality with two `DatePicker`.
 
-````jsx
-import { DatePicker } from 'antd';
+> - Use the `disabledDate` property to limit the start and end dates.
+> - Improve user experience with `open` and `onOpenChange`.
 
-class DateRange extends React.Component {
-  state = {
-    startValue: null,
-    endValue: null,
-    endOpen: false,
+```tsx
+import { DatePicker, Space } from 'antd';
+import type { Moment } from 'moment';
+import React, { useState } from 'react';
+
+const App: React.FC = () => {
+  const [startValue, setStartValue] = useState<Moment | null>(null);
+  const [endValue, setEndValue] = useState<Moment | null>(null);
+  const [endOpen, setEndOpen] = useState(false);
+
+  const disabledStartDate = (startDate: Moment) => {
+    if (!startDate || !endValue) {
+      return false;
+    }
+    return startDate.valueOf() > endValue.valueOf();
   };
 
-  disabledStartDate = (startValue) => {
-    const endValue = this.state.endValue;
-    if (!startValue || !endValue) {
+  const disabledEndDate = (endDate: Moment) => {
+    if (!endDate || !startValue) {
       return false;
     }
-    return startValue.valueOf() > endValue.valueOf();
-  }
+    return endDate.valueOf() <= startValue.valueOf();
+  };
 
-  disabledEndDate = (endValue) => {
-    const startValue = this.state.startValue;
-    if (!endValue || !startValue) {
-      return false;
-    }
-    return endValue.valueOf() <= startValue.valueOf();
-  }
-
-  onChange = (field, value) => {
-    this.setState({
-      [field]: value,
-    });
-  }
-
-  onStartChange = (value) => {
-    this.onChange('startValue', value);
-  }
-
-  onEndChange = (value) => {
-    this.onChange('endValue', value);
-  }
-
-  handleStartOpenChange = (open) => {
+  const handleStartOpenChange = (open: boolean) => {
     if (!open) {
-      this.setState({ endOpen: true });
+      setEndOpen(true);
     }
-  }
+  };
 
-  handleEndOpenChange = (open) => {
-    this.setState({ endOpen: open });
-  }
+  const handleEndOpenChange = (open: boolean) => {
+    setEndOpen(open);
+  };
 
-  render() {
-    const { startValue, endValue, endOpen } = this.state;
-    return (
-      <div>
-        <DatePicker
-          disabledDate={this.disabledStartDate}
-          showTime
-          format="YYYY-MM-DD HH:mm:ss"
-          value={startValue}
-          placeholder="Start"
-          onChange={this.onStartChange}
-          onOpenChange={this.handleStartOpenChange}
-        />
-        <DatePicker
-          disabledDate={this.disabledEndDate}
-          showTime
-          format="YYYY-MM-DD HH:mm:ss"
-          value={endValue}
-          placeholder="End"
-          onChange={this.onEndChange}
-          open={endOpen}
-          onOpenChange={this.handleEndOpenChange}
-        />
-      </div>
-    );
-  }
-}
+  return (
+    <Space>
+      <DatePicker
+        disabledDate={disabledStartDate}
+        showTime
+        format="YYYY-MM-DD HH:mm:ss"
+        value={startValue}
+        placeholder="Start"
+        onChange={setStartValue}
+        onOpenChange={handleStartOpenChange}
+      />
+      <DatePicker
+        disabledDate={disabledEndDate}
+        showTime
+        format="YYYY-MM-DD HH:mm:ss"
+        value={endValue}
+        placeholder="End"
+        onChange={setEndValue}
+        open={endOpen}
+        onOpenChange={handleEndOpenChange}
+      />
+    </Space>
+  );
+};
 
-ReactDOM.render(<DateRange />, mountNode);
-````
+export default App;
+```

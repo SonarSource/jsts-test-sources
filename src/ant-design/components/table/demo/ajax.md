@@ -1,5 +1,5 @@
 ---
-order: 9
+order: 10
 title:
   en-US: Ajax
   zh-CN: 远程加载数据
@@ -11,95 +11,128 @@ title:
 
 另外，本例也展示了筛选排序功能如何交给服务端实现，列不需要指定具体的 `onFilter` 和 `sorter` 函数，而是在把筛选和排序的参数发到服务端来处理。
 
+当使用 `rowSelection` 时，请设置 `rowSelection.preserveSelectedRowKeys` 属性以保留 `key`。
+
 **注意，此示例使用 [模拟接口](https://randomuser.me)，展示数据可能不准确，请打开网络面板查看请求。**
+
+> 🛎️ 想要 3 分钟实现？试试 [ProTable](https://procomponents.ant.design/components/table)！
 
 ## en-US
 
-This example shows how to fetch and present data from remote server, and how to implement filtering and sorting in server side by sending related parameters to server.
+This example shows how to fetch and present data from a remote server, and how to implement filtering and sorting in server side by sending related parameters to server.
+
+Setting `rowSelection.preserveSelectedRowKeys` to keep the `key` when enable selection.
 
 **Note, this example use [Mock API](https://randomuser.me) that you can look up in Network Console.**
 
-````jsx
+```tsx
 import { Table } from 'antd';
-import reqwest from 'reqwest';
+import type { ColumnsType, TablePaginationConfig } from 'antd/lib/table';
+import type { FilterValue, SorterResult } from 'antd/lib/table/interface';
+import qs from 'qs';
+import React, { useEffect, useState } from 'react';
 
-const columns = [{
-  title: 'Name',
-  dataIndex: 'name',
-  sorter: true,
-  render: name => `${name.first} ${name.last}`,
-  width: '20%',
-}, {
-  title: 'Gender',
-  dataIndex: 'gender',
-  filters: [
-    { text: 'Male', value: 'male' },
-    { text: 'Female', value: 'female' },
-  ],
-  width: '20%',
-}, {
-  title: 'Email',
-  dataIndex: 'email',
-}];
-
-class App extends React.Component {
-  state = {
-    data: [],
-    pagination: {},
-    loading: false,
+interface DataType {
+  name: {
+    first: string;
+    last: string;
   };
-  handleTableChange = (pagination, filters, sorter) => {
-    const pager = { ...this.state.pagination };
-    pager.current = pagination.current;
-    this.setState({
-      pagination: pager,
-    });
-    this.fetch({
-      results: pagination.pageSize,
-      page: pagination.current,
-      sortField: sorter.field,
-      sortOrder: sorter.order,
-      ...filters,
-    });
-  }
-  fetch = (params = {}) => {
-    console.log('params:', params);
-    this.setState({ loading: true });
-    reqwest({
-      url: 'https://randomuser.me/api',
-      method: 'get',
-      data: {
-        results: 10,
-        ...params,
-      },
-      type: 'json',
-    }).then((data) => {
-      const pagination = { ...this.state.pagination };
-      // Read total count from server
-      // pagination.total = data.totalCount;
-      pagination.total = 200;
-      this.setState({
-        loading: false,
-        data: data.results,
-        pagination,
-      });
-    });
-  }
-  componentDidMount() {
-    this.fetch();
-  }
-  render() {
-    return (
-      <Table columns={columns}
-        rowKey={record => record.registered}
-        dataSource={this.state.data}
-        pagination={this.state.pagination}
-        loading={this.state.loading}
-        onChange={this.handleTableChange}
-      />
-    );
-  }
+  gender: string;
+  email: string;
+  login: {
+    uuid: string;
+  };
 }
 
-ReactDOM.render(<App />, mountNode);
-````
+interface Params {
+  pagination?: TablePaginationConfig;
+  sorter?: SorterResult<any> | SorterResult<any>[];
+  total?: number;
+  sortField?: string;
+  sortOrder?: string;
+}
+
+const columns: ColumnsType<DataType> = [
+  {
+    title: 'Name',
+    dataIndex: 'name',
+    sorter: true,
+    render: name => `${name.first} ${name.last}`,
+    width: '20%',
+  },
+  {
+    title: 'Gender',
+    dataIndex: 'gender',
+    filters: [
+      { text: 'Male', value: 'male' },
+      { text: 'Female', value: 'female' },
+    ],
+    width: '20%',
+  },
+  {
+    title: 'Email',
+    dataIndex: 'email',
+  },
+];
+
+const getRandomuserParams = (params: Params) => ({
+  results: params.pagination?.pageSize,
+  page: params.pagination?.current,
+  ...params,
+});
+
+const App: React.FC = () => {
+  const [data, setData] = useState();
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState<TablePaginationConfig>({
+    current: 1,
+    pageSize: 10,
+  });
+
+  const fetchData = (params: Params = {}) => {
+    setLoading(true);
+    fetch(`https://randomuser.me/api?${qs.stringify(getRandomuserParams(params))}`)
+      .then(res => res.json())
+      .then(({ results }) => {
+        setData(results);
+        setLoading(false);
+        setPagination({
+          ...params.pagination,
+          total: 200,
+          // 200 is mock data, you should read it from server
+          // total: data.totalCount,
+        });
+      });
+  };
+
+  useEffect(() => {
+    fetchData({ pagination });
+  }, []);
+
+  const handleTableChange = (
+    newPagination: TablePaginationConfig,
+    filters: Record<string, FilterValue>,
+    sorter: SorterResult<DataType>,
+  ) => {
+    fetchData({
+      sortField: sorter.field as string,
+      sortOrder: sorter.order as string,
+      pagination: newPagination,
+      ...filters,
+    });
+  };
+
+  return (
+    <Table
+      columns={columns}
+      rowKey={record => record.login.uuid}
+      dataSource={data}
+      pagination={pagination}
+      loading={loading}
+      onChange={handleTableChange}
+    />
+  );
+};
+
+export default App;
+```

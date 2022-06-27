@@ -1,25 +1,100 @@
+import { mount } from 'enzyme';
 import React from 'react';
-import TestUtils from 'react-dom/test-utils';
 import Popover from '..';
+import mountTest from '../../../tests/shared/mountTest';
+import { render } from '../../../tests/utils';
+import ConfigProvider from '../../config-provider';
 
 describe('Popover', () => {
+  mountTest(Popover);
+
   it('should show overlay when trigger is clicked', () => {
-    const popover = TestUtils.renderIntoDocument(
+    const ref = React.createRef();
+
+    const popover = mount(
+      <Popover ref={ref} content="console.log('hello world')" title="code" trigger="click">
+        <span>show me your code</span>
+      </Popover>,
+    );
+
+    expect(ref.current.getPopupDomNode()).toBe(null);
+
+    popover.find('span').simulate('click');
+    expect(popover.find('Trigger PopupInner').props().visible).toBeTruthy();
+  });
+
+  it('shows content for render functions', () => {
+    const renderTitle = () => 'some-title';
+    const renderContent = () => 'some-content';
+    const ref = React.createRef();
+
+    const popover = mount(
+      <Popover ref={ref} content={renderContent} title={renderTitle} trigger="click">
+        <span>show me your code</span>
+      </Popover>,
+    );
+
+    popover.find('span').simulate('click');
+
+    const popup = ref.current.getPopupDomNode();
+    expect(popup).not.toBe(null);
+    expect(popup.innerHTML).toContain('some-title');
+    expect(popup.innerHTML).toContain('some-content');
+    expect(popup.innerHTML).toMatchSnapshot();
+  });
+
+  it('handles empty title/content props safely', () => {
+    const ref = React.createRef();
+
+    const popover = mount(
+      <Popover trigger="click" ref={ref}>
+        <span>show me your code</span>
+      </Popover>,
+    );
+
+    popover.find('span').simulate('click');
+
+    const popup = ref.current.getPopupDomNode();
+    expect(popup).toBe(null);
+  });
+
+  it('should not render popover when the title & content props is empty', () => {
+    const ref = React.createRef();
+
+    const popover = mount(
+      <Popover trigger="click" ref={ref} content="">
+        <span>show me your code</span>
+      </Popover>,
+    );
+
+    popover.find('span').simulate('click');
+    const popup = ref.current.getPopupDomNode();
+
+    expect(popup).toBe(null);
+  });
+
+  it('props#overlay do not warn anymore', () => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    const overlay = jest.fn();
+    render(
       <Popover content="console.log('hello world')" title="code" trigger="click">
         <span>show me your code</span>
-      </Popover>
+      </Popover>,
     );
 
-    expect(popover.getPopupDomNode()).toBe(null);
+    expect(errorSpy).not.toHaveBeenCalled();
+    expect(overlay).not.toHaveBeenCalled();
+  });
 
-    TestUtils.Simulate.click(
-      TestUtils.findRenderedDOMComponentWithTag(popover, 'span')
+  it(`should be rendered correctly in RTL direction`, () => {
+    const wrapper = mount(
+      <ConfigProvider direction="rtl">
+        <Popover title="RTL" visible>
+          <span>show me your Rtl demo</span>
+        </Popover>
+      </ConfigProvider>,
     );
-
-    const popup = popover.getPopupDomNode();
-    expect(popup).not.toBe(null);
-    expect(popup.className).toContain('ant-popover-placement-top');
-    expect(popup.innerHTML).toMatch(/<div class="ant-popover-title".*?>code<\/div>/);
-    expect(popup.innerHTML).toMatch(/<div class="ant-popover-inner-content".*?>console\.log\('hello world'\)<\/div>/);
+    expect(wrapper.render()).toMatchSnapshot();
   });
 });

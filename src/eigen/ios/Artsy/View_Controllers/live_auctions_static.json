@@ -1,0 +1,138 @@
+{
+  "data": {
+    "me": {
+      "id": "abcd",
+      "paddle_number": "123456",
+      "bidders": [
+        {
+          "id": "123456",
+          "sale": {
+            "id": "54c7e8fa7261692b5acd0600",
+            "require_bidder_approval": true
+          },
+          "qualified_for_bidding": true
+        }
+      ]
+    },
+    "sale": {
+      "_id": "54c7e8fa7261692b5acd0600",
+      "id": "los-angeles-modern-auctions-march-2015",
+      "start_at": "2016-05-02T10:00:00+00:00",
+      "end_at": "2016-05-02T23:59:00+00:00",
+      "auction_state": "preview",
+      "name": "Los Angeles Modern Auctions - March 2015",
+      "is_with_buyers_premium": true,
+      "description": "",
+      "bid_increments": [
+        {
+          "from": 0,
+          "amount": 5000
+        },
+        {
+          "from": 100000,
+          "amount": 10000
+        },
+        {
+          "from": 200000,
+          "amount": 25000
+        },
+        {
+          "from": 500000,
+          "amount": 50000
+        },
+        {
+          "from": 1000000,
+          "amount": 100000
+        },
+        {
+          "from": 2000000,
+          "amount": 200000
+        },
+        {
+          "from": 5000000,
+          "amount": 500000
+        },
+        {
+          "from": 10000000,
+          "amount": 1000000
+        }
+      ],
+      "sale_artworks": {
+        "edges": [
+          {
+            "node": {
+              "_id": "54c7ecc27261692b5e420600",
+              "lot_label": "1",
+              "currency": "USD",
+              "symbol": "$",
+              "reserve_status": "reserve_met",
+              "low_estimate": { "cents": 200000 },
+              "high_estimate": { "cents": 300000 },
+              "estimate": "Estimate String",
+              "artwork": {
+                "title": "Cockroaches (from Insects Portfolio)",
+                "artist": {
+                  "name": "Ed Ruscha"
+                },
+                "artist_names": "Ed Ruscha",
+                "image": {
+                  "aspect_ratio": 1,
+                  "large": "https://d32dm0rphc51dk.cloudfront.net/0-AL7CEZ5IDjCWdNxwjmBg/large.jpg",
+                  "thumb": "https://d32dm0rphc51dk.cloudfront.net/0-AL7CEZ5IDjCWdNxwjmBg/tall.jpg"
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "_id": "54c7ed2a7261692bfa910200",
+              "lot_label": "2",
+              "currency": "USD",
+              "estimate": "Estimate String",
+              "symbol": "$",
+              "reserve_status": "reserve_met",
+              "low_estimate": { "cents": 200000 },
+              "high_estimate": { "cents": 300000 },
+              "artwork": {
+                "title": "Pearl Dust Combination (from Insects Portfolio)",
+                "artist": {
+                  "name": "Ed Ruscha"
+                },
+                "artist_names": "Ed Ruscha",
+                "image": {
+                  "aspect_ratio": 1,
+                  "large": "https://d32dm0rphc51dk.cloudfront.net/XkAtGqcI3DTjapCjtOhI2Q/large.jpg",
+                  "thumb": "https://d32dm0rphc51dk.cloudfront.net/XkAtGqcI3DTjapCjtOhI2Q/tall.jpg"
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "_id": "54c7eff17261692b51460200",
+              "lot_label": "3",
+              "currency": "USD",
+              "symbol": "$",
+              "estimate": "Estimate String",
+              "reserve_status": "reserve_met",
+              "low_estimate": { "cents": 700000 },
+              "high_estimate": { "cents": 900000 },
+              "artwork": {
+                "title": "Wedge with Puff",
+                "artist": {
+                  "name": "Peter Alexander"
+                },
+                "artist_names": "Peter Alexander",
+                "image": {
+                  "aspect_ratio": 1,
+                  "large": "https://d32dm0rphc51dk.cloudfront.net/hSlwncI_Ipf9tLQUOdtLuQ/large.jpg",
+                  "thumb": "https://d32dm0rphc51dk.cloudfront.net/hSlwncI_Ipf9tLQUOdtLuQ/tall.jpg"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

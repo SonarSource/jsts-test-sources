@@ -1,490 +1,286 @@
-@import "../../style/themes/default";
-@import "../../style/mixins/index";
-@import "../../input/style/mixin";
-@import "../../button/style/mixin";
-@import "../../grid/style/mixin";
-@import "./mixin";
+@import '../../style/themes/index';
+@import '../../style/mixins/index';
+@import '../../input/style/mixin';
+@import '../../button/style/mixin';
+@import '../../grid/style/mixin';
+@import './components';
+@import './inline';
+@import './horizontal';
+@import './vertical';
+@import './status';
+@import './mixin';
 
-@form-prefix-cls: ~"@{ant-prefix}-form";
-@form-component-height: @input-height-lg;
+@form-prefix-cls: ~'@{ant-prefix}-form';
+@form-item-prefix-cls: ~'@{form-prefix-cls}-item';
+@form-font-height: ceil(@font-size-base * @line-height-base);
 
-.reset-form();
-
-label {
-  position: relative;
-
-  > .@{iconfont-css-prefix} {
-    vertical-align: top;
-    font-size: @font-size-base;
-  }
-}
-
-.@{form-prefix-cls}-item-required:before {
-  display: inline-block;
-  margin-right: 4px;
-  content: "*";
-  font-family: SimSun;
-  line-height: 1;
-  font-size: @font-size-base;
-  color: @label-required-color;
-  .@{form-prefix-cls}-hide-required-mark & {
-    display: none;
-  }
-}
-
-// Radio && Checkbox
-input[type="radio"],
-input[type="checkbox"] {
-  &[disabled],
-  &.disabled {
-    cursor: not-allowed;
-  }
-}
-
-// These classes are used directly on <label>s
-.@{ant-prefix}-radio-inline,
-.@{ant-prefix}-radio-vertical,
-.@{ant-prefix}-checkbox-inline,
-.@{ant-prefix}-checkbox-vertical {
-  &.disabled {
-    cursor: not-allowed;
-  }
-}
-
-// These classes are used on elements with <label> descendants
-.@{ant-prefix}-radio,
-.@{ant-prefix}-checkbox {
-  &.disabled {
-    label {
-      cursor: not-allowed;
-    }
-  }
-}
-
-// Form items
-// You should wrap labels and controls in .@{form-prefix-cls}-item for optimum spacing
-.@{form-prefix-cls}-item {
-  font-size: @font-size-base;
-  margin-bottom: @form-item-margin-bottom;
-  color: @text-color;
-  vertical-align: top;
-
-  // nested FormItem
-  & > &,
-  & :not(.@{form-prefix-cls}) > & {
-    margin-bottom: -@form-item-margin-bottom;
-  }
-
-  &-control {
-    line-height: @form-component-height;
-    position: relative;
-    .clearfix;
-  }
-
-  &-with-help {
-    margin-bottom: @form-item-margin-bottom - @font-size-base * @line-height-base;
-  }
-
-  &-label {
-    text-align: right;
-    vertical-align: middle;
-    line-height: @form-component-height;
-    display: inline-block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-
-    label {
-      color: @label-color;
-
-      &:after {
-        & when (@form-item-trailing-colon=true) {
-          content: ":";
-        }
-        & when not (@form-item-trailing-colon=true) {
-          content: " ";
-        }
-        margin: 0 8px 0 2px;
-        position: relative;
-        top: -0.5px;
-      }
-    }
-  }
-
-  .@{ant-prefix}-switch {
-    margin: 4px 0;
-  }
-
-  &-no-colon &-label label:after {
-    content: " ";
-  }
-}
-
-.@{form-prefix-cls}-explain {
-  line-height: 1.5;
-}
-
-.@{form-prefix-cls}-explain,
-.@{form-prefix-cls}-extra {
-  color: @text-color-secondary;
-}
-
-.@{form-prefix-cls}-text {
-  display: inline-block;
-  padding-right: 8px;
-}
-
-.@{form-prefix-cls}-split {
-  display: block;
-  text-align: center;
-}
-
-// 表单下的输入框尺寸唯一: 大尺寸
-form {
-  .has-feedback {
-    .@{ant-prefix}-input {
-      padding-right: 24px;
-    }
-
-    // Fix overlapping between feedback icon and <Select>'s arrow.
-    // https://github.com/ant-design/ant-design/issues/4431
-    .@{ant-prefix}-select {
-      &-arrow,
-      &-selection__clear {
-        right: 28px;
-      }
-      &-selection-selected-value {
-        padding-right: 42px;
-      }
-    }
-    .@{ant-prefix}-cascader-picker {
-      &-arrow {
-        padding-right: 36px;
-      }
-      &-clear {
-        right: 28px;
-      }
-    }
-
-    // Fix issue: https://github.com/ant-design/ant-design/issues/4783
-    .@{ant-prefix}-calendar-picker {
-      &-icon,
-      &-clear {
-        right: 28px;
-      }
-    }
-  }
-
-  textarea.@{ant-prefix}-input {
-    height: auto;
-  }
-
-  // input[type=file]
-  .@{ant-prefix}-upload {
-    background: transparent;
-  }
-
-  input[type="radio"],
-  input[type="checkbox"] {
-    width: 14px;
-    height: 14px;
-  }
-
-  // Radios and checkboxes on same line
-  .@{ant-prefix}-radio-inline,
-  .@{ant-prefix}-checkbox-inline {
-    display: inline-block;
-    vertical-align: middle;
-    font-weight: normal;
-    cursor: pointer;
-    margin-left: 8px;
-
-    &:first-child {
-      margin-left: 0;
-    }
-  }
-
-  .@{ant-prefix}-checkbox-vertical,
-  .@{ant-prefix}-radio-vertical {
-    display: block;
-  }
-
-  .@{ant-prefix}-checkbox-vertical + .@{ant-prefix}-checkbox-vertical,
-  .@{ant-prefix}-radio-vertical + .@{ant-prefix}-radio-vertical {
-    margin-left: 0;
-  }
-
-  .@{ant-prefix}-input-number {
-    margin-top: -1px;
-    margin-right: 8px;
-  }
-
-  .@{ant-prefix}-select,
-  .@{ant-prefix}-cascader-picker {
-    width: 100%;
-    &:only-child {
-      display: block;
-    }
-  }
-}
-
-// Input combined with select
-.@{ant-prefix}-input-group-wrap {
-  .@{ant-prefix}-select-selection {
-    border-bottom-left-radius: 0;
-    border-top-left-radius: 0;
-    &:hover {
-      border-color: @border-color-base;
-    }
-  }
-
-  .@{ant-prefix}-select-selection--single {
-    margin-left: -1px;
-    height: @input-height-lg;
-    background-color: #eee;
-    .@{ant-prefix}-select-selection__rendered {
-      padding-left: 8px;
-      padding-right: 25px;
-      line-height: 30px;
-    }
-  }
-
-  .@{ant-prefix}-select-open .@{ant-prefix}-select-selection {
-    border-color: @border-color-base;
-    box-shadow: none;
-  }
-}
-
-// Form layout
-//== Vertical Form
-.make-vertical-layout() {
-  padding: 0 0 8px;
-  display: block;
-  text-align: left;
-
-  label:after {
-    content: '';
-  }
-}
-.@{form-prefix-cls}-vertical .@{form-prefix-cls}-item-label,
-// when labelCol is 24, it is a vertical form
-.@{ant-prefix}-col-24.@{form-prefix-cls}-item-label,
-.@{ant-prefix}-col-xl-24.@{form-prefix-cls}-item-label {
-  .make-vertical-layout();
-}
-
-@media (max-width: @screen-xs-max) {
-  .@{ant-prefix}-col-xs-24.@{form-prefix-cls}-item-label {
-    .make-vertical-layout();
-  }
-}
-
-@media (max-width: @screen-sm-max) {
-  .@{ant-prefix}-col-sm-24.@{form-prefix-cls}-item-label {
-    .make-vertical-layout();
-  }
-}
-
-@media (max-width: @screen-md-max) {
-  .@{ant-prefix}-col-md-24.@{form-prefix-cls}-item-label {
-    .make-vertical-layout();
-  }
-}
-
-@media (max-width: @screen-lg-max) {
-  .@{ant-prefix}-col-lg-24.@{form-prefix-cls}-item-label {
-    .make-vertical-layout();
-  }
-}
-
-//== Inline Form
-.@{form-prefix-cls}-inline {
-  .@{form-prefix-cls}-item {
-    display: inline-block;
-    margin-right: 10px;
-    margin-bottom: 0;
-
-    &-with-help {
-      margin-bottom: 24px;
-    }
-
-    > div {
-      display: inline-block;
-      vertical-align: middle;
-    }
-  }
+.@{form-prefix-cls} {
+  .reset-component();
+  .reset-form();
 
   .@{form-prefix-cls}-text {
     display: inline-block;
+    padding-right: 8px;
   }
 
-  .has-feedback {
+  // ================================================================
+  // =                             Size                             =
+  // ================================================================
+  .formSize(@input-height) {
+    .@{form-item-prefix-cls}-label > label {
+      height: @input-height;
+    }
+
+    .@{form-item-prefix-cls}-control-input {
+      min-height: @input-height;
+    }
+  }
+
+  &-small {
+    .formSize(@input-height-sm);
+  }
+
+  &-large {
+    .formSize(@input-height-lg);
+  }
+}
+
+.explainAndExtraDistance(@num) when (@num >= 0) {
+  padding-top: floor(@num);
+}
+
+.explainAndExtraDistance(@num) when (@num < 0) {
+  margin-top: ceil(@num);
+  margin-bottom: ceil(@num);
+}
+
+// ================================================================
+// =                             Item                             =
+// ================================================================
+.@{form-item-prefix-cls} {
+  .reset-component();
+
+  margin-bottom: @form-item-margin-bottom;
+  vertical-align: top;
+  // We delay one frame (0.017s) here to let CSSMotion goes
+  transition: margin-bottom @animation-duration-slow 0.017s linear;
+
+  &-with-help {
+    margin-bottom: 0;
+    transition: none;
+  }
+
+  &-hidden,
+  &-hidden.@{ant-prefix}-row {
+    // https://github.com/ant-design/ant-design/issues/26141
+    display: none;
+  }
+
+  // ==============================================================
+  // =                            Label                           =
+  // ==============================================================
+  &-label {
     display: inline-block;
-  }
+    flex-grow: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-align: right;
+    vertical-align: middle;
 
-  // Fix https://github.com/ant-design/ant-design/issues/1040
-  .@{form-prefix-cls}-explain {
-    position: absolute;
-  }
-}
-
-// Validation state
-.has-success,
-.has-warning,
-.has-error,
-.is-validating {
-  &.has-feedback:after {
-    position: absolute;
-    top: 0;
-    right: 0;
-    visibility: visible;
-    pointer-events: none;
-    .square(@input-height-lg);
-    line-height: @input-height-lg;
-    text-align: center;
-    font-size: @font-size-lg;
-    animation: zoomIn .3s @ease-out-back;
-    .iconfont-font("");
-    z-index: 1;
-  }
-}
-
-.has-success {
-  &.has-feedback:after {
-    animation-name: diffZoomIn1 !important;
-  }
-}
-
-.has-error {
-  &.has-feedback:after {
-    animation-name: diffZoomIn2 !important;
-  }
-}
-
-.has-warning {
-  &.has-feedback:after {
-    animation-name: diffZoomIn3 !important;
-  }
-}
-
-.has-success {
-  &.has-feedback:after {
-    content: '\e630';
-    color: @success-color;
-  }
-}
-
-.has-warning {
-  .form-control-validation(@warning-color; @warning-color;);
-
-  &.has-feedback:after {
-    content: '\e62c';
-    color: @warning-color;
-  }
-
-  //select
-  .@{ant-prefix}-select {
-    &-selection {
-      border-color: @warning-color;
+    &-left {
+      text-align: left;
     }
-    &-open .@{ant-prefix}-select-selection,
-    &-focused .@{ant-prefix}-select-selection {
-      .active(@warning-color);
-    }
-  }
 
-  // arrow and icon
-  .@{ant-prefix}-calendar-picker-icon:after,
-  .@{ant-prefix}-picker-icon:after,
-  .@{ant-prefix}-select-arrow,
-  .@{ant-prefix}-cascader-picker-arrow {
-    color: @warning-color;
-  }
-
-  //input-number, timepicker
-  .@{ant-prefix}-input-number,
-  .@{ant-prefix}-time-picker-input {
-    border-color: @warning-color;
-    &-focused,
-    &:focus {
-      .active(@warning-color);
+    &-wrap {
+      overflow: unset;
+      line-height: (@line-height-base - 0.25em);
+      white-space: unset;
     }
-    &:not([disabled]):hover {
-      border-color: @warning-color;
-    }
-  }
-}
 
-.has-error {
-  .form-control-validation(@error-color; @error-color;);
+    > label {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      max-width: 100%;
+      height: @form-item-label-height;
+      color: @label-color;
+      font-size: @form-item-label-font-size;
 
-  &.has-feedback:after {
-    content: '\e62e';
-    color: @error-color;
-  }
+      > .@{iconfont-css-prefix} {
+        font-size: @form-item-label-font-size;
+        vertical-align: top;
+      }
 
-  //select
-  .@{ant-prefix}-select {
-    &-selection {
-      border-color: @error-color;
-    }
-    &-open .@{ant-prefix}-select-selection,
-    &-focused .@{ant-prefix}-select-selection {
-      .active(@error-color);
-    }
-  }
+      // Required mark
+      &.@{form-item-prefix-cls}-required:not(.@{form-item-prefix-cls}-required-mark-optional)::before {
+        display: inline-block;
+        margin-right: 4px;
+        color: @label-required-color;
+        font-size: @form-item-label-font-size;
+        font-family: SimSun, sans-serif;
+        line-height: 1;
+        content: '*';
 
-  // arrow and icon
-  .@{ant-prefix}-calendar-picker-icon:after,
-  .@{ant-prefix}-picker-icon:after,
-  .@{ant-prefix}-select-arrow,
-  .@{ant-prefix}-cascader-picker-arrow {
-    color: @error-color;
-  }
+        .@{form-prefix-cls}-hide-required-mark & {
+          display: none;
+        }
+      }
 
-  //input-number, timepicker
-  .@{ant-prefix}-input-number,
-  .@{ant-prefix}-time-picker-input {
-    border-color: @error-color;
-    &-focused,
-    &:focus {
-      .active(@error-color);
-    }
-    &:not([disabled]):hover {
-      border-color: @error-color;
-    }
-  }
-  .@{ant-prefix}-mention-wrapper {
-    .@{ant-prefix}-mention-editor {
-      &,
-      &:not([disabled]):hover {
-        border-color: @error-color;
+      // Optional mark
+      .@{form-item-prefix-cls}-optional {
+        display: inline-block;
+        margin-left: @margin-xss;
+        color: @text-color-secondary;
+
+        .@{form-prefix-cls}-hide-required-mark & {
+          display: none;
+        }
+      }
+
+      // Optional mark
+      .@{form-item-prefix-cls}-tooltip {
+        color: @text-color-secondary;
+        cursor: help;
+        writing-mode: horizontal-tb;
+        margin-inline-start: @margin-xss;
+      }
+
+      &::after {
+        & when (@form-item-trailing-colon=true) {
+          content: ':';
+        }
+        & when not (@form-item-trailing-colon=true) {
+          content: ' ';
+        }
+
+        position: relative;
+        top: -0.5px;
+        margin: 0 @form-item-label-colon-margin-right 0 @form-item-label-colon-margin-left;
+      }
+
+      &.@{form-item-prefix-cls}-no-colon::after {
+        content: ' ';
       }
     }
-    &.@{ant-prefix}-mention-active .@{ant-prefix}-mention-editor,
-    .@{ant-prefix}-mention-editor:not([disabled]):focus {
-      .active(@error-color);
+  }
+
+  // ==============================================================
+  // =                            Input                           =
+  // ==============================================================
+  &-control {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+
+    &:first-child:not([class^=~"'@{ant-prefix}-col-'"]):not([class*=~"' @{ant-prefix}-col-'"]) {
+      width: 100%;
+    }
+  }
+
+  &-control-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: @input-height-base;
+
+    &-content {
+      flex: auto;
+      max-width: 100%;
+    }
+  }
+
+  // ==============================================================
+  // =                           Explain                          =
+  // ==============================================================
+  &-explain,
+  &-extra {
+    clear: both;
+    color: @text-color-secondary;
+    font-size: @font-size-base;
+    line-height: @line-height-base;
+    transition: color 0.3s @ease-out; // sync input color transition
+    .explainAndExtraDistance((@form-item-margin-bottom - @form-font-height) / 2);
+  }
+
+  &-explain-connected {
+    height: 0;
+    min-height: 0;
+    opacity: 0;
+  }
+
+  &-extra {
+    min-height: @form-item-margin-bottom;
+  }
+
+  &-with-help &-explain {
+    height: auto;
+    min-height: @form-item-margin-bottom;
+    opacity: 1;
+  }
+
+  // ==============================================================
+  // =                        Feedback Icon                       =
+  // ==============================================================
+  &-feedback-icon {
+    font-size: @font-size-base;
+    text-align: center;
+    visibility: visible;
+    animation: zoomIn 0.3s @ease-out-back;
+    pointer-events: none;
+
+    &-success {
+      color: @success-color;
+    }
+
+    &-error {
+      color: @error-color;
+    }
+
+    &-warning {
+      color: @warning-color;
+    }
+
+    &-validating {
+      color: @primary-color;
     }
   }
 }
 
-.is-validating {
-  &.has-feedback:after {
-    display: inline-block;
-    animation: loadingCircle 1s infinite linear;
-    content: "\e64d";
-    color: @primary-color;
+// >>>>>>>>>> Motion <<<<<<<<<<
+// Explain holder
+.@{ant-prefix}-show-help {
+  transition: height @animation-duration-slow linear, min-height @animation-duration-slow linear,
+    margin-bottom @animation-duration-slow @ease-in-out,
+    opacity @animation-duration-slow @ease-in-out;
+
+  &-leave {
+    min-height: @form-item-margin-bottom;
+
+    &-active {
+      min-height: 0;
+    }
   }
 }
 
-.@{ant-prefix}-advanced-search-form {
-  .@{form-prefix-cls}-item {
-    margin-bottom: 16px;
+// Explain
+.@{ant-prefix}-show-help-item {
+  overflow: hidden;
+  transition: height @animation-duration-slow @ease-in-out,
+    opacity @animation-duration-slow @ease-in-out, transform @animation-duration-slow @ease-in-out !important;
+
+  &-appear,
+  &-enter {
+    transform: translateY(-5px);
+    opacity: 0;
+
+    &-active {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
-  .@{ant-prefix}-input,
-  .@{ant-prefix}-input-group .@{ant-prefix}-input,
-  .@{ant-prefix}-input-group .@{ant-prefix}-input-group-addon {
-    height: @input-height-base;
+
+  &-leave-active {
+    transform: translateY(-5px);
   }
 }
 
@@ -493,26 +289,37 @@ form {
 @keyframes diffZoomIn1 {
   0% {
     transform: scale(0);
+    opacity: 0;
   }
+
   100% {
     transform: scale(1);
+    opacity: 1;
   }
 }
 
 @keyframes diffZoomIn2 {
   0% {
     transform: scale(0);
+    opacity: 0;
   }
+
   100% {
     transform: scale(1);
+    opacity: 1;
   }
 }
 
 @keyframes diffZoomIn3 {
   0% {
     transform: scale(0);
+    opacity: 0;
   }
+
   100% {
     transform: scale(1);
+    opacity: 1;
   }
 }
+
+@import './rtl';

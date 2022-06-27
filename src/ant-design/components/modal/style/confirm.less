@@ -1,18 +1,14 @@
-@import "../../style/mixins/index";
+@import '../../style/mixins/index';
 
-@confirm-prefix-cls: ~"@{ant-prefix}-confirm";
+@confirm-prefix-cls: ~'@{ant-prefix}-modal-confirm';
 
 .@{confirm-prefix-cls} {
   .@{ant-prefix}-modal-header {
     display: none;
   }
 
-  .@{ant-prefix}-modal-close {
-    display: none;
-  }
-
   .@{ant-prefix}-modal-body {
-    padding: 30px 40px;
+    padding: @modal-confirm-body-padding;
   }
 
   &-body-wrapper {
@@ -21,33 +17,41 @@
 
   &-body {
     .@{confirm-prefix-cls}-title {
-      color: @text-color;
-      font-weight: bold;
-      font-size: @font-size-lg;
+      display: block;
+      // create BFC to avoid
+      // https://user-images.githubusercontent.com/507615/37702510-ba844e06-2d2d-11e8-9b67-8e19be57f445.png
+      overflow: hidden;
+      color: @heading-color;
+      font-weight: 500;
+      font-size: @modal-confirm-title-font-size;
+      line-height: 1.4;
     }
 
     .@{confirm-prefix-cls}-content {
-      margin-left: 42px;
-      font-size: @font-size-base;
-      color: @text-color;
       margin-top: 8px;
+      color: @text-color;
+      font-size: @font-size-base;
     }
 
     > .@{iconfont-css-prefix} {
-      font-size: 24px;
-      margin-right: 16px;
-      padding: 0 1px;
       float: left;
+      margin-right: 16px;
+      font-size: 22px;
+
+      // `content` after `icon` should set marginLeft
+      + .@{confirm-prefix-cls}-title + .@{confirm-prefix-cls}-content {
+        margin-left: 38px;
+      }
     }
   }
 
   .@{confirm-prefix-cls}-btns {
-    margin-top: 30px;
-    float: right;
+    margin-top: 24px;
+    text-align: right;
 
-    button + button {
-      margin-left: 10px;
+    .@{ant-prefix}-btn + .@{ant-prefix}-btn {
       margin-bottom: 0;
+      margin-left: 8px;
     }
   }
 

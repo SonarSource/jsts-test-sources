@@ -13,112 +13,97 @@ title:
 
 This component can be rendered by using `dateCellRender` and `monthCellRender` with the data you need.
 
-````jsx
-import { Calendar } from 'antd';
+```tsx
+import type { BadgeProps } from 'antd';
+import { Badge, Calendar } from 'antd';
+import type { Moment } from 'moment';
+import React from 'react';
 
-function getListData(value) {
+const getListData = (value: Moment) => {
   let listData;
   switch (value.date()) {
     case 8:
       listData = [
         { type: 'warning', content: 'This is warning event.' },
-        { type: 'normal', content: 'This is usual event.' },
-      ]; break;
+        { type: 'success', content: 'This is usual event.' },
+      ];
+      break;
     case 10:
       listData = [
         { type: 'warning', content: 'This is warning event.' },
-        { type: 'normal', content: 'This is usual event.' },
+        { type: 'success', content: 'This is usual event.' },
         { type: 'error', content: 'This is error event.' },
-      ]; break;
+      ];
+      break;
     case 15:
       listData = [
         { type: 'warning', content: 'This is warning event' },
-        { type: 'normal', content: 'This is very long usual event。。....' },
+        { type: 'success', content: 'This is very long usual event。。....' },
         { type: 'error', content: 'This is error event 1.' },
         { type: 'error', content: 'This is error event 2.' },
         { type: 'error', content: 'This is error event 3.' },
         { type: 'error', content: 'This is error event 4.' },
-      ]; break;
+      ];
+      break;
     default:
   }
   return listData || [];
-}
+};
 
-function dateCellRender(value) {
-  const listData = getListData(value);
-  return (
-    <ul className="events">
-      {
-        listData.map(item => (
-          <li key={item.content}>
-            <span className={`event-${item.type}`}>●</span>
-            {item.content}
-          </li>
-        ))
-      }
-    </ul>
-  );
-}
-
-function getMonthData(value) {
+const getMonthData = (value: Moment) => {
   if (value.month() === 8) {
     return 1394;
   }
-}
+};
 
-function monthCellRender(value) {
-  const num = getMonthData(value);
-  return num ? <div className="notes-month">
-    <section>{num}</section>
-    <span>Backlog number</span>
-  </div> : null;
-}
+const App: React.FC = () => {
+  const monthCellRender = (value: Moment) => {
+    const num = getMonthData(value);
+    return num ? (
+      <div className="notes-month">
+        <section>{num}</section>
+        <span>Backlog number</span>
+      </div>
+    ) : null;
+  };
 
-ReactDOM.render(
-  <Calendar dateCellRender={dateCellRender} monthCellRender={monthCellRender} />
-, mountNode);
-````
+  const dateCellRender = (value: Moment) => {
+    const listData = getListData(value);
+    return (
+      <ul className="events">
+        {listData.map(item => (
+          <li key={item.content}>
+            <Badge status={item.type as BadgeProps['status']} text={item.content} />
+          </li>
+        ))}
+      </ul>
+    );
+  };
 
-````css
+  return <Calendar dateCellRender={dateCellRender} monthCellRender={monthCellRender} />;
+};
+
+export default App;
+```
+
+```css
 .events {
-  line-height: 24px;
-  list-style: none;
   margin: 0;
   padding: 0;
+  list-style: none;
 }
-
-.events li {
-  color: #999;
+.events .ant-badge-status {
+  width: 100%;
   overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 12px;
   white-space: nowrap;
+  text-overflow: ellipsis;
 }
-
-.events li span {
-  vertical-align: middle;
-}
-
-.events li span:first-child {
-  font-size: 9px;
-  margin-right: 4px;
-}
-
-.event-warning {
-  color: #fac450;
-}
-
-.event-normal {
-  color: #108ee9;
-}
-
-.event-error {
-  color: #f50;
-}
-
 .notes-month {
+  font-size: 28px;
   text-align: center;
 }
 .notes-month section {
   font-size: 28px;
 }
-````
+```

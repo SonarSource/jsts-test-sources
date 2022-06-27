@@ -13,32 +13,29 @@ title:
 
 Messages of success, error and warning types.
 
-````jsx
-import { message, Button } from 'antd';
+```tsx
+import { Button, message, Space } from 'antd';
+import React from 'react';
 
 const success = () => {
-  message.success('This is a message of success');
+  message.success('This is a success message');
 };
 
 const error = () => {
-  message.error('This is a message of error');
+  message.error('This is an error message');
 };
 
 const warning = () => {
-  message.warning('This is message of warning');
+  message.warning('This is a warning message');
 };
 
-ReactDOM.render(
-  <div>
+const App: React.FC = () => (
+  <Space>
     <Button onClick={success}>Success</Button>
     <Button onClick={error}>Error</Button>
     <Button onClick={warning}>Warning</Button>
-  </div>
-, mountNode);
-````
+  </Space>
+);
 
-<style>
-#components-message-demo-other .ant-btn {
-  margin-right: 8px;
-}
-</style>
+export default App;
+```

@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "esModuleInterop": true,
+    "baseUrl": "src",
+    "experimentalDecorators": true,
+    "incremental": true,
+    "lib": ["es2017"],
+    "jsx": "react-native",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "outDir": "build",
+    "plugins": [{ "name": "typescript-styled-plugin" }],
+    "allowSyntheticDefaultImports": true,
+    "pretty": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "strictBindCallApply": true,
+    "noImplicitThis": true,
+    "noFallthroughCasesInSwitch": true,
+    "strictFunctionTypes": true,
+    "target": "esnext",
+    "types": ["jest", "react", "react-native"],
+    "noEmit": true
+  },
+  "include": ["typings/*.d.ts", "src/**/*.ts", "src/**/*.tsx", "scripts/**/*.ts", "dangerfile.ts"],
+  "exclude": [
+    "node_modules",
+    "babel.config.js",
+    "metro.config.js",
+    "jest.config.js",
+    "emission/Pod/Assets",
+    "build",
+    "index.ios.js",
+    "index.android.js",
+    "**/__mocks__",
+    "src/palette/**/*.test.*" // TODO: Fix palette tests and remove this exclude rule
+  ]
+}

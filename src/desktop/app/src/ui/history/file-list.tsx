@@ -1,66 +1,53 @@
 import * as React from 'react'
-import { FileChange, mapStatus, iconForStatus } from '../../models/status'
-import { PathLabel } from '../lib/path-label'
-import { Octicon } from '../octicons'
-import { List } from '../list'
+
+import { CommittedFileChange } from '../../models/status'
+import { List } from '../lib/list'
+import { CommittedFileItem } from './committed-file-item'
 
 interface IFileListProps {
-  readonly files: ReadonlyArray<FileChange>
-  readonly selectedFile: FileChange | null
-  readonly onSelectedFileChanged: (file: FileChange) => void
+  readonly files: ReadonlyArray<CommittedFileChange>
+  readonly selectedFile: CommittedFileChange | null
+  readonly onSelectedFileChanged: (file: CommittedFileChange) => void
   readonly availableWidth: number
+  readonly onContextMenu?: (
+    file: CommittedFileChange,
+    event: React.MouseEvent<HTMLDivElement>
+  ) => void
 }
 
-export class FileList extends React.Component<IFileListProps, void> {
-  private onSelectionChanged = (row: number) => {
+/**
+ * Display a list of changed files as part of a commit or stash
+ */
+export class FileList extends React.Component<IFileListProps> {
+  private onSelectedRowChanged = (row: number) => {
     const file = this.props.files[row]
     this.props.onSelectedFileChanged(file)
   }
 
   private renderFile = (row: number) => {
-    const file = this.props.files[row]
-    const status = file.status
-    const fileStatus = mapStatus(status)
-
-
-
-    const listItemPadding = 10 * 2
-    const statusWidth = 16
-    const filePathPadding = 5
-    const availablePathWidth = this.props.availableWidth - listItemPadding - filePathPadding - statusWidth
-
-    return <div className='file'>
-
-      <PathLabel
-        path={file.path}
-        oldPath={file.oldPath}
-        status={file.status}
-        availableWidth={availablePathWidth}
+    return (
+      <CommittedFileItem
+        file={this.props.files[row]}
+        availableWidth={this.props.availableWidth}
+        onContextMenu={this.props.onContextMenu}
       />
-
-      <Octicon
-        symbol={iconForStatus(status)}
-        className={'status status-' + fileStatus.toLowerCase()}
-        title={fileStatus}
-      />
-
-    </div>
+    )
   }
 
-  private rowForFile(file: FileChange | null): number {
-    return file
-      ? this.props.files.findIndex(f => f.path === file.path)
-      : -1
+  private rowForFile(file: CommittedFileChange | null): number {
+    return file ? this.props.files.findIndex(f => f.path === file.path) : -1
   }
 
   public render() {
     return (
-      <div className='file-list'>
-        <List rowRenderer={this.renderFile}
-              rowCount={this.props.files.length}
-              rowHeight={29}
-              selectedRow={this.rowForFile(this.props.selectedFile)}
-              onSelectionChanged={this.onSelectionChanged}/>
+      <div className="file-list">
+        <List
+          rowRenderer={this.renderFile}
+          rowCount={this.props.files.length}
+          rowHeight={29}
+          selectedRows={[this.rowForFile(this.props.selectedFile)]}
+          onSelectedRowChanged={this.onSelectedRowChanged}
+        />
       </div>
     )
   }

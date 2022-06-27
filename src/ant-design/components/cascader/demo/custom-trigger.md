@@ -13,47 +13,56 @@ title:
 
 Separate trigger button and result.
 
-````jsx
+```tsx
 import { Cascader } from 'antd';
+import React, { useState } from 'react';
 
-const options = [{
-  value: 'zhejiang',
-  label: 'Zhejiang',
-  children: [{
-    value: 'hangzhou',
-    label: 'Hangzhou',
-  }],
-}, {
-  value: 'jiangsu',
-  label: 'Jiangsu',
-  children: [{
-    value: 'nanjing',
-    label: 'Nanjing',
-  }],
-}];
-
-class CitySwitcher extends React.Component {
-  state = {
-    text: 'Unselect',
-  };
-
-  onChange = (value, selectedOptions) => {
-    this.setState({
-      text: selectedOptions.map(o => o.label).join(', '),
-    });
-  }
-  render() {
-    return (
-      <span>
-        {this.state.text}
-        &nbsp;
-        <Cascader options={options} onChange={this.onChange}>
-          <a href="#">Change city</a>
-        </Cascader>
-      </span>
-    );
-  }
+interface Option {
+  value: string;
+  label: string;
+  children?: Option[];
 }
 
-ReactDOM.render(<CitySwitcher />, mountNode);
-````
+const options: Option[] = [
+  {
+    value: 'zhejiang',
+    label: 'Zhejiang',
+    children: [
+      {
+        value: 'hangzhou',
+        label: 'Hangzhou',
+      },
+    ],
+  },
+  {
+    value: 'jiangsu',
+    label: 'Jiangsu',
+    children: [
+      {
+        value: 'nanjing',
+        label: 'Nanjing',
+      },
+    ],
+  },
+];
+
+const App: React.FC = () => {
+  const [text, setText] = useState('Unselect');
+
+  const onChange = (_: string[], selectedOptions: Option[]) => {
+    setText(selectedOptions.map(o => o.label).join(', '));
+  };
+
+  return (
+    <span>
+      {text}
+      &nbsp;
+      <Cascader options={options} onChange={onChange}>
+        <a href="#">Change city</a>
+      </Cascader>
+    </span>
+  );
+};
+
+export default App;
+```

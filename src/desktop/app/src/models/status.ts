@@ -1,90 +1,254 @@
-import { DiffSelection } from './diff'
-import { OcticonSymbol } from '../ui/octicons'
-import { assertNever } from '../lib/fatal-error'
+import { DiffSelection, DiffSelectionType } from './diff'
 
-/** the state of the changed file in the working directory */
-export enum FileStatus {
-  New,
-  Modified,
-  Deleted,
-  Renamed,
-  Conflicted,
-  Copied,
+/**
+ * The status entry code as reported by Git.
+ */
+export enum GitStatusEntry {
+  Modified = 'M',
+  Added = 'A',
+  Deleted = 'D',
+  Renamed = 'R',
+  Copied = 'C',
+  Unchanged = '.',
+  Untracked = '?',
+  Ignored = '!',
+  UpdatedButUnmerged = 'U',
+}
+
+/** The enum representation of a Git file change in GitHub Desktop. */
+export enum AppFileStatusKind {
+  New = 'New',
+  Modified = 'Modified',
+  Deleted = 'Deleted',
+  Copied = 'Copied',
+  Renamed = 'Renamed',
+  Conflicted = 'Conflicted',
+  Untracked = 'Untracked',
 }
 
 /**
- * Converts a given FileStatus value to a human-readable string to be
- * presented to users which describes the state of a file.
- *
- * Typically this will be the same value as that of the enum key.
- *
- * Used in file lists.
+ * Normal changes to a repository detected by GitHub Desktop
  */
-export function mapStatus(status: FileStatus): string {
-  switch (status) {
-    case FileStatus.New: return 'New'
-    case FileStatus.Modified: return 'Modified'
-    case FileStatus.Deleted: return 'Deleted'
-    case FileStatus.Renamed: return 'Renamed'
-    case FileStatus.Conflicted: return 'Conflicted'
-    case FileStatus.Copied: return 'Copied'
-  }
-
-  return assertNever(status, `Unknown file status ${status}`)
+export type PlainFileStatus = {
+  kind:
+    | AppFileStatusKind.New
+    | AppFileStatusKind.Modified
+    | AppFileStatusKind.Deleted
 }
 
 /**
- * Converts a given FileStatus value to an Octicon symbol
- * presented to users when displaying the file path.
+ * Copied or renamed files are change staged in the index that have a source
+ * as well as a destination.
  *
- * Used in file lists.
+ * The `oldPath` of a copied file also exists in the working directory, but the
+ * `oldPath` of a renamed file will be missing from the working directory.
  */
-export function iconForStatus(status: FileStatus): OcticonSymbol {
-
-  switch (status) {
-    case FileStatus.New: return OcticonSymbol.diffAdded
-    case FileStatus.Modified: return OcticonSymbol.diffModified
-    case FileStatus.Deleted: return OcticonSymbol.diffRemoved
-    case FileStatus.Renamed: return OcticonSymbol.diffRenamed
-    case FileStatus.Conflicted: return OcticonSymbol.alert
-    case FileStatus.Copied: return OcticonSymbol.diffAdded
-  }
-
-  return assertNever(status, `Unknown file status ${status}`)
+export type CopiedOrRenamedFileStatus = {
+  kind: AppFileStatusKind.Copied | AppFileStatusKind.Renamed
+  oldPath: string
 }
 
+/**
+ * Details about a file marked as conflicted in the index which may have
+ * conflict markers to inspect.
+ */
+export type ConflictsWithMarkers = {
+  kind: AppFileStatusKind.Conflicted
+  entry: TextConflictEntry
+  conflictMarkerCount: number
+}
+
+/**
+ * Details about a file marked as conflicted in the index which needs to be
+ * resolved manually by the user.
+ */
+export type ManualConflict = {
+  kind: AppFileStatusKind.Conflicted
+  entry: ManualConflictEntry
+}
+
+/** Union of potential conflict scenarios the application should handle */
+export type ConflictedFileStatus = ConflictsWithMarkers | ManualConflict
+
+/** Custom typeguard to differentiate Conflict files from other types */
+export function isConflictedFileStatus(
+  appFileStatus: AppFileStatus
+): appFileStatus is ConflictedFileStatus {
+  return appFileStatus.kind === AppFileStatusKind.Conflicted
+}
+
+/** Custom typeguard to differentiate ConflictsWithMarkers from other Conflict types */
+export function isConflictWithMarkers(
+  conflictedFileStatus: ConflictedFileStatus
+): conflictedFileStatus is ConflictsWithMarkers {
+  return conflictedFileStatus.hasOwnProperty('conflictMarkerCount')
+}
+
+/** Custom typeguard to differentiate ManualConflict from other Conflict types */
+export function isManualConflict(
+  conflictedFileStatus: ConflictedFileStatus
+): conflictedFileStatus is ManualConflict {
+  return !conflictedFileStatus.hasOwnProperty('conflictMarkerCount')
+}
+
+/** Denotes an untracked file in the working directory) */
+export type UntrackedFileStatus = { kind: AppFileStatusKind.Untracked }
+
+/** The union of potential states associated with a file change in Desktop */
+export type AppFileStatus =
+  | PlainFileStatus
+  | CopiedOrRenamedFileStatus
+  | ConflictedFileStatus
+  | UntrackedFileStatus
+
+/** The porcelain status for an ordinary changed entry */
+type OrdinaryEntry = {
+  readonly kind: 'ordinary'
+  /** how we should represent the file in the application */
+  readonly type: 'added' | 'modified' | 'deleted'
+  /** the status of the index for this entry (if known) */
+  readonly index?: GitStatusEntry
+  /** the status of the working tree for this entry (if known) */
+  readonly workingTree?: GitStatusEntry
+}
+
+/** The porcelain status for a renamed or copied entry */
+type RenamedOrCopiedEntry = {
+  readonly kind: 'renamed' | 'copied'
+  /** the status of the index for this entry (if known) */
+  readonly index?: GitStatusEntry
+  /** the status of the working tree for this entry (if known) */
+  readonly workingTree?: GitStatusEntry
+}
+
+export enum UnmergedEntrySummary {
+  AddedByUs = 'added-by-us',
+  DeletedByUs = 'deleted-by-us',
+  AddedByThem = 'added-by-them',
+  DeletedByThem = 'deleted-by-them',
+  BothDeleted = 'both-deleted',
+  BothAdded = 'both-added',
+  BothModified = 'both-modified',
+}
+
+/**
+ * Valid Git index states that the application should detect text conflict
+ * markers
+ */
+type TextConflictDetails =
+  | {
+      readonly action: UnmergedEntrySummary.BothAdded
+      readonly us: GitStatusEntry.Added
+      readonly them: GitStatusEntry.Added
+    }
+  | {
+      readonly action: UnmergedEntrySummary.BothModified
+      readonly us: GitStatusEntry.UpdatedButUnmerged
+      readonly them: GitStatusEntry.UpdatedButUnmerged
+    }
+
+type TextConflictEntry = {
+  readonly kind: 'conflicted'
+} & TextConflictDetails
+
+/**
+ * Valid Git index states where the user needs to choose one of `us` or `them`
+ * in the app.
+ */
+type ManualConflictDetails =
+  | {
+      readonly action: UnmergedEntrySummary.BothAdded
+      readonly us: GitStatusEntry.Added
+      readonly them: GitStatusEntry.Added
+    }
+  | {
+      readonly action: UnmergedEntrySummary.BothModified
+      readonly us: GitStatusEntry.UpdatedButUnmerged
+      readonly them: GitStatusEntry.UpdatedButUnmerged
+    }
+  | {
+      readonly action: UnmergedEntrySummary.AddedByUs
+      readonly us: GitStatusEntry.Added
+      readonly them: GitStatusEntry.UpdatedButUnmerged
+    }
+  | {
+      readonly action: UnmergedEntrySummary.DeletedByThem
+      readonly us: GitStatusEntry.UpdatedButUnmerged
+      readonly them: GitStatusEntry.Deleted
+    }
+  | {
+      readonly action: UnmergedEntrySummary.AddedByThem
+      readonly us: GitStatusEntry.UpdatedButUnmerged
+      readonly them: GitStatusEntry.Added
+    }
+  | {
+      readonly action: UnmergedEntrySummary.DeletedByUs
+      readonly us: GitStatusEntry.Deleted
+      readonly them: GitStatusEntry.UpdatedButUnmerged
+    }
+  | {
+      readonly action: UnmergedEntrySummary.BothDeleted
+      readonly us: GitStatusEntry.Deleted
+      readonly them: GitStatusEntry.Deleted
+    }
+
+type ManualConflictEntry = {
+  readonly kind: 'conflicted'
+} & ManualConflictDetails
+
+/** The porcelain status for an unmerged entry */
+export type UnmergedEntry = TextConflictEntry | ManualConflictEntry
+
+/** The porcelain status for an unmerged entry */
+type UntrackedEntry = {
+  readonly kind: 'untracked'
+}
+
+/** The union of possible entries from the git status */
+export type FileEntry =
+  | OrdinaryEntry
+  | RenamedOrCopiedEntry
+  | UnmergedEntry
+  | UntrackedEntry
+
+/** encapsulate changes to a file associated with a commit */
 export class FileChange {
-  /** the relative path to the file in the repository */
-  public readonly path: string
-
-  /** The original path in the case of a renamed file */
-  public readonly oldPath?: string
-
-  /** the status of the change to the file */
-  public readonly status: FileStatus
-
-  public constructor(path: string, status: FileStatus, oldPath?: string) {
-    this.path = path
-    this.status = status
-    this.oldPath = oldPath
-  }
-
   /** An ID for the file change. */
-  public get id(): string {
-    return `${this.status}+${this.path}`
+  public readonly id: string
+
+  /**
+   * @param path The relative path to the file in the repository.
+   * @param status The status of the change to the file.
+   */
+  public constructor(
+    public readonly path: string,
+    public readonly status: AppFileStatus
+  ) {
+    if (
+      status.kind === AppFileStatusKind.Renamed ||
+      status.kind === AppFileStatusKind.Copied
+    ) {
+      this.id = `${status.kind}+${path}+${status.oldPath}`
+    } else {
+      this.id = `${status.kind}+${path}`
+    }
   }
 }
 
-/** encapsulate the changes to a file in the working directory  */
+/** encapsulate the changes to a file in the working directory */
 export class WorkingDirectoryFileChange extends FileChange {
-
-  /** contains the selection details for this file - all, nothing or partial */
-  public readonly selection: DiffSelection
-
-  public constructor(path: string, status: FileStatus, selection: DiffSelection, oldPath?: string) {
-    super(path, status, oldPath)
-
-    this.selection = selection
+  /**
+   * @param path The relative path to the file in the repository.
+   * @param status The status of the change to the file.
+   * @param selection Contains the selection details for this file - all, nothing or partial.
+   * @param oldPath The original path in the case of a renamed file.
+   */
+  public constructor(
+    path: string,
+    status: AppFileStatus,
+    public readonly selection: DiffSelection
+  ) {
+    super(path, status)
   }
 
   /** Create a new WorkingDirectoryFileChange with the given includedness. */
@@ -98,28 +262,52 @@ export class WorkingDirectoryFileChange extends FileChange {
 
   /** Create a new WorkingDirectoryFileChange with the given diff selection. */
   public withSelection(selection: DiffSelection): WorkingDirectoryFileChange {
-    return new WorkingDirectoryFileChange(this.path, this.status, selection, this.oldPath)
+    return new WorkingDirectoryFileChange(this.path, this.status, selection)
+  }
+}
+
+/**
+ * An object encapsulating the changes to a committed file.
+ *
+ * @param status A commit SHA or some other identifier that ultimately
+ *               dereferences to a commit. This is the pointer to the
+ *               'after' version of this change. I.e. the parent of this
+ *               commit will contain the 'before' (or nothing, if the
+ *               file change represents a new file).
+ */
+export class CommittedFileChange extends FileChange {
+  public constructor(
+    path: string,
+    status: AppFileStatus,
+    public readonly commitish: string
+  ) {
+    super(path, status)
+
+    this.commitish = commitish
   }
 }
 
 /** the state of the working directory for a repository */
 export class WorkingDirectoryStatus {
+  /** Create a new status with the given files. */
+  public static fromFiles(
+    files: ReadonlyArray<WorkingDirectoryFileChange>
+  ): WorkingDirectoryStatus {
+    return new WorkingDirectoryStatus(files, getIncludeAllState(files))
+  }
 
+  private readonly fileIxById = new Map<string, number>()
   /**
-   * The list of changes in the repository's working directory
+   * @param files The list of changes in the repository's working directory.
+   * @param includeAll Update the include checkbox state of the form.
+   *                   NOTE: we need to track this separately to the file list selection
+   *                         and perform two-way binding manually when this changes.
    */
-  public readonly files: ReadonlyArray<WorkingDirectoryFileChange> = new Array<WorkingDirectoryFileChange>()
-
-  /**
-   * Update the include checkbox state of the form
-   * NOTE: we need to track this separately to the file list selection
-   *       and perform two-way binding manually when this changes
-   */
-  public readonly includeAll: boolean | null = true
-
-  public constructor(files: ReadonlyArray<WorkingDirectoryFileChange>, includeAll: boolean | null) {
-    this.files = files
-    this.includeAll = includeAll
+  private constructor(
+    public readonly files: ReadonlyArray<WorkingDirectoryFileChange>,
+    public readonly includeAll: boolean | null = true
+  ) {
+    files.forEach((f, ix) => this.fileIxById.set(f.id, ix))
   }
 
   /**
@@ -130,20 +318,39 @@ export class WorkingDirectoryStatus {
     return new WorkingDirectoryStatus(newFiles, includeAll)
   }
 
-  /** Update by replacing the file with the same ID with a new file. */
-  public byReplacingFile(file: WorkingDirectoryFileChange): WorkingDirectoryStatus {
-    const newFiles = this.files.map(f => {
-      if (f.id === file.id) {
-        return file
-      } else {
-        return f
-      }
-    })
-    return new WorkingDirectoryStatus(newFiles, this.includeAll)
-  }
-
   /** Find the file with the given ID. */
   public findFileWithID(id: string): WorkingDirectoryFileChange | null {
-    return this.files.find(f => f.id === id) || null
+    const ix = this.fileIxById.get(id)
+    return ix !== undefined ? this.files[ix] || null : null
   }
+
+  /** Find the index of the file with the given ID. Returns -1 if not found */
+  public findFileIndexByID(id: string): number {
+    const ix = this.fileIxById.get(id)
+    return ix !== undefined ? ix : -1
+  }
+}
+
+function getIncludeAllState(
+  files: ReadonlyArray<WorkingDirectoryFileChange>
+): boolean | null {
+  if (!files.length) {
+    return true
+  }
+
+  const allSelected = files.every(
+    f => f.selection.getSelectionType() === DiffSelectionType.All
+  )
+  const noneSelected = files.every(
+    f => f.selection.getSelectionType() === DiffSelectionType.None
+  )
+
+  let includeAll: boolean | null = null
+  if (allSelected) {
+    includeAll = true
+  } else if (noneSelected) {
+    includeAll = false
+  }
+
+  return includeAll
 }

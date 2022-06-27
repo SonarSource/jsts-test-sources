@@ -1,51 +1,45 @@
 ---
 order: 2
 title:
-  zh-CN: RadioGroup 垂直
-  en-US: Vertical RadioGroup
+  zh-CN: Radio.Group 垂直
+  en-US: Vertical Radio.Group
 ---
 
 ## zh-CN
 
-垂直的 RadioGroup，配合更多输入框选项。
+垂直的 Radio.Group，配合更多输入框选项。
 
 ## en-US
 
-Vertical RadioGroup, with more radios.
+Vertical Radio.Group, with more radios.
 
-```jsx
-import { Radio, Input } from 'antd';
-const RadioGroup = Radio.Group;
+```tsx
+import type { RadioChangeEvent } from 'antd';
+import { Input, Radio, Space } from 'antd';
+import React, { useState } from 'react';
 
-class App extends React.Component {
-  state = {
-    value: 1,
-  }
-  onChange = (e) => {
+const App: React.FC = () => {
+  const [value, setValue] = useState(1);
+
+  const onChange = (e: RadioChangeEvent) => {
     console.log('radio checked', e.target.value);
-    this.setState({
-      value: e.target.value,
-    });
-  }
-  render() {
-    const radioStyle = {
-      display: 'block',
-      height: '30px',
-      lineHeight: '30px',
-    };
-    return (
-      <RadioGroup onChange={this.onChange} value={this.state.value}>
-        <Radio style={radioStyle} value={1}>Option A</Radio>
-        <Radio style={radioStyle} value={2}>Option B</Radio>
-        <Radio style={radioStyle} value={3}>Option C</Radio>
-        <Radio style={radioStyle} value={4}>
-          More...
-          {this.state.value === 4 ? <Input style={{ width: 100, marginLeft: 10 }} /> : null}
-        </Radio>
-      </RadioGroup>
-    );
-  }
-}
+    setValue(e.target.value);
+  };
 
-ReactDOM.render(<App />, mountNode);
+  return (
+    <Radio.Group onChange={onChange} value={value}>
+      <Space direction="vertical">
+        <Radio value={1}>Option A</Radio>
+        <Radio value={2}>Option B</Radio>
+        <Radio value={3}>Option C</Radio>
+        <Radio value={4}>
+          More...
+          {value === 4 ? <Input style={{ width: 100, marginLeft: 10 }} /> : null}
+        </Radio>
+      </Space>
+    </Radio.Group>
+  );
+};
+
+export default App;
 ```

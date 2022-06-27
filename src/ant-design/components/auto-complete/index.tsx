@@ -1,118 +1,161 @@
-import React from 'react';
-import { Option, OptGroup } from 'rc-select';
+/**
+ * TODO: 4.0
+ *
+ * - Remove `dataSource`
+ * - `size` not work with customizeInput
+ * - CustomizeInput not feedback `ENTER` key since accessibility enhancement
+ */
+
 import classNames from 'classnames';
-import Select, { AbstractSelectProps, SelectValue, OptionProps, OptGroupProps } from '../select';
-import Input from '../input';
-import InputElement from './InputElement';
+import type { BaseSelectRef } from 'rc-select';
+import toArray from 'rc-util/lib/Children/toArray';
+import omit from 'rc-util/lib/omit';
+import * as React from 'react';
+import type { ConfigConsumerProps } from '../config-provider';
+import { ConfigConsumer } from '../config-provider';
+import type {
+  BaseOptionType,
+  DefaultOptionType,
+  InternalSelectProps,
+  RefSelectProps,
+} from '../select';
+import Select from '../select';
+import { isValidElement } from '../_util/reactNode';
+import type { InputStatus } from '../_util/statusUtils';
+import warning from '../_util/warning';
 
-export interface DataSourceItemObject { value: string; text: string; };
-export type DataSourceItemType = string | DataSourceItemObject;
+const { Option } = Select;
 
-export interface InputProps {
-  onChange?: React.FormEventHandler<any>;
-  value: any;
+export interface DataSourceItemObject {
+  value: string;
+  text: string;
 }
+export type DataSourceItemType = DataSourceItemObject | React.ReactNode;
 
-export type ValidInputElement =
-  HTMLInputElement |
-  HTMLTextAreaElement |
-  React.ReactElement<InputProps>;
-
-export interface AutoCompleteProps extends AbstractSelectProps {
-  value?: SelectValue;
-  defaultValue?: SelectValue;
-  dataSource: DataSourceItemType[];
-  optionLabelProp?: string;
-  filterOption?: boolean | ((inputValue: string, option: Object) => any);
-  onChange?: (value: SelectValue) => void;
-  onSelect?: (value: SelectValue, option: Object) => any;
-  children?: ValidInputElement |
-    React.ReactElement<OptionProps> |
-    Array<React.ReactElement<OptionProps>>;
+export interface AutoCompleteProps<
+  ValueType = any,
+  OptionType extends BaseOptionType | DefaultOptionType = DefaultOptionType,
+> extends Omit<
+    InternalSelectProps<ValueType, OptionType>,
+    'inputIcon' | 'loading' | 'mode' | 'optionLabelProp' | 'labelInValue'
+  > {
+  dataSource?: DataSourceItemType[];
+  status?: InputStatus;
 }
 
 function isSelectOptionOrSelectOptGroup(child: any): Boolean {
   return child && child.type && (child.type.isSelectOption || child.type.isSelectOptGroup);
 }
 
-export default class AutoComplete extends React.Component<AutoCompleteProps, any> {
-  static Option = Option as React.ClassicComponentClass<OptionProps>;
-  static OptGroup = OptGroup as React.ClassicComponentClass<OptGroupProps>;
+const AutoComplete: React.ForwardRefRenderFunction<RefSelectProps, AutoCompleteProps> = (
+  props,
+  ref,
+) => {
+  const { prefixCls: customizePrefixCls, className, children, dataSource } = props;
+  const childNodes: React.ReactElement[] = toArray(children);
 
-  static defaultProps = {
-    prefixCls: 'ant-select',
-    transitionName: 'slide-up',
-    optionLabelProp: 'children',
-    choiceTransitionName: 'zoom',
-    showSearch: false,
-    filterOption: false,
-  };
+  // ============================= Input =============================
+  let customizeInput: React.ReactElement | undefined;
 
-  getInputElement = () => {
-    const { children } = this.props;
-    const element = children && React.isValidElement(children) && children.type !== Option ?
-      React.Children.only(this.props.children) :
-      <Input/>;
-    return (
-      <InputElement
-        {...element.props}
-        className={classNames('ant-input', element.props.className)}
-      >
-        {element}
-      </InputElement>
-    );
+  if (
+    childNodes.length === 1 &&
+    isValidElement(childNodes[0]) &&
+    !isSelectOptionOrSelectOptGroup(childNodes[0])
+  ) {
+    [customizeInput] = childNodes;
   }
 
-  render() {
-    let {
-      size, className = '', notFoundContent, prefixCls, optionLabelProp, dataSource, children,
-    } = this.props;
+  const getInputElement = customizeInput ? (): React.ReactElement => customizeInput! : undefined;
 
-    const cls = classNames({
-      [`${prefixCls}-lg`]: size === 'large',
-      [`${prefixCls}-sm`]: size === 'small',
-      [className]: !!className,
-      [`${prefixCls}-show-search`]: true,
-      [`${prefixCls}-auto-complete`]: true,
-    });
+  // ============================ Options ============================
+  let optionChildren: React.ReactNode;
 
-    let options;
-    const childArray = React.Children.toArray(children);
-    if (childArray.length &&
-        isSelectOptionOrSelectOptGroup(childArray[0])
-      ) {
-      options = children;
-    } else {
-      options = dataSource ? dataSource.map((item) => {
-        if (React.isValidElement(item)) {
-          return item;
-        }
-        switch (typeof item) {
-          case 'string':
-            return <Option key={item}>{item}</Option>;
-          case 'object':
-            return (
-              <Option key={(item as DataSourceItemObject).value}>
-                {(item as DataSourceItemObject).text}
-              </Option>
-            );
-          default:
-            throw new Error('AutoComplete[dataSource] only supports type `string[] | Object[]`.');
-        }
-      }) : [];
-    }
-
-    return (
-      <Select
-        {...this.props}
-        className={cls}
-        mode="combobox"
-        optionLabelProp={optionLabelProp}
-        getInputElement={this.getInputElement}
-        notFoundContent={notFoundContent}
-      >
-        {options}
-      </Select>
-    );
+  // [Legacy] convert `children` or `dataSource` into option children
+  if (childNodes.length && isSelectOptionOrSelectOptGroup(childNodes[0])) {
+    optionChildren = children;
+  } else {
+    optionChildren = dataSource
+      ? dataSource.map(item => {
+          if (isValidElement(item)) {
+            return item;
+          }
+          switch (typeof item) {
+            case 'string':
+              return (
+                <Option key={item} value={item}>
+                  {item}
+                </Option>
+              );
+            case 'object': {
+              const { value: optionValue } = item as DataSourceItemObject;
+              return (
+                <Option key={optionValue} value={optionValue}>
+                  {(item as DataSourceItemObject).text}
+                </Option>
+              );
+            }
+            default:
+              warning(
+                false,
+                'AutoComplete',
+                '`dataSource` is only supports type `string[] | Object[]`.',
+              );
+              return undefined;
+          }
+        })
+      : [];
   }
-}
+
+  warning(
+    !('dataSource' in props),
+    'AutoComplete',
+    '`dataSource` is deprecated, please use `options` instead.',
+  );
+
+  warning(
+    !customizeInput || !('size' in props),
+    'AutoComplete',
+    'You need to control style self instead of setting `size` when using customize input.',
+  );
+
+  return (
+    <ConfigConsumer>
+      {({ getPrefixCls }: ConfigConsumerProps) => {
+        const prefixCls = getPrefixCls('select', customizePrefixCls);
+
+        return (
+          <Select
+            ref={ref}
+            {...omit(props, ['dataSource'])}
+            prefixCls={prefixCls}
+            className={classNames(`${prefixCls}-auto-complete`, className)}
+            mode={Select.SECRET_COMBOBOX_MODE_DO_NOT_USE as any}
+            {...{
+              // Internal api
+              getInputElement,
+            }}
+          >
+            {optionChildren}
+          </Select>
+        );
+      }}
+    </ConfigConsumer>
+  );
+};
+
+const RefAutoComplete = React.forwardRef<RefSelectProps, AutoCompleteProps>(
+  AutoComplete,
+) as unknown as (<
+  ValueType = any,
+  OptionType extends BaseOptionType | DefaultOptionType = DefaultOptionType,
+>(
+  props: React.PropsWithChildren<AutoCompleteProps<ValueType, OptionType>> & {
+    ref?: React.Ref<BaseSelectRef>;
+  },
+) => React.ReactElement) & {
+  Option: typeof Option;
+};
+
+RefAutoComplete.Option = Option;
+
+export default RefAutoComplete;

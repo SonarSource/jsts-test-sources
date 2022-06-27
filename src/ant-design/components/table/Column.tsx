@@ -1,24 +1,14 @@
-import React from 'react';
-import RcTable from 'rc-table';
+import type { ColumnType } from './interface';
 
-export interface ColumnProps<T> {
-  title?: React.ReactNode;
-  key?: string;
-  dataIndex?: string;
-  render?: (text: any, record: T, index: number) => React.ReactNode;
-  filters?: { text: string; value: string, children?: any[] }[];
-  onFilter?: (value: any, record: T) => boolean;
-  filterMultiple?: boolean;
-  filterDropdown?: React.ReactNode;
-  sorter?: boolean | ((a: any, b: any) => number);
-  colSpan?: number;
-  width?: string | number;
-  className?: string;
-  fixed?: boolean | ('left' | 'right');
-  filterIcon?: React.ReactNode;
-  filteredValue?: any[];
-  sortOrder?: boolean | ('ascend' | 'descend');
-  children?: ColumnProps<T>[];
+export interface ColumnProps<RecordType> extends ColumnType<RecordType> {
+  children?: null;
 }
 
-export default class Column<T> extends (RcTable.Column as React.ComponentClass<ColumnProps<T>>) {}
+/* istanbul ignore next */
+/** This is a syntactic sugar for `columns` prop. So HOC will not work on this. */
+// eslint-disable-next-line no-unused-vars
+function Column<RecordType>(_: ColumnProps<RecordType>) {
+  return null;
+}
+
+export default Column;

@@ -13,25 +13,37 @@ title:
 
 Basic Usage.
 
-````jsx
+```tsx
 import { Select } from 'antd';
-const Option = Select.Option;
+import React from 'react';
 
-function handleChange(value) {
+const { Option } = Select;
+
+const handleChange = (value: string) => {
   console.log(`selected ${value}`);
-}
+};
 
-ReactDOM.render(
-  <div>
+const App: React.FC = () => (
+  <>
     <Select defaultValue="lucy" style={{ width: 120 }} onChange={handleChange}>
       <Option value="jack">Jack</Option>
       <Option value="lucy">Lucy</Option>
-      <Option value="disabled" disabled>Disabled</Option>
+      <Option value="disabled" disabled>
+        Disabled
+      </Option>
       <Option value="Yiminghe">yiminghe</Option>
     </Select>
-    <Select defaultValue="lucy" style={{ width: 120 }} allowClear disabled>
+    <Select defaultValue="lucy" style={{ width: 120 }} disabled>
       <Option value="lucy">Lucy</Option>
     </Select>
-  </div>
-, mountNode);
-````
+    <Select defaultValue="lucy" style={{ width: 120 }} loading>
+      <Option value="lucy">Lucy</Option>
+    </Select>
+    <Select defaultValue="lucy" style={{ width: 120 }} allowClear>
+      <Option value="lucy">Lucy</Option>
+    </Select>
+  </>
+);
+
+export default App;
+```

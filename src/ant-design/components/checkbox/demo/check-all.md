@@ -1,8 +1,8 @@
 ---
 order: 4
 title:
-    zh-CN: 全选
-    en-US: Check all
+  zh-CN: 全选
+  en-US: Check all
 ---
 
 ## zh-CN
@@ -13,51 +13,44 @@ title:
 
 The `indeterminate` property can help you to achieve a 'check all' effect.
 
-````jsx
-import { Checkbox } from 'antd';
+```tsx
+import { Checkbox, Divider } from 'antd';
+import type { CheckboxChangeEvent } from 'antd/es/checkbox';
+import type { CheckboxValueType } from 'antd/es/checkbox/Group';
+import React, { useState } from 'react';
+
 const CheckboxGroup = Checkbox.Group;
 
 const plainOptions = ['Apple', 'Pear', 'Orange'];
 const defaultCheckedList = ['Apple', 'Orange'];
 
-class App extends React.Component {
-  state = {
-    checkedList: defaultCheckedList,
-    indeterminate: true,
-    checkAll: false,
-  };
-  render() {
-    return (
-      <div>
-        <div style={{ borderBottom: '1px solid #E9E9E9' }}>
-          <Checkbox
-            indeterminate={this.state.indeterminate}
-            onChange={this.onCheckAllChange}
-            checked={this.state.checkAll}
-          >
-            Check all
-          </Checkbox>
-        </div>
-        <br />
-        <CheckboxGroup options={plainOptions} value={this.state.checkedList} onChange={this.onChange} />
-      </div>
-    );
-  }
-  onChange = (checkedList) => {
-    this.setState({
-      checkedList,
-      indeterminate: !!checkedList.length && (checkedList.length < plainOptions.length),
-      checkAll: checkedList.length === plainOptions.length,
-    });
-  }
-  onCheckAllChange = (e) => {
-    this.setState({
-      checkedList: e.target.checked ? plainOptions : [],
-      indeterminate: false,
-      checkAll: e.target.checked,
-    });
-  }
-}
+const App: React.FC = () => {
+  const [checkedList, setCheckedList] = useState<CheckboxValueType[]>(defaultCheckedList);
+  const [indeterminate, setIndeterminate] = useState(true);
+  const [checkAll, setCheckAll] = useState(false);
 
-ReactDOM.render(<App />, mountNode);
-````
+  const onChange = (list: CheckboxValueType[]) => {
+    setCheckedList(list);
+    setIndeterminate(!!list.length && list.length < plainOptions.length);
+    setCheckAll(list.length === plainOptions.length);
+  };
+
+  const onCheckAllChange = (e: CheckboxChangeEvent) => {
+    setCheckedList(e.target.checked ? plainOptions : []);
+    setIndeterminate(false);
+    setCheckAll(e.target.checked);
+  };
+
+  return (
+    <>
+      <Checkbox indeterminate={indeterminate} onChange={onCheckAllChange} checked={checkAll}>
+        Check all
+      </Checkbox>
+      <Divider />
+      <CheckboxGroup options={plainOptions} value={checkedList} onChange={onChange} />
+    </>
+  );
+};
+
+export default App;
+```

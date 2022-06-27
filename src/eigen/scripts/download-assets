@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euxo pipefail
+
+
+if test ${CI:-false} = true
+then
+  ./scripts/setup-distribute
+fi
+
+aws s3 cp s3://artsy-citadel/eigen/google-services.json android/app/google-services.json
+aws s3 cp s3://artsy-citadel/eigen/GoogleService-Info.plist ios/Artsy/GoogleService-Info.plist
+
+./scripts/download-fonts

@@ -1,7 +1,7 @@
 ---
 order: 3
 title:
-  zh-CN: 可选择
+  zh-CN: 可选择标签
   en-US: Checkable
 ---
 
@@ -17,25 +17,38 @@ title:
 
 > it is an absolute controlled component and has no uncontrolled mode.
 
-````jsx
+```tsx
 import { Tag } from 'antd';
+import React, { useState } from 'react';
+
 const { CheckableTag } = Tag;
 
-class MyTag extends React.Component {
-  state = { checked: true };
-  handleChange = (checked) => {
-    this.setState({ checked });
-  }
-  render() {
-    return <CheckableTag {...this.props} checked={this.state.checked} onChange={this.handleChange} />;
-  }
-}
+const tagsData = ['Movies', 'Books', 'Music', 'Sports'];
 
-ReactDOM.render(
-  <div>
-    <MyTag>Tag1</MyTag>
-    <MyTag>Tag2</MyTag>
-    <MyTag>Tag3</MyTag>
-  </div>
-, mountNode);
-````
+const App: React.FC = () => {
+  const [selectedTags, setSelectedTags] = useState<string[]>(['Books']);
+
+  const handleChange = (tag: string, checked: boolean) => {
+    const nextSelectedTags = checked ? [...selectedTags, tag] : selectedTags.filter(t => t !== tag);
+    console.log('You are interested in: ', nextSelectedTags);
+    setSelectedTags(nextSelectedTags);
+  };
+
+  return (
+    <>
+      <span style={{ marginRight: 8 }}>Categories:</span>
+      {tagsData.map(tag => (
+        <CheckableTag
+          key={tag}
+          checked={selectedTags.indexOf(tag) > -1}
+          onChange={checked => handleChange(tag, checked)}
+        >
+          {tag}
+        </CheckableTag>
+      ))}
+    </>
+  );
+};
+
+export default App;
+```

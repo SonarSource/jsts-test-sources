@@ -1,130 +1,184 @@
-import React from 'react';
-import moment from 'moment';
-import { PREFIX_CLS } from './Constants';
+import type { GenerateConfig } from 'rc-picker/lib/generate';
+import type { Locale } from 'rc-picker/lib/interface';
+import * as React from 'react';
+import { useContext, useMemo } from 'react';
+import { FormItemInputContext } from '../form/context';
+import { Button, Group } from '../radio';
 import Select from '../select';
-import { Group, Button } from '../radio';
-const Option = Select.Option;
+import type { CalendarMode } from './generateCalendar';
 
-export interface HeaderProps {
-  prefixCls?: string;
-  locale?: any;
-  fullscreen?: boolean;
-  yearSelectOffset?: number;
-  yearSelectTotal?: number;
-  type?: string;
-  onValueChange?: (value) => void;
-  onTypeChange?: (type: string) => void;
-  value: any;
+const YearSelectOffset = 10;
+const YearSelectTotal = 20;
+
+interface SharedProps<DateType> {
+  prefixCls: string;
+  value: DateType;
+  validRange?: [DateType, DateType];
+  generateConfig: GenerateConfig<DateType>;
+  locale: Locale;
+  fullscreen: boolean;
+  divRef: React.RefObject<HTMLDivElement>;
+  onChange: (year: DateType) => void;
 }
 
-export default class Header extends React.Component<HeaderProps, any> {
-  static defaultProps = {
-    prefixCls: `${PREFIX_CLS}-header`,
-    yearSelectOffset: 10,
-    yearSelectTotal: 20,
+function YearSelect<DateType>(props: SharedProps<DateType>) {
+  const { fullscreen, validRange, generateConfig, locale, prefixCls, value, onChange, divRef } =
+    props;
+
+  const year = generateConfig.getYear(value || generateConfig.getNow());
+
+  let start = year - YearSelectOffset;
+  let end = start + YearSelectTotal;
+
+  if (validRange) {
+    start = generateConfig.getYear(validRange[0]);
+    end = generateConfig.getYear(validRange[1]) + 1;
+  }
+
+  const suffix = locale && locale.year === '年' ? '年' : '';
+  const options: { label: string; value: number }[] = [];
+  for (let index = start; index < end; index++) {
+    options.push({ label: `${index}${suffix}`, value: index });
+  }
+
+  return (
+    <Select
+      size={fullscreen ? undefined : 'small'}
+      options={options}
+      value={year}
+      className={`${prefixCls}-year-select`}
+      onChange={numYear => {
+        let newDate = generateConfig.setYear(value, numYear);
+
+        if (validRange) {
+          const [startDate, endDate] = validRange;
+          const newYear = generateConfig.getYear(newDate);
+          const newMonth = generateConfig.getMonth(newDate);
+          if (
+            newYear === generateConfig.getYear(endDate) &&
+            newMonth > generateConfig.getMonth(endDate)
+          ) {
+            newDate = generateConfig.setMonth(newDate, generateConfig.getMonth(endDate));
+          }
+          if (
+            newYear === generateConfig.getYear(startDate) &&
+            newMonth < generateConfig.getMonth(startDate)
+          ) {
+            newDate = generateConfig.setMonth(newDate, generateConfig.getMonth(startDate));
+          }
+        }
+
+        onChange(newDate);
+      }}
+      getPopupContainer={() => divRef!.current!}
+    />
+  );
+}
+
+function MonthSelect<DateType>(props: SharedProps<DateType>) {
+  const { prefixCls, fullscreen, validRange, value, generateConfig, locale, onChange, divRef } =
+    props;
+  const month = generateConfig.getMonth(value || generateConfig.getNow());
+
+  let start = 0;
+  let end = 11;
+
+  if (validRange) {
+    const [rangeStart, rangeEnd] = validRange;
+    const currentYear = generateConfig.getYear(value);
+    if (generateConfig.getYear(rangeEnd) === currentYear) {
+      end = generateConfig.getMonth(rangeEnd);
+    }
+    if (generateConfig.getYear(rangeStart) === currentYear) {
+      start = generateConfig.getMonth(rangeStart);
+    }
+  }
+
+  const months = locale.shortMonths || generateConfig.locale.getShortMonths!(locale.locale);
+  const options: { label: string; value: number }[] = [];
+  for (let index = start; index <= end; index += 1) {
+    options.push({
+      label: months[index],
+      value: index,
+    });
+  }
+
+  return (
+    <Select
+      size={fullscreen ? undefined : 'small'}
+      className={`${prefixCls}-month-select`}
+      value={month}
+      options={options}
+      onChange={newMonth => {
+        onChange(generateConfig.setMonth(value, newMonth));
+      }}
+      getPopupContainer={() => divRef!.current!}
+    />
+  );
+}
+
+interface ModeSwitchProps<DateType> extends Omit<SharedProps<DateType>, 'onChange'> {
+  mode: CalendarMode;
+  onModeChange: (type: CalendarMode) => void;
+}
+
+function ModeSwitch<DateType>(props: ModeSwitchProps<DateType>) {
+  const { prefixCls, locale, mode, fullscreen, onModeChange } = props;
+  return (
+    <Group
+      onChange={({ target: { value } }) => {
+        onModeChange(value);
+      }}
+      value={mode}
+      size={fullscreen ? undefined : 'small'}
+      className={`${prefixCls}-mode-switch`}
+    >
+      <Button value="month">{locale.month}</Button>
+      <Button value="year">{locale.year}</Button>
+    </Group>
+  );
+}
+
+export interface CalendarHeaderProps<DateType> {
+  prefixCls: string;
+  value: DateType;
+  validRange?: [DateType, DateType];
+  generateConfig: GenerateConfig<DateType>;
+  locale: Locale;
+  mode: CalendarMode;
+  fullscreen: boolean;
+  onChange: (date: DateType) => void;
+  onModeChange: (mode: CalendarMode) => void;
+}
+function CalendarHeader<DateType>(props: CalendarHeaderProps<DateType>) {
+  const { prefixCls, fullscreen, mode, onChange, onModeChange } = props;
+  const divRef = React.useRef<HTMLDivElement>(null);
+
+  const formItemInputContext = useContext(FormItemInputContext);
+  const mergedFormItemInputContext = useMemo(
+    () => ({
+      ...formItemInputContext,
+      isFormItemInput: false,
+    }),
+    [formItemInputContext],
+  );
+
+  const sharedProps = {
+    ...props,
+    onChange,
+    fullscreen,
+    divRef,
   };
 
-  getYearSelectElement(year) {
-    const { yearSelectOffset, yearSelectTotal, locale, prefixCls, fullscreen } = this.props;
-    const start = year - (yearSelectOffset as number);
-    const end = start + (yearSelectTotal as number);
-    const suffix = locale.year === '年' ? '年' : '';
-
-    const options: React.ReactElement<any>[] = [];
-    for (let index = start; index < end; index++) {
-      options.push(<Option key={`${index}`}>{index + suffix}</Option>);
-    }
-    return (
-      <Select
-        size={fullscreen ? 'default' : 'small'}
-        dropdownMatchSelectWidth={false}
-        className={`${prefixCls}-year-select`}
-        onChange={this.onYearChange}
-        value={String(year)}
-      >
-        {options}
-      </Select>
-    );
-  }
-
-  getMonthsLocale(value: moment.Moment) {
-    const current = value.clone();
-    const localeData = value.localeData();
-    const months: any[] = [];
-    for (let i = 0; i < 12; i++) {
-      current.month(i);
-      months.push(localeData.monthsShort(current));
-    }
-    return months;
-  }
-
-  getMonthSelectElement(month, months) {
-    const props = this.props;
-    const { prefixCls, fullscreen } = props;
-    const options: React.ReactElement<any>[] = [];
-
-    for (let index = 0; index < 12; index++) {
-      options.push(<Option key={`${index}`}>{months[index]}</Option>);
-    }
-
-    return (
-      <Select
-        size={fullscreen ? 'default' : 'small'}
-        dropdownMatchSelectWidth={false}
-        className={`${prefixCls}-month-select`}
-        value={String(month)}
-        onChange={this.onMonthChange}
-      >
-        {options}
-      </Select>
-    );
-  }
-
-  onYearChange = (year) => {
-    const newValue = this.props.value.clone();
-    newValue.year(parseInt(year, 10));
-
-    const onValueChange = this.props.onValueChange;
-    if (onValueChange) {
-      onValueChange(newValue);
-    }
-  }
-
-  onMonthChange = (month) => {
-    const newValue = this.props.value.clone();
-    newValue.month(parseInt(month, 10));
-    const onValueChange = this.props.onValueChange;
-    if (onValueChange) {
-      onValueChange(newValue);
-    }
-  }
-
-  onTypeChange = (e) => {
-    const onTypeChange = this.props.onTypeChange;
-    if (onTypeChange) {
-      onTypeChange(e.target.value);
-    }
-  }
-
-  render() {
-    const { type, value, prefixCls, locale, fullscreen } = this.props;
-    const yearSelect = this.getYearSelectElement(value.year());
-    const monthSelect = type === 'date' ?
-      this.getMonthSelectElement(value.month(), this.getMonthsLocale(value)) : null;
-    const size = (fullscreen ? 'default' : 'small') as any;
-    const typeSwitch = (
-      <Group onChange={this.onTypeChange} value={type} size={size}>
-        <Button value="date">{locale.month}</Button>
-        <Button value="month">{locale.year}</Button>
-      </Group>
-    );
-
-    return (
-      <div className={`${prefixCls}-header`}>
-        {yearSelect}
-        {monthSelect}
-        {typeSwitch}
-      </div>
-    );
-  }
+  return (
+    <div className={`${prefixCls}-header`} ref={divRef}>
+      <FormItemInputContext.Provider value={mergedFormItemInputContext}>
+        <YearSelect {...sharedProps} />
+        {mode === 'month' && <MonthSelect {...sharedProps} />}
+      </FormItemInputContext.Provider>
+      <ModeSwitch {...sharedProps} onModeChange={onModeChange} />
+    </div>
+  );
 }
+
+export default CalendarHeader;

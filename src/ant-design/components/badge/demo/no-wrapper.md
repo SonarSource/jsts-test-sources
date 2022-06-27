@@ -15,14 +15,27 @@ title:
 
 Used in standalone when children is empty.
 
-````jsx
-import { Badge } from 'antd';
+```tsx
+import { ClockCircleOutlined } from '@ant-design/icons';
+import { Badge, Space, Switch } from 'antd';
+import React, { useState } from 'react';
 
-ReactDOM.render(
-  <div>
-    <Badge count={25} />
-    <Badge count={4} style={{ backgroundColor: '#fff', color: '#999', boxShadow: '0 0 0 1px #d9d9d9 inset' }} />
-    <Badge count={109} style={{ backgroundColor: '#87d068' }} />
-  </div>
-, mountNode);
-````
+const App: React.FC = () => {
+  const [show, setShow] = useState(true);
+
+  return (
+    <Space>
+      <Switch checked={show} onChange={() => setShow(!show)} />
+      <Badge count={show ? 25 : 0} />
+      <Badge count={show ? <ClockCircleOutlined style={{ color: '#f5222d' }} /> : 0} />
+      <Badge
+        className="site-badge-count-109"
+        count={show ? 109 : 0}
+        style={{ backgroundColor: '#52c41a' }}
+      />
+    </Space>
+  );
+};
+
+export default App;
+```

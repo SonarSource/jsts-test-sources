@@ -1,0 +1,246 @@
+diff --git a/node_modules/react-native-credit-card-input/src/CCInput.js b/node_modules/react-native-credit-card-input/src/CCInput.js
+index dde3aec..aec1f45 100644
+--- a/node_modules/react-native-credit-card-input/src/CCInput.js
++++ b/node_modules/react-native-credit-card-input/src/CCInput.js
+@@ -33,6 +33,7 @@ export default class CCInput extends Component {
+     placeholderColor: PropTypes.string,
+ 
+     onFocus: PropTypes.func,
++    onBlur: PropTypes.func,
+     onChange: PropTypes.func,
+     onBecomeEmpty: PropTypes.func,
+     onBecomeValid: PropTypes.func,
+@@ -47,6 +48,7 @@ export default class CCInput extends Component {
+     inputStyle: {},
+     labelStyle: {},
+     onFocus: () => {},
++    onBlur: () => {},
+     onChange: () => {},
+     onBecomeEmpty: () => {},
+     onBecomeValid: () => {},
+@@ -70,6 +72,7 @@ export default class CCInput extends Component {
+     const { label, value, placeholder, status, keyboardType,
+             containerStyle, inputStyle, labelStyle,
+             validColor, invalidColor, placeholderColor,
++            onBlur,
+             additionalInputProps } = this.props;
+     return (
+       <TouchableOpacity onPress={this.focus}
+@@ -81,6 +84,7 @@ export default class CCInput extends Component {
+             keyboardType={keyboardType}
+             autoCapitalise="words"
+             autoCorrect={false}
++            onBlur={onBlur}
+             style={[
+               s.baseInputStyle,
+               inputStyle,
+diff --git a/node_modules/react-native-credit-card-input/src/LiteCreditCardInput.js b/node_modules/react-native-credit-card-input/src/LiteCreditCardInput.js
+index a5f166b..35e81c4 100644
+--- a/node_modules/react-native-credit-card-input/src/LiteCreditCardInput.js
++++ b/node_modules/react-native-credit-card-input/src/LiteCreditCardInput.js
+@@ -5,11 +5,14 @@ import {
+   Text,
+   StyleSheet,
+   Image,
+-  LayoutAnimation,
+   TouchableOpacity,
+   TextInput,
+ } from "react-native";
+ 
++// We had to replace LayoutAnimation with react-native-reanimated to fix vanishing card details on android
++// see https://utest-dl.s3.amazonaws.com/13083/27879/315960/null/bugAttachment/Bug5071486_1.mp4?AWSAccessKeyId=AKIAJ2UIWMJ2OMC3UCQQ&Expires=1937594726&Signature=IpRsV6PNLAlSDFN9J7A6obYajIU%3D (CX-1529)
++import { Transition, Transitioning } from 'react-native-reanimated';
++
+ import Icons from "./Icons";
+ import CCInput from "./CCInput";
+ import { InjectedProps } from "./connectToState";
+@@ -20,13 +23,14 @@ const s = StyleSheet.create({
+   container: {
+     paddingLeft: 10,
+     paddingRight: 10,
++    height: 50,
+     flexDirection: "row",
+     alignItems: "center",
+     overflow: "hidden",
+   },
+   icon: {
+-    width: 48,
+-    height: 40,
++    width: 32,
++    height: 26,
+     resizeMode: "contain",
+   },
+   expanded: {
+@@ -50,18 +54,22 @@ const s = StyleSheet.create({
+     width: INFINITE_WIDTH,
+   },
+   expiryInput: {
+-    width: 80,
++    width: "100%",
++    marginRight: 5,
+   },
+   cvcInput: {
+-    width: 80,
++    width: "100%",
++    marginRight: 3, // fix truncated text for custom font
+   },
+   last4Input: {
+     width: 60,
+-    marginLeft: 20,
++    marginLeft: 5,
+   },
+   input: {
+-    height: 40,
++    height: 50,
+     color: "black",
++    fontSize: 16,
++    fontFamily: "Unica77LL-Regular"
+   },
+ });
+ 
+@@ -83,13 +91,13 @@ export default class LiteCreditCardInput extends Component {
+ 
+   static defaultProps = {
+     placeholders: {
+-      number: "1234 5678 1234 5678",
++      number: "Card number",
+       expiry: "MM/YY",
+       cvc: "CVC",
+     },
+     validColor: "",
+     invalidColor: "red",
+-    placeholderColor: "gray",
++    placeholderColor: "#707070", // black60
+     additionalInputsProps: {},
+   };
+ 
+@@ -105,7 +113,7 @@ export default class LiteCreditCardInput extends Component {
+   _focus = field => {
+     if (!field) return;
+     this.refs[field].focus();
+-    LayoutAnimation.easeInEaseOut();
++    animate()
+   }
+ 
+   _inputProps = field => {
+@@ -113,6 +121,7 @@ export default class LiteCreditCardInput extends Component {
+       inputStyle, validColor, invalidColor, placeholderColor,
+       placeholders, values, status,
+       onFocus, onChange, onBecomeEmpty, onBecomeValid,
++      onBlur,
+       additionalInputsProps,
+     } = this.props;
+ 
+@@ -126,6 +135,7 @@ export default class LiteCreditCardInput extends Component {
+       status: status[field],
+ 
+       onFocus, onChange, onBecomeEmpty, onBecomeValid,
++      onBlur,
+       additionalInputProps: additionalInputsProps[field],
+     };
+   };
+@@ -139,11 +149,22 @@ export default class LiteCreditCardInput extends Component {
+   }
+ 
+   render() {
+-    const { focused, values: { number }, inputStyle, status: { number: numberStatus } } = this.props;
++    const { focused, isInputFocused, valid, values: { number }, inputStyle, status: { number: numberStatus } } = this.props;
+     const showRightPart = focused && focused !== "number";
+ 
++    const borderColor = "#C2C2C2" // black30
++    const borderColorFocused = "#707070" // black60
++    const borderColorError = "#C82400" // red100
++
++    const showWarningState = !isInputFocused && !valid && number?.length
++
++    const borderStyle = {
++      borderWidth: 1,
++      borderColor: showWarningState ? borderColorError : isInputFocused ? borderColorFocused : borderColor
++    }
++
+     return (
+-      <View style={s.container}>
++      <View style={[s.container, borderStyle]}>
+         <View style={[
+           s.leftPart,
+           showRightPart ? s.hidden : s.expanded,
+@@ -152,16 +173,23 @@ export default class LiteCreditCardInput extends Component {
+             keyboardType="numeric"
+             containerStyle={s.numberInput} />
+         </View>
+-        <TouchableOpacity onPress={showRightPart ? this._focusNumber : this._focusExpiry }>
+-          <Image style={s.icon} source={Icons[this._iconToShow()]} />
+-        </TouchableOpacity>
++          <Transitioning.View transition={transition} ref={ANIMATION_REF}>
++            <TouchableOpacity onPress={showRightPart ? this._focusNumber : this._focusExpiry }>
++              <Image style={s.icon} source={Icons[this._iconToShow()]} />
++            </TouchableOpacity>
++          </Transitioning.View>
++
+         <View style={[
+           s.rightPart,
+           showRightPart ? s.expanded : s.hidden,
+         ]}>
+           <TouchableOpacity onPress={this._focusNumber}
+             style={s.last4}>
+-            <View pointerEvents={"none"}>
++            <View
++              pointerEvents={"none"}
++              style={{flexDirection: 'row', alignItems: 'center', paddingStart: 15}}
++            >
++              <Text>••••</Text>
+               <CCInput field="last4"
+                 keyboardType="numeric"
+                 value={ numberStatus === "valid" ? number.substr(number.length - 4, 4) : "" }
+@@ -180,3 +208,14 @@ export default class LiteCreditCardInput extends Component {
+     );
+   }
+ }
++const transition = (
++  <Transition.Together>
++    <Transition.Change interpolation="easeInOut" />
++  </Transition.Together>
++);
++
++const ANIMATION_REF = React.createRef();
++
++function animate() {
++  ANIMATION_REF.current.animateNextTransition();
++}
+diff --git a/node_modules/react-native-credit-card-input/src/connectToState.js b/node_modules/react-native-credit-card-input/src/connectToState.js
+index cda7fc6..d12a1de 100644
+--- a/node_modules/react-native-credit-card-input/src/connectToState.js
++++ b/node_modules/react-native-credit-card-input/src/connectToState.js
+@@ -6,6 +6,7 @@ import compact from "lodash.compact";
+ 
+ export const InjectedProps = {
+   focused: PropTypes.string,
++  isInputFocused: PropTypes.bool,
+   values: PropTypes.object.isRequired,
+   status: PropTypes.object.isRequired,
+   onFocus: PropTypes.func.isRequired,
+@@ -47,6 +48,7 @@ export default function connectToState(CreditCardInput) {
+       super();
+       this.state = {
+         focused: "",
++        isInputFocused: false,
+         values: {},
+         status: {},
+       };
+@@ -68,7 +70,7 @@ export default function connectToState(CreditCardInput) {
+     };
+ 
+     focus = (field = "number") => {
+-      this.setState({ focused: field });
++      this.setState({ focused: field, isInputFocused: true });
+     };
+ 
+     _displayedFields = () => {
+@@ -115,6 +117,7 @@ export default function connectToState(CreditCardInput) {
+           {...this.props}
+           {...this.state}
+           onFocus={this._onFocus}
++          onBlur={() => this.setState({isInputFocused: false})}
+           onChange={this._change}
+           onBecomeEmpty={this._focusPreviousField}
+           onBecomeValid={this._focusNextField} />

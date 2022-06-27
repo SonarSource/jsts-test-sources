@@ -1,953 +1,566 @@
-import React from 'react';
-import RcTable from 'rc-table';
-import PropTypes from 'prop-types';
 import classNames from 'classnames';
-import assign from 'object-assign';
-import Pagination, { PaginationProps } from '../pagination';
-import Icon from '../icon';
-import Spin, { SpinProps } from '../spin';
+import RcTable, { Summary } from 'rc-table';
+import { convertChildrenToColumns } from 'rc-table/lib/hooks/useColumns';
+import type { TableProps as RcTableProps } from 'rc-table/lib/Table';
+import { INTERNAL_HOOKS } from 'rc-table/lib/Table';
+import omit from 'rc-util/lib/omit';
+import * as React from 'react';
+import { ConfigContext } from '../config-provider/context';
+import defaultRenderEmpty from '../config-provider/defaultRenderEmpty';
+import type { SizeType } from '../config-provider/SizeContext';
+import SizeContext from '../config-provider/SizeContext';
+import useBreakpoint from '../grid/hooks/useBreakpoint';
+import defaultLocale from '../locale/en_US';
+import Pagination from '../pagination';
+import type { SpinProps } from '../spin';
+import Spin from '../spin';
+import type { TooltipProps } from '../tooltip';
+import type { Breakpoint } from '../_util/responsiveObserve';
+import scrollTo from '../_util/scrollTo';
 import warning from '../_util/warning';
-import FilterDropdown from './filterDropdown';
-import createStore, { Store } from './createStore';
-import SelectionBox from './SelectionBox';
-import SelectionCheckboxAll, { SelectionDecorator } from './SelectionCheckboxAll';
-import Column, { ColumnProps } from './Column';
+import Column from './Column';
 import ColumnGroup from './ColumnGroup';
-import { flatArray, treeMap, flatFilter, normalizeColumns } from './util';
+import renderExpandIcon from './ExpandIcon';
+import type { FilterState } from './hooks/useFilter';
+import useFilter, { getFilterData } from './hooks/useFilter';
+import useLazyKVMap from './hooks/useLazyKVMap';
+import usePagination, { DEFAULT_PAGE_SIZE, getPaginationParam } from './hooks/usePagination';
+import useSelection, {
+  SELECTION_ALL,
+  SELECTION_COLUMN,
+  SELECTION_INVERT,
+  SELECTION_NONE,
+} from './hooks/useSelection';
+import type { SortState } from './hooks/useSorter';
+import useSorter, { getSortData } from './hooks/useSorter';
+import useTitleColumns from './hooks/useTitleColumns';
+import type {
+  ColumnType,
+  ExpandableConfig,
+  ExpandType,
+  FilterValue,
+  GetPopupContainer,
+  GetRowKey,
+  SorterResult,
+  SortOrder,
+  TableAction,
+  TableCurrentDataSource,
+  TableLocale,
+  TableRowSelection,
+} from './interface';
+import { ColumnsType, TablePaginationConfig } from './interface';
 
-function noop() {
+export { ColumnsType, TablePaginationConfig };
+
+const EMPTY_LIST: any[] = [];
+
+interface ChangeEventInfo<RecordType> {
+  pagination: {
+    current?: number;
+    pageSize?: number;
+    total?: number;
+  };
+  filters: Record<string, FilterValue | null>;
+  sorter: SorterResult<RecordType> | SorterResult<RecordType>[];
+
+  filterStates: FilterState<RecordType>[];
+  sorterStates: SortState<RecordType>[];
+
+  resetPagination: Function;
 }
 
-function stopPropagation(e) {
-  e.stopPropagation();
-  if (e.nativeEvent.stopImmediatePropagation) {
-    e.nativeEvent.stopImmediatePropagation();
-  }
-}
-
-const defaultLocale = {
-  filterTitle: '筛选',
-  filterConfirm: '确定',
-  filterReset: '重置',
-  emptyText: <span><Icon type="frown-o" />暂无数据</span>,
-  selectAll: '全选当页',
-  selectInvert: '反选当页',
-};
-
-const defaultPagination = {
-  onChange: noop,
-  onShowSizeChange: noop,
-};
-
-/**
- * Avoid creating new object, so that parent component's shouldComponentUpdate
- * can works appropriately。
- */
-const emptyObject = {};
-
-export type TableColumnConfig<T> = ColumnProps<T>;
-
-export interface TableRowSelection<T> {
-  type?: 'checkbox' | 'radio';
-  selectedRowKeys?: string[];
-  onChange?: (selectedRowKeys: string[], selectedRows: Object[]) => any;
-  getCheckboxProps?: (record: T) => Object;
-  onSelect?: (record: T, selected: boolean, selectedRows: Object[]) => any;
-  onSelectAll?: (selected: boolean, selectedRows: Object[], changeRows: Object[]) => any;
-  onSelectInvert?: (selectedRows: Object[]) => any;
-  selections?: SelectionDecorator[] | boolean;
-}
-
-export interface TableProps<T> {
-  prefixCls?: string;
+export interface TableProps<RecordType>
+  extends Omit<
+    RcTableProps<RecordType>,
+    | 'transformColumns'
+    | 'internalHooks'
+    | 'internalRefs'
+    | 'data'
+    | 'columns'
+    | 'scroll'
+    | 'emptyText'
+  > {
   dropdownPrefixCls?: string;
-  rowSelection?: TableRowSelection<T>;
-  pagination?: PaginationProps | boolean;
-  size?: 'default' | 'middle' | 'small';
-  dataSource?: T[];
-  columns?: ColumnProps<T>[];
-  rowKey?: string | ((record: T, index: number) => string);
-  rowClassName?: (record: T, index: number) => string;
-  expandedRowRender?: any;
-  defaultExpandedRowKeys?: string[];
-  expandedRowKeys?: string[];
-  expandIconAsCell?: boolean;
-  expandIconColumnIndex?: number;
-  onExpandedRowsChange?: (expandedRowKeys: string[]) => void;
-  onExpand?: (expanded: boolean, record: T) => void;
-  onChange?: (pagination: PaginationProps | boolean, filters: string[], sorter: Object) => any;
+  dataSource?: RcTableProps<RecordType>['data'];
+  columns?: ColumnsType<RecordType>;
+  pagination?: false | TablePaginationConfig;
   loading?: boolean | SpinProps;
-  locale?: Object;
-  indentSize?: number;
-  onRowClick?: (record: T, index: number) => any;
-  useFixedHeader?: boolean;
+  size?: SizeType;
   bordered?: boolean;
-  showHeader?: boolean;
-  footer?: (currentPageData: Object[]) => React.ReactNode;
-  title?: (currentPageData: Object[]) => React.ReactNode;
-  scroll?: { x?: boolean | number, y?: boolean | number};
-  childrenColumnName?: string;
-  bodyStyle?: React.CSSProperties;
-  className?: string;
-  style?: React.CSSProperties;
+  locale?: TableLocale;
+
+  onChange?: (
+    pagination: TablePaginationConfig,
+    filters: Record<string, FilterValue | null>,
+    sorter: SorterResult<RecordType> | SorterResult<RecordType>[],
+    extra: TableCurrentDataSource<RecordType>,
+  ) => void;
+  rowSelection?: TableRowSelection<RecordType>;
+
+  getPopupContainer?: GetPopupContainer;
+  scroll?: RcTableProps<RecordType>['scroll'] & {
+    scrollToFirstRowOnChange?: boolean;
+  };
+  sortDirections?: SortOrder[];
+  showSorterTooltip?: boolean | TooltipProps;
 }
 
-export interface TableContext {
-  antLocale?: {
-    Table?: any,
-  };
-}
+function InternalTable<RecordType extends object = any>(
+  props: TableProps<RecordType>,
+  ref: React.MutableRefObject<HTMLDivElement>,
+) {
+  const {
+    prefixCls: customizePrefixCls,
+    className,
+    style,
+    size: customizeSize,
+    bordered,
+    dropdownPrefixCls: customizeDropdownPrefixCls,
+    dataSource,
+    pagination,
+    rowSelection,
+    rowKey,
+    rowClassName,
+    columns,
+    children,
+    childrenColumnName: legacyChildrenColumnName,
+    onChange,
+    getPopupContainer,
+    loading,
+    expandIcon,
+    expandable,
+    expandedRowRender,
+    expandIconColumnIndex,
+    indentSize,
+    scroll,
+    sortDirections,
+    locale,
+    showSorterTooltip = true,
+  } = props;
 
-export default class Table<T> extends React.Component<TableProps<T>, any> {
-  static Column = Column;
-  static ColumnGroup = ColumnGroup;
+  warning(
+    !(typeof rowKey === 'function' && rowKey.length > 1),
+    'Table',
+    '`index` parameter of `rowKey` function is deprecated. There is no guarantee that it will work as expected.',
+  );
 
-  static propTypes = {
-    dataSource: PropTypes.array,
-    columns: PropTypes.array,
-    prefixCls: PropTypes.string,
-    useFixedHeader: PropTypes.bool,
-    rowSelection: PropTypes.object,
-    className: PropTypes.string,
-    size: PropTypes.string,
-    loading: PropTypes.oneOfType([
-      PropTypes.bool,
-      PropTypes.object,
-    ]),
-    bordered: PropTypes.bool,
-    onChange: PropTypes.func,
-    locale: PropTypes.object,
-    dropdownPrefixCls: PropTypes.string,
-  };
+  const baseColumns = React.useMemo(
+    () => columns || (convertChildrenToColumns(children) as ColumnsType<RecordType>),
+    [columns, children],
+  );
+  const needResponsive = React.useMemo(
+    () => baseColumns.some((col: ColumnType<RecordType>) => col.responsive),
+    [baseColumns],
+  );
 
-  static defaultProps = {
-    dataSource: [],
-    prefixCls: 'ant-table',
-    useFixedHeader: false,
-    rowSelection: null,
-    className: '',
-    size: 'large',
-    loading: false,
-    bordered: false,
-    indentSize: 20,
-    locale: {},
-    rowKey: 'key',
-    showHeader: true,
-  };
+  const screens = useBreakpoint(needResponsive);
 
-  static contextTypes = {
-    antLocale: PropTypes.object,
-  };
+  const mergedColumns = React.useMemo(() => {
+    const matched = new Set(Object.keys(screens).filter((m: Breakpoint) => screens[m]));
 
-  context: TableContext;
-  CheckboxPropsCache: Object;
-  store: Store;
-  columns: ColumnProps<T>[];
-
-  constructor(props) {
-    super(props);
-
-    warning(
-      !('columnsPageRange' in props || 'columnsPageSize' in props),
-      '`columnsPageRange` and `columnsPageSize` are removed, please use ' +
-      'fixed columns instead, see: http://u.ant.design/fixed-columns.',
+    return baseColumns.filter(
+      c => !c.responsive || c.responsive.some((r: Breakpoint) => matched.has(r)),
     );
+  }, [baseColumns, screens]);
 
-    this.columns = props.columns || normalizeColumns(props.children);
+  const tableProps = omit(props, ['className', 'style', 'columns']) as TableProps<RecordType>;
 
-    this.state = assign({}, this.getSortStateFromColumns(), {
-      // 减少状态
-      filters: this.getFiltersFromColumns(),
-      pagination: this.getDefaultPagination(props),
-    });
+  const size = React.useContext(SizeContext);
+  const {
+    locale: contextLocale = defaultLocale,
+    renderEmpty,
+    direction,
+  } = React.useContext(ConfigContext);
+  const mergedSize = customizeSize || size;
+  const tableLocale = { ...contextLocale.Table, ...locale } as TableLocale;
+  const rawData: readonly RecordType[] = dataSource || EMPTY_LIST;
 
-    this.CheckboxPropsCache = {};
+  const { getPrefixCls } = React.useContext(ConfigContext);
+  const prefixCls = getPrefixCls('table', customizePrefixCls);
+  const dropdownPrefixCls = getPrefixCls('dropdown', customizeDropdownPrefixCls);
 
-    this.store = createStore({
-      selectedRowKeys: (props.rowSelection || {}).selectedRowKeys || [],
-      selectionDirty: false,
-    });
-  }
+  const mergedExpandable: ExpandableConfig<RecordType> = {
+    childrenColumnName: legacyChildrenColumnName,
+    expandIconColumnIndex,
+    ...expandable,
+  };
+  const { childrenColumnName = 'children' } = mergedExpandable;
 
-  getCheckboxPropsByItem = (item, index) => {
-    const { rowSelection = {} } = this.props;
-    if (!rowSelection.getCheckboxProps) {
-      return {};
-    }
-    const key = this.getRecordKey(item, index);
-    // Cache checkboxProps
-    if (!this.CheckboxPropsCache[key]) {
-      this.CheckboxPropsCache[key] = rowSelection.getCheckboxProps(item);
-    }
-    return this.CheckboxPropsCache[key];
-  }
-
-  getDefaultSelection() {
-    const { rowSelection = {} } = this.props;
-    if (!rowSelection.getCheckboxProps) {
-      return [];
-    }
-    return this.getFlatData()
-      .filter((item, rowIndex) => this.getCheckboxPropsByItem(item, rowIndex).defaultChecked)
-      .map((record, rowIndex) => this.getRecordKey(record, rowIndex));
-  }
-
-  getDefaultPagination(props) {
-    const pagination = props.pagination || {};
-    return this.hasPagination(props) ?
-      assign({},  defaultPagination, pagination, {
-        current: pagination.defaultCurrent || pagination.current || 1,
-        pageSize: pagination.defaultPageSize || pagination.pageSize || 10,
-      }) : {};
-  }
-
-  getLocale() {
-    let locale = {};
-    if (this.context.antLocale && this.context.antLocale.Table) {
-      locale = this.context.antLocale.Table;
-    }
-    return assign({}, defaultLocale, locale, this.props.locale);
-  }
-
-  componentWillReceiveProps(nextProps) {
-    this.columns = nextProps.columns || normalizeColumns(nextProps.children);
-    if ('pagination' in nextProps || 'pagination' in this.props) {
-      this.setState(previousState => {
-        const newPagination = assign({}, defaultPagination, previousState.pagination, nextProps.pagination);
-        newPagination.current = newPagination.current || 1;
-        newPagination.pageSize = newPagination.pageSize || 10;
-        return { pagination: nextProps.pagination !== false ? newPagination : emptyObject };
-      });
-    }
-    if (nextProps.rowSelection &&
-        'selectedRowKeys' in nextProps.rowSelection) {
-      this.store.setState({
-        selectedRowKeys: nextProps.rowSelection.selectedRowKeys || [],
-      });
-      const { rowSelection } = this.props;
-      if (rowSelection && (
-        nextProps.rowSelection.getCheckboxProps !== rowSelection.getCheckboxProps
-      )) {
-        this.CheckboxPropsCache = {};
-      }
-    }
-    if ('dataSource' in nextProps &&
-        nextProps.dataSource !== this.props.dataSource) {
-      this.store.setState({
-        selectionDirty: false,
-      });
-      this.CheckboxPropsCache = {};
+  const expandType: ExpandType = React.useMemo<ExpandType>(() => {
+    if (rawData.some(item => (item as any)?.[childrenColumnName])) {
+      return 'nest';
     }
 
-    if (this.getSortOrderColumns(this.columns).length > 0) {
-      const sortState = this.getSortStateFromColumns(this.columns);
-      if (sortState.sortColumn !== this.state.sortColumn ||
-          sortState.sortOrder !== this.state.sortOrder) {
-        this.setState(sortState);
-      }
+    if (expandedRowRender || (expandable && expandable.expandedRowRender)) {
+      return 'row';
     }
 
-    const filteredValueColumns = this.getFilteredValueColumns(this.columns);
-    if (filteredValueColumns.length > 0) {
-      const filtersFromColumns = this.getFiltersFromColumns(this.columns);
-      const newFilters = assign({}, this.state.filters);
-      Object.keys(filtersFromColumns).forEach(key => {
-        newFilters[key] = filtersFromColumns[key];
-      });
-      if (this.isFiltersChanged(newFilters)) {
-        this.setState({ filters: newFilters });
-      }
-    }
-  }
+    return null;
+  }, [rawData]);
 
-  setSelectedRowKeys(selectedRowKeys, { selectWay, record, checked, changeRowKeys }: any) {
-    const { rowSelection = {} } = this.props;
-    if (rowSelection && !('selectedRowKeys' in rowSelection)) {
-      this.store.setState({ selectedRowKeys });
-    }
-    const data = this.getFlatData();
-    if (!rowSelection.onChange && !rowSelection[selectWay]) {
-      return;
-    }
-    const selectedRows = data.filter(
-      (row, i) => selectedRowKeys.indexOf(this.getRecordKey(row, i)) >= 0,
-    );
-    if (rowSelection.onChange) {
-      rowSelection.onChange(selectedRowKeys, selectedRows);
-    }
-    if (selectWay === 'onSelect' && rowSelection.onSelect) {
-      rowSelection.onSelect(record, checked, selectedRows);
-    } else if (selectWay === 'onSelectAll' && rowSelection.onSelectAll) {
-      const changeRows = data.filter(
-        (row, i) => changeRowKeys.indexOf(this.getRecordKey(row, i)) >= 0,
-      );
-      rowSelection.onSelectAll(checked, selectedRows, changeRows);
-    } else if (selectWay === 'onSelectInvert' && rowSelection.onSelectInvert) {
-      rowSelection.onSelectInvert(selectedRowKeys);
-    }
-  }
+  const internalRefs = {
+    body: React.useRef<HTMLDivElement>(),
+  };
 
-  hasPagination(props?: any) {
-    return (props || this.props).pagination !== false;
-  }
-
-  isFiltersChanged(filters) {
-    let filtersChanged = false;
-    if (Object.keys(filters).length !== Object.keys(this.state.filters).length) {
-      filtersChanged = true;
-    } else {
-      Object.keys(filters).forEach(columnKey => {
-        if (filters[columnKey] !== this.state.filters[columnKey]) {
-          filtersChanged = true;
-        }
-      });
+  // ============================ RowKey ============================
+  const getRowKey = React.useMemo<GetRowKey<RecordType>>(() => {
+    if (typeof rowKey === 'function') {
+      return rowKey;
     }
-    return filtersChanged;
-  }
 
-  getSortOrderColumns(columns?) {
-    return flatFilter(columns || this.columns || [], column => 'sortOrder' in column);
-  }
+    return (record: RecordType) => (record as any)?.[rowKey as string];
+  }, [rowKey]);
 
-  getFilteredValueColumns(columns?) {
-    return flatFilter(columns || this.columns || [], column => typeof column.filteredValue !== 'undefined');
-  }
+  const [getRecordByKey] = useLazyKVMap(rawData, childrenColumnName, getRowKey);
 
-  getFiltersFromColumns(columns?) {
-    let filters = {};
-    this.getFilteredValueColumns(columns).forEach(col => {
-      filters[this.getColumnKey(col)] = col.filteredValue;
-    });
-    return filters;
-  }
+  // ============================ Events =============================
+  const changeEventInfo: Partial<ChangeEventInfo<RecordType>> = {};
 
-  getSortStateFromColumns(columns?) {
-    // return fisrt column which sortOrder is not falsy
-    const sortedColumn =
-      this.getSortOrderColumns(columns).filter(col => col.sortOrder)[0];
-    if (sortedColumn) {
-      return {
-        sortColumn: sortedColumn,
-        sortOrder: sortedColumn.sortOrder,
-      };
-    }
-    return {
-      sortColumn: null,
-      sortOrder: null,
-    };
-  }
-
-  getSorterFn() {
-    const { sortOrder, sortColumn } = this.state;
-    if (!sortOrder || !sortColumn ||
-        typeof sortColumn.sorter !== 'function') {
-      return;
-    }
-    return (a, b) => {
-      const result = sortColumn.sorter(a, b);
-      if (result !== 0) {
-        return (sortOrder === 'descend') ? -result : result;
-      }
-      return 0;
-    };
-  }
-
-  toggleSortOrder(order, column) {
-    let { sortColumn, sortOrder } = this.state;
-    // 只同时允许一列进行排序，否则会导致排序顺序的逻辑问题
-    let isSortColumn = this.isSortColumn(column);
-    if (!isSortColumn) {  // 当前列未排序
-      sortOrder = order;
-      sortColumn = column;
-    } else {                      // 当前列已排序
-      if (sortOrder === order) {  // 切换为未排序状态
-        sortOrder = '';
-        sortColumn = null;
-      } else {                    // 切换为排序状态
-        sortOrder = order;
-      }
-    }
-    const newState = {
-      sortOrder,
-      sortColumn,
+  const triggerOnChange = (
+    info: Partial<ChangeEventInfo<RecordType>>,
+    action: TableAction,
+    reset: boolean = false,
+  ) => {
+    const changeInfo = {
+      ...changeEventInfo,
+      ...info,
     };
 
-    // Controlled
-    if (this.getSortOrderColumns().length === 0) {
-      this.setState(newState);
-    }
+    if (reset) {
+      changeEventInfo.resetPagination!();
 
-    const onChange = this.props.onChange;
-    if (onChange) {
-      onChange.apply(null, this.prepareParamsArguments(assign({}, this.state, newState)));
-    }
-  }
-
-  handleFilter = (column, nextFilters) => {
-    const props = this.props;
-    let pagination = assign({}, this.state.pagination);
-    const filters = assign({}, this.state.filters, {
-      [this.getColumnKey(column)]: nextFilters,
-    });
-    // Remove filters not in current columns
-    const currentColumnKeys: string[] = [];
-    treeMap(this.columns, c => {
-      if (!c.children) {
-        currentColumnKeys.push(this.getColumnKey(c));
+      // Reset event param
+      if (changeInfo.pagination!.current) {
+        changeInfo.pagination!.current = 1;
       }
-    });
-    Object.keys(filters).forEach((columnKey) => {
-      if (currentColumnKeys.indexOf(columnKey) < 0) {
-        delete filters[columnKey];
-      }
-    });
 
-    if (props.pagination) {
-      // Reset current prop
-      pagination.current = 1;
-      pagination.onChange(pagination.current);
+      // Trigger pagination events
+      if (pagination && pagination.onChange) {
+        pagination.onChange(1, changeInfo.pagination!.pageSize!);
+      }
     }
 
-    const newState = {
-      pagination,
-      filters: {},
-    };
-    const filtersToSetState = assign({}, filters);
-    // Remove filters which is controlled
-    this.getFilteredValueColumns().forEach(col => {
-      const columnKey = this.getColumnKey(col);
-      if (columnKey) {
-        delete filtersToSetState[columnKey];
-      }
-    });
-    if (Object.keys(filtersToSetState).length > 0) {
-      newState.filters = filtersToSetState;
-    }
-
-    // Controlled current prop will not respond user interaction
-    if (typeof props.pagination === 'object' && 'current' in (props.pagination as Object)) {
-      newState.pagination = assign({}, pagination, {
-        current: this.state.pagination.current,
+    if (scroll && scroll.scrollToFirstRowOnChange !== false && internalRefs.body.current) {
+      scrollTo(0, {
+        getContainer: () => internalRefs.body.current!,
       });
     }
 
-    this.setState(newState, () => {
-      this.store.setState({
-        selectionDirty: false,
-      });
-      const onChange = this.props.onChange;
-      if (onChange) {
-        onChange.apply(null, this.prepareParamsArguments(assign({}, this.state, {
-          selectionDirty: false,
-          filters,
-          pagination,
-        })));
-      }
+    onChange?.(changeInfo.pagination!, changeInfo.filters!, changeInfo.sorter!, {
+      currentDataSource: getFilterData(
+        getSortData(rawData, changeInfo.sorterStates!, childrenColumnName),
+        changeInfo.filterStates!,
+      ),
+      action,
     });
-  }
+  };
 
-  handleSelect = (record, rowIndex, e) => {
-    const checked = e.target.checked;
-    const defaultSelection = this.store.getState().selectionDirty ? [] : this.getDefaultSelection();
-    let selectedRowKeys = this.store.getState().selectedRowKeys.concat(defaultSelection);
-    let key = this.getRecordKey(record, rowIndex);
-    if (checked) {
-      selectedRowKeys.push(this.getRecordKey(record, rowIndex));
-    } else {
-      selectedRowKeys = selectedRowKeys.filter((i) => key !== i);
-    }
-    this.store.setState({
-      selectionDirty: true,
-    });
-    this.setSelectedRowKeys(selectedRowKeys, {
-      selectWay: 'onSelect',
-      record,
-      checked,
-    });
-  }
+  /**
+   * Controlled state in `columns` is not a good idea that makes too many code (1000+ line?) to read
+   * state out and then put it back to title render. Move these code into `hooks` but still too
+   * complex. We should provides Table props like `sorter` & `filter` to handle control in next big version.
+   */
 
-  handleRadioSelect = (record, rowIndex, e) => {
-    const checked = e.target.checked;
-    const defaultSelection = this.store.getState().selectionDirty ? [] : this.getDefaultSelection();
-    let selectedRowKeys = this.store.getState().selectedRowKeys.concat(defaultSelection);
-    let key = this.getRecordKey(record, rowIndex);
-    selectedRowKeys = [key];
-    this.store.setState({
-      selectionDirty: true,
-    });
-    this.setSelectedRowKeys(selectedRowKeys, {
-      selectWay: 'onSelect',
-      record,
-      checked,
-    });
-  }
-
-  handleSelectRow = (selectionKey, index, onSelectFunc) => {
-    const data = this.getFlatCurrentPageData();
-    const defaultSelection = this.store.getState().selectionDirty ? [] : this.getDefaultSelection();
-    const selectedRowKeys = this.store.getState().selectedRowKeys.concat(defaultSelection);
-    const changeableRowKeys = data
-      .filter((item, i) => !this.getCheckboxPropsByItem(item, i).disabled)
-      .map((item, i) => this.getRecordKey(item, i));
-
-    let changeRowKeys: string[] = [];
-    let selectWay = '';
-    let checked;
-    // handle default selection
-    switch (selectionKey) {
-      case 'all':
-        changeableRowKeys.forEach(key => {
-          if (selectedRowKeys.indexOf(key) < 0) {
-            selectedRowKeys.push(key);
-            changeRowKeys.push(key);
-          }
-        });
-        selectWay = 'onSelectAll';
-        checked = true;
-        break;
-      case 'removeAll':
-        changeableRowKeys.forEach(key => {
-          if (selectedRowKeys.indexOf(key) >= 0) {
-            selectedRowKeys.splice(selectedRowKeys.indexOf(key), 1);
-            changeRowKeys.push(key);
-          }
-        });
-        selectWay = 'onSelectAll';
-        checked = false;
-        break;
-      case 'invert':
-        changeableRowKeys.forEach(key => {
-          if (selectedRowKeys.indexOf(key) < 0) {
-            selectedRowKeys.push(key);
-          }else {
-            selectedRowKeys.splice(selectedRowKeys.indexOf(key), 1);
-          }
-          changeRowKeys.push(key);
-          selectWay = 'onSelectInvert';
-        });
-        break;
-      default:
-        break;
-    }
-
-    this.store.setState({
-      selectionDirty: true,
-    });
-    // when select custom selection, callback selections[n].onSelect
-    if (index > 1 && typeof onSelectFunc === 'function') {
-      return onSelectFunc(changeableRowKeys);
-    }
-    this.setSelectedRowKeys(selectedRowKeys, {
-      selectWay: selectWay,
-      checked,
-      changeRowKeys,
-    });
-  }
-
-  handlePageChange = (current, ...otherArguments) => {
-    const props = this.props;
-    let pagination = assign({}, this.state.pagination);
-    if (current) {
-      pagination.current = current;
-    } else {
-      pagination.current = pagination.current || 1;
-    }
-    pagination.onChange(pagination.current, ...otherArguments);
-
-    const newState = {
-      pagination,
-    };
-    // Controlled current prop will not respond user interaction
-    if (props.pagination &&
-        typeof props.pagination === 'object' &&
-        'current' in (props.pagination as Object)) {
-      newState.pagination = assign({}, pagination, {
-        current: this.state.pagination.current,
-      });
-    }
-    this.setState(newState);
-
-    this.store.setState({
-      selectionDirty: false,
-    });
-
-    const onChange = this.props.onChange;
-    if (onChange) {
-      onChange.apply(null, this.prepareParamsArguments(assign({}, this.state, {
-        selectionDirty: false,
-        pagination,
-      })));
-    }
-  }
-
-  renderSelectionBox = (type) => {
-    return (_, record, index) => {
-      let rowIndex = this.getRecordKey(record, index); // 从 1 开始
-      const props = this.getCheckboxPropsByItem(record, index);
-      const handleChange = (e) => {
-        type === 'radio' ? this.handleRadioSelect(record, rowIndex, e) :
-                           this.handleSelect(record, rowIndex, e);
-      };
-
-      return (
-        <span onClick={stopPropagation}>
-          <SelectionBox
-            type={type}
-            store={this.store}
-            rowIndex={rowIndex}
-            disabled={props.disabled}
-            onChange={handleChange}
-            defaultSelection={this.getDefaultSelection()}
-          />
-        </span>
-      );
-    };
-  }
-
-  getRecordKey = (record, index): string => {
-    const rowKey = this.props.rowKey;
-    const recordKey = (typeof rowKey === 'function') ?
-      rowKey(record, index) :  record[rowKey as string];
-    warning(recordKey !== undefined,
-      'Each record in dataSource of table should have a unique `key` prop, or set `rowKey` to an unique primary key,' +
-      'see http://u.ant.design/table-row-key',
-    );
-    return recordKey === undefined ? index : recordKey;
-  }
-
-  renderRowSelection() {
-    const { prefixCls, rowSelection } = this.props;
-    const columns = this.columns.concat();
-    if (rowSelection) {
-      const data = this.getFlatCurrentPageData().filter((item, index) => {
-        if (rowSelection.getCheckboxProps) {
-          return !this.getCheckboxPropsByItem(item, index).disabled;
-        }
-        return true;
-      });
-      let selectionColumnClass = classNames(`${prefixCls}-selection-column`, {
-        [`${prefixCls}-selection-column-custom`]: rowSelection.selections,
-      });
-      const selectionColumn: ColumnProps<any> = {
-        key: 'selection-column',
-        render: this.renderSelectionBox(rowSelection.type),
-        className: selectionColumnClass,
-      };
-      if (rowSelection.type !== 'radio') {
-        const checkboxAllDisabled = data.every((item, index) => this.getCheckboxPropsByItem(item, index).disabled);
-        selectionColumn.title  = (
-          <SelectionCheckboxAll
-            store={this.store}
-            locale={this.getLocale()}
-            data={data}
-            getCheckboxPropsByItem={this.getCheckboxPropsByItem}
-            getRecordKey={this.getRecordKey}
-            disabled={checkboxAllDisabled}
-            prefixCls={prefixCls}
-            onSelect={this.handleSelectRow}
-            selections={rowSelection.selections}
-          />
-        );
-      }
-      if (columns.some(column => column.fixed === 'left' || column.fixed === true)) {
-        selectionColumn.fixed = 'left';
-      }
-      if (columns[0] && columns[0].key === 'selection-column') {
-        columns[0] = selectionColumn;
-      } else {
-        columns.unshift(selectionColumn);
-      }
-    }
-    return columns;
-  }
-
-  getColumnKey(column, index?) {
-    return column.key || column.dataIndex || index;
-  }
-
-  getMaxCurrent(total) {
-    const { current, pageSize } = this.state.pagination;
-    if ((current - 1) * pageSize >= total) {
-      return Math.floor((total - 1) / pageSize) + 1;
-    }
-    return current;
-  }
-
-  isSortColumn(column) {
-    const { sortColumn } = this.state;
-    if (!column || !sortColumn) {
-      return false;
-    }
-    return this.getColumnKey(sortColumn) === this.getColumnKey(column);
-  }
-
-  renderColumnsDropdown(columns) {
-    const { prefixCls, dropdownPrefixCls } = this.props;
-    const { sortOrder } = this.state;
-    const locale = this.getLocale();
-    return treeMap(columns, (originColumn, i) => {
-      let column = assign({}, originColumn);
-      let key = this.getColumnKey(column, i);
-      let filterDropdown;
-      let sortButton;
-      if ((column.filters && column.filters.length > 0) || column.filterDropdown) {
-        let colFilters = this.state.filters[key] || [];
-        filterDropdown = (
-          <FilterDropdown
-            locale={locale}
-            column={column}
-            selectedKeys={colFilters}
-            confirmFilter={this.handleFilter}
-            prefixCls={`${prefixCls}-filter`}
-            dropdownPrefixCls={dropdownPrefixCls || 'ant-dropdown'}
-          />
-        );
-      }
-      if (column.sorter) {
-        let isSortColumn = this.isSortColumn(column);
-        if (isSortColumn) {
-          column.className = column.className || '';
-          if (sortOrder) {
-            column.className += ` ${prefixCls}-column-sort`;
-          }
-        }
-        const isAscend = isSortColumn && sortOrder === 'ascend';
-        const isDescend = isSortColumn && sortOrder === 'descend';
-        sortButton = (
-          <div className={`${prefixCls}-column-sorter`}>
-            <span
-              className={`${prefixCls}-column-sorter-up ${isAscend ? 'on' : 'off'}`}
-              title="↑"
-              onClick={() => this.toggleSortOrder('ascend', column)}
-            >
-              <Icon type="caret-up" />
-            </span>
-            <span
-              className={`${prefixCls}-column-sorter-down ${isDescend ? 'on' : 'off'}`}
-              title="↓"
-              onClick={() => this.toggleSortOrder('descend', column)}
-            >
-              <Icon type="caret-down" />
-            </span>
-          </div>
-        );
-      }
-      column.title = (
-        <span>
-          {column.title}
-          {sortButton}
-          {filterDropdown}
-        </span>
-      );
-      return column;
-    });
-  }
-
-  handleShowSizeChange = (current, pageSize) => {
-    const pagination = this.state.pagination;
-    pagination.onShowSizeChange(current, pageSize);
-    const nextPagination = assign({}, pagination, { pageSize, current });
-    this.setState({ pagination: nextPagination });
-
-    const onChange = this.props.onChange;
-    if (onChange) {
-      onChange.apply(null, this.prepareParamsArguments(assign({}, this.state, {
-        pagination: nextPagination,
-      })));
-    }
-  }
-
-  renderPagination() {
-    // 强制不需要分页
-    if (!this.hasPagination()) {
-      return null;
-    }
-    let size = 'default';
-    const { pagination } = this.state;
-    if (pagination.size) {
-      size = pagination.size;
-    } else if (this.props.size as string === 'middle' || this.props.size === 'small') {
-      size = 'small';
-    }
-    let total = pagination.total || this.getLocalData().length;
-    return (total > 0) ? (
-      <Pagination
-        key="pagination"
-        {...pagination}
-        className={`${this.props.prefixCls}-pagination`}
-        onChange={this.handlePageChange}
-        total={total}
-        size={size}
-        current={this.getMaxCurrent(total)}
-        onShowSizeChange={this.handleShowSizeChange}
-      />
-    ) : null;
-  }
-
-  // Get pagination, filters, sorter
-  prepareParamsArguments(state: any): [any, string[], Object] {
-    const pagination = { ...state.pagination };
-    // remove useless handle function in Table.onChange
-    delete pagination.onChange;
-    delete pagination.onShowSizeChange;
-    const filters = state.filters;
-    const sorter: any = {};
-    if (state.sortColumn && state.sortOrder) {
-      sorter.column = state.sortColumn;
-      sorter.order = state.sortOrder;
-      sorter.field = state.sortColumn.dataIndex;
-      sorter.columnKey = this.getColumnKey(state.sortColumn);
-    }
-    return [pagination, filters, sorter];
-  }
-
-  findColumn(myKey) {
-    let column;
-    treeMap(this.columns, c => {
-      if (this.getColumnKey(c) === myKey) {
-        column = c;
-      }
-    });
-    return column;
-  }
-
-  getCurrentPageData() {
-    let data = this.getLocalData();
-    let current;
-    let pageSize;
-    let state = this.state;
-    // 如果没有分页的话，默认全部展示
-    if (!this.hasPagination()) {
-      pageSize = Number.MAX_VALUE;
-      current = 1;
-    } else {
-      pageSize = state.pagination.pageSize;
-      current = this.getMaxCurrent(state.pagination.total || data.length);
-    }
-
-    // 分页
-    // ---
-    // 当数据量少于等于每页数量时，直接设置数据
-    // 否则进行读取分页数据
-    if (data.length > pageSize || pageSize === Number.MAX_VALUE) {
-      data = data.filter((_, i) => {
-        return i >= (current - 1) * pageSize && i < current * pageSize;
-      });
-    }
-    return data;
-  }
-
-  getFlatData() {
-    return flatArray(this.getLocalData());
-  }
-
-  getFlatCurrentPageData() {
-    return flatArray(this.getCurrentPageData());
-  }
-
-  recursiveSort(data, sorterFn) {
-    const { childrenColumnName = 'children' } = this.props;
-    return data.sort(sorterFn).map(item => (item[childrenColumnName] ? assign(
-      {},
-      item, {
-        [childrenColumnName]: this.recursiveSort(item[childrenColumnName], sorterFn),
+  // ============================ Sorter =============================
+  const onSorterChange = (
+    sorter: SorterResult<RecordType> | SorterResult<RecordType>[],
+    sorterStates: SortState<RecordType>[],
+  ) => {
+    triggerOnChange(
+      {
+        sorter,
+        sorterStates,
       },
-    ) : item));
+      'sort',
+      false,
+    );
+  };
+  const [transformSorterColumns, sortStates, sorterTitleProps, getSorters] = useSorter<RecordType>({
+    prefixCls,
+    mergedColumns,
+    onSorterChange,
+    sortDirections: sortDirections || ['ascend', 'descend'],
+    tableLocale,
+    showSorterTooltip,
+  });
+  const sortedData = React.useMemo(
+    () => getSortData(rawData, sortStates, childrenColumnName),
+    [rawData, sortStates],
+  );
+
+  changeEventInfo.sorter = getSorters();
+  changeEventInfo.sorterStates = sortStates;
+
+  // ============================ Filter ============================
+  const onFilterChange = (
+    filters: Record<string, FilterValue>,
+    filterStates: FilterState<RecordType>[],
+  ) => {
+    triggerOnChange(
+      {
+        filters,
+        filterStates,
+      },
+      'filter',
+      true,
+    );
+  };
+
+  const [transformFilterColumns, filterStates, getFilters] = useFilter<RecordType>({
+    prefixCls,
+    locale: tableLocale,
+    dropdownPrefixCls,
+    mergedColumns,
+    onFilterChange,
+    getPopupContainer,
+  });
+  const mergedData = getFilterData(sortedData, filterStates);
+
+  changeEventInfo.filters = getFilters();
+  changeEventInfo.filterStates = filterStates;
+
+  // ============================ Column ============================
+  const columnTitleProps = React.useMemo(
+    () => ({
+      ...sorterTitleProps,
+    }),
+    [sorterTitleProps],
+  );
+  const [transformTitleColumns] = useTitleColumns(columnTitleProps);
+
+  // ========================== Pagination ==========================
+  const onPaginationChange = (current: number, pageSize: number) => {
+    triggerOnChange(
+      {
+        pagination: { ...changeEventInfo.pagination, current, pageSize },
+      },
+      'paginate',
+    );
+  };
+
+  const [mergedPagination, resetPagination] = usePagination(
+    mergedData.length,
+    pagination,
+    onPaginationChange,
+  );
+
+  changeEventInfo.pagination =
+    pagination === false ? {} : getPaginationParam(pagination, mergedPagination);
+
+  changeEventInfo.resetPagination = resetPagination;
+
+  // ============================= Data =============================
+  const pageData = React.useMemo<RecordType[]>(() => {
+    if (pagination === false || !mergedPagination.pageSize) {
+      return mergedData;
+    }
+
+    const { current = 1, total, pageSize = DEFAULT_PAGE_SIZE } = mergedPagination;
+    warning(current > 0, 'Table', '`current` should be positive number.');
+
+    // Dynamic table data
+    if (mergedData.length < total!) {
+      if (mergedData.length > pageSize) {
+        warning(
+          false,
+          'Table',
+          '`dataSource` length is less than `pagination.total` but large than `pagination.pageSize`. Please make sure your config correct data with async mode.',
+        );
+        return mergedData.slice((current - 1) * pageSize, current * pageSize);
+      }
+      return mergedData;
+    }
+
+    return mergedData.slice((current - 1) * pageSize, current * pageSize);
+  }, [
+    !!pagination,
+    mergedData,
+    mergedPagination && mergedPagination.current,
+    mergedPagination && mergedPagination.pageSize,
+    mergedPagination && mergedPagination.total,
+  ]);
+
+  // ========================== Selections ==========================
+  const [transformSelectionColumns, selectedKeySet] = useSelection<RecordType>(rowSelection, {
+    prefixCls,
+    data: mergedData,
+    pageData,
+    getRowKey,
+    getRecordByKey,
+    expandType,
+    childrenColumnName,
+    locale: tableLocale,
+    getPopupContainer,
+  });
+
+  const internalRowClassName = (record: RecordType, index: number, indent: number) => {
+    let mergedRowClassName;
+    if (typeof rowClassName === 'function') {
+      mergedRowClassName = classNames(rowClassName(record, index, indent));
+    } else {
+      mergedRowClassName = classNames(rowClassName);
+    }
+
+    return classNames(
+      {
+        [`${prefixCls}-row-selected`]: selectedKeySet.has(getRowKey(record, index)),
+      },
+      mergedRowClassName,
+    );
+  };
+
+  // ========================== Expandable ==========================
+
+  // Pass origin render status into `rc-table`, this can be removed when refactor with `rc-table`
+  (mergedExpandable as any).__PARENT_RENDER_ICON__ = mergedExpandable.expandIcon;
+
+  // Customize expandable icon
+  mergedExpandable.expandIcon =
+    mergedExpandable.expandIcon || expandIcon || renderExpandIcon(tableLocale!);
+
+  // Adjust expand icon index, no overwrite expandIconColumnIndex if set.
+  if (expandType === 'nest' && mergedExpandable.expandIconColumnIndex === undefined) {
+    mergedExpandable.expandIconColumnIndex = rowSelection ? 1 : 0;
+  } else if (mergedExpandable.expandIconColumnIndex! > 0 && rowSelection) {
+    mergedExpandable.expandIconColumnIndex! -= 1;
   }
 
-  getLocalData() {
-    const state = this.state;
-    const { dataSource } = this.props;
-    let data = dataSource || [];
-    // 优化本地排序
-    data = data.slice(0);
-    const sorterFn = this.getSorterFn();
-    if (sorterFn) {
-      data = this.recursiveSort(data, sorterFn);
-    }
-    // 筛选
-    if (state.filters) {
-      Object.keys(state.filters).forEach((columnKey) => {
-        let col = this.findColumn(columnKey) as any;
-        if (!col) {
-          return;
-        }
-        let values = state.filters[columnKey] || [];
-        if (values.length === 0) {
-          return;
-        }
-        const onFilter = col.onFilter;
-        data = onFilter ? data.filter(record => {
-          return values.some(v => onFilter(v, record));
-        }) : data;
-      });
-    }
-    return data;
+  // Indent size
+  if (typeof mergedExpandable.indentSize !== 'number') {
+    mergedExpandable.indentSize = typeof indentSize === 'number' ? indentSize : 15;
   }
 
-  render() {
-    const { style, className, prefixCls, showHeader, ...restProps } = this.props;
-    const data = this.getCurrentPageData();
-    let columns = this.renderRowSelection();
-    const expandIconAsCell = this.props.expandedRowRender && this.props.expandIconAsCell !== false;
-    const locale = this.getLocale();
+  // ============================ Render ============================
+  const transformColumns = React.useCallback(
+    (innerColumns: ColumnsType<RecordType>): ColumnsType<RecordType> =>
+      transformTitleColumns(
+        transformSelectionColumns(transformFilterColumns(transformSorterColumns(innerColumns))),
+      ),
+    [transformSorterColumns, transformFilterColumns, transformSelectionColumns],
+  );
 
-    const classString = classNames({
-      [`${prefixCls}-${this.props.size}`]: true,
-      [`${prefixCls}-bordered`]: this.props.bordered,
-      [`${prefixCls}-empty`]: !data.length,
-      [`${prefixCls}-without-column-header`]: !showHeader,
-    });
-
-    columns = this.renderColumnsDropdown(columns);
-    columns = columns.map((column, i) => {
-      const newColumn = assign({}, column);
-      newColumn.key = this.getColumnKey(newColumn, i);
-      return newColumn;
-    });
-
-    let expandIconColumnIndex = (columns[0] && columns[0].key === 'selection-column') ? 1 : 0;
-    if ('expandIconColumnIndex' in restProps) {
-      expandIconColumnIndex = restProps.expandIconColumnIndex as number;
+  let topPaginationNode: React.ReactNode;
+  let bottomPaginationNode: React.ReactNode;
+  if (pagination !== false && mergedPagination?.total) {
+    let paginationSize: TablePaginationConfig['size'];
+    if (mergedPagination.size) {
+      paginationSize = mergedPagination.size;
+    } else {
+      paginationSize = mergedSize === 'small' || mergedSize === 'middle' ? 'small' : undefined;
     }
 
-    const table = (
-      <RcTable
-        key="table"
-        {...restProps}
-        prefixCls={prefixCls}
-        data={data}
-        columns={columns}
-        showHeader={showHeader}
-        className={classString}
-        expandIconColumnIndex={expandIconColumnIndex}
-        expandIconAsCell={expandIconAsCell}
-        emptyText={() => locale.emptyText}
+    const renderPagination = (position: string) => (
+      <Pagination
+        {...mergedPagination}
+        className={classNames(
+          `${prefixCls}-pagination ${prefixCls}-pagination-${position}`,
+          mergedPagination.className,
+        )}
+        size={paginationSize}
       />
     );
-
-    // if there is no pagination or no data,
-    // the height of spin should decrease by half of pagination
-    const paginationPatchClass = (this.hasPagination() && data && data.length !== 0)
-      ? `${prefixCls}-with-pagination` : `${prefixCls}-without-pagination`;
-
-    let loading = this.props.loading;
-    if (typeof loading === 'boolean') {
-      loading = {
-        spinning: loading,
-      };
+    const defaultPosition = direction === 'rtl' ? 'left' : 'right';
+    const { position } = mergedPagination;
+    if (position !== null && Array.isArray(position)) {
+      const topPos = position.find(p => p.indexOf('top') !== -1);
+      const bottomPos = position.find(p => p.indexOf('bottom') !== -1);
+      const isDisable = position.every(p => `${p}` === 'none');
+      if (!topPos && !bottomPos && !isDisable) {
+        bottomPaginationNode = renderPagination(defaultPosition);
+      }
+      if (topPos) {
+        topPaginationNode = renderPagination(topPos!.toLowerCase().replace('top', ''));
+      }
+      if (bottomPos) {
+        bottomPaginationNode = renderPagination(bottomPos!.toLowerCase().replace('bottom', ''));
+      }
+    } else {
+      bottomPaginationNode = renderPagination(defaultPosition);
     }
-
-    return (
-      <div className={classNames(`${prefixCls}-wrapper`, className)} style={style}>
-        <Spin
-          {...loading}
-          className={loading ? `${paginationPatchClass} ${prefixCls}-spin-holder` : ''}
-        >
-          {table}
-          {this.renderPagination()}
-        </Spin>
-      </div>
-    );
   }
+
+  // >>>>>>>>> Spinning
+  let spinProps: SpinProps | undefined;
+  if (typeof loading === 'boolean') {
+    spinProps = {
+      spinning: loading,
+    };
+  } else if (typeof loading === 'object') {
+    spinProps = {
+      spinning: true,
+      ...loading,
+    };
+  }
+
+  const wrapperClassNames = classNames(
+    `${prefixCls}-wrapper`,
+    {
+      [`${prefixCls}-wrapper-rtl`]: direction === 'rtl',
+    },
+    className,
+  );
+  return (
+    <div ref={ref} className={wrapperClassNames} style={style}>
+      <Spin spinning={false} {...spinProps}>
+        {topPaginationNode}
+        <RcTable<RecordType>
+          {...tableProps}
+          columns={mergedColumns as RcTableProps<RecordType>['columns']}
+          direction={direction}
+          expandable={mergedExpandable}
+          prefixCls={prefixCls}
+          className={classNames({
+            [`${prefixCls}-middle`]: mergedSize === 'middle',
+            [`${prefixCls}-small`]: mergedSize === 'small',
+            [`${prefixCls}-bordered`]: bordered,
+            [`${prefixCls}-empty`]: rawData.length === 0,
+          })}
+          data={pageData}
+          rowKey={getRowKey}
+          rowClassName={internalRowClassName}
+          emptyText={(locale && locale.emptyText) || (renderEmpty || defaultRenderEmpty)('Table')}
+          // Internal
+          internalHooks={INTERNAL_HOOKS}
+          internalRefs={internalRefs as any}
+          transformColumns={transformColumns as RcTableProps<RecordType>['transformColumns']}
+        />
+        {bottomPaginationNode}
+      </Spin>
+    </div>
+  );
 }
+
+const ForwardTable = React.forwardRef(InternalTable) as <RecordType extends object = any>(
+  props: React.PropsWithChildren<TableProps<RecordType>> & { ref?: React.Ref<HTMLDivElement> },
+) => React.ReactElement;
+
+type InternalTableType = typeof ForwardTable;
+
+interface TableInterface extends InternalTableType {
+  defaultProps?: Partial<TableProps<any>>;
+  SELECTION_COLUMN: typeof SELECTION_COLUMN;
+  EXPAND_COLUMN: typeof RcTable.EXPAND_COLUMN;
+  SELECTION_ALL: 'SELECT_ALL';
+  SELECTION_INVERT: 'SELECT_INVERT';
+  SELECTION_NONE: 'SELECT_NONE';
+  Column: typeof Column;
+  ColumnGroup: typeof ColumnGroup;
+  Summary: typeof Summary;
+}
+
+const Table = ForwardTable as TableInterface;
+
+Table.defaultProps = {
+  rowKey: 'key',
+};
+
+Table.SELECTION_COLUMN = SELECTION_COLUMN;
+Table.EXPAND_COLUMN = RcTable.EXPAND_COLUMN;
+Table.SELECTION_ALL = SELECTION_ALL;
+Table.SELECTION_INVERT = SELECTION_INVERT;
+Table.SELECTION_NONE = SELECTION_NONE;
+Table.Column = Column;
+Table.ColumnGroup = ColumnGroup;
+Table.Summary = Summary;
+
+export default Table;

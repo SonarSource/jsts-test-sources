@@ -1,0 +1,575 @@
+# frozen_string_literal: true
+
+require 'yaml'
+require 'spaceship'
+require 'fileutils'
+require 'json'
+
+skip_docs
+
+before_all do
+  setup_circle_ci
+end
+
+lane :ship_beta do
+  ship_beta_ios
+  ship_beta_android
+end
+
+app_json_path = "../app.json"
+app_json = JSON.parse(File.read(app_json_path))
+
+app_plist = '../ios/Artsy/App_Resources/Artsy-Info.plist'
+
+ios_targets = {
+  'net.artsy.artsy' => { :name => 'Artsy', :plist_path => app_plist },
+  'net.artsy.artsy.Artsy-Stickers' => { :name => 'ArtsyStickers', :plist_path => '../ios/ArtsyStickers/Info.plist' },
+  'net.artsy.artsy.ArtsyWidget' => { :name => 'ArtsyWidgetExtension', :plist_path => '../ios/ArtsyWidget/Info.plist' },
+  'net.artsy.artsy.BrazePushServiceExtension' => { :name => 'BrazePushServiceExtension', :plist_path => '../ios/BrazePushServiceExtension/Info.plist' }
+}
+
+lane :ship_beta_ios do
+  api_key = app_store_connect_api_key(
+    key_id: ENV['ARTSY_APP_STORE_CONNECT_API_KEY_ID'],
+    issuer_id: ENV['ARTSY_APP_STORE_CONNECT_API_KEY_ISSUER_ID'],
+    key_content: ENV['ARTSY_APP_STORE_CONNECT_API_KEY_CONTENT_BASE64'],
+    is_key_content_base64: true,
+    in_house: false,
+  )
+
+  set_build_version_ios
+
+  latest_version = app_json['version']
+
+  # TODO: Once changelog infra is nailed down we should get release notes from there
+  beta_readme = "Thanks for using the Artsy beta!"
+
+  # Builds the app
+  ios_target_ids = ios_targets.keys
+  sync_code_signing(app_identifier: ios_target_ids, type: 'appstore')
+
+  ios_targets.each do |id, meta|
+    disable_automatic_code_signing(
+      path: 'ios/Artsy.xcodeproj',
+      team_id: '23KMWZ572J',
+      targets: [meta[:name]],
+      profile_name: "match AppStore #{id}"
+    )
+  end
+
+  root = File.expand_path('..', __dir__)
+  bundle_version = `/usr/libexec/PlistBuddy -c "print CFBundleVersion" #{File.join(root, 'ios/Artsy/App_Resources/Artsy-Info.plist')}`.strip
+  tag_and_push(tag: "ios-#{latest_version}-#{bundle_version}")
+
+  # important! this much match the release version specified
+  # in Eigen in order for sourcemaps to work correctly
+  sentry_release_name = "ios-#{latest_version}-#{bundle_version}"
+
+  build_ios_app(workspace: 'ios/Artsy.xcworkspace', configuration: 'Store', silent: true)
+
+  upload_sentry_artifacts(sentry_release_name: sentry_release_name, dist_version: bundle_version, platform: "ios")
+
+  # Send to the app store
+  beta_app_review_info = {
+    contact_email: ENV['BETA_CONTACT_EMAIL'],
+    contact_first_name: ENV['BETA_CONTACT_FIRST_NAME'],
+    contact_last_name: ENV['BETA_CONTACT_LAST_NAME'],
+    contact_phone: ENV['BETA_CONTACT_PHONE'],
+    demo_account_name: ENV['BETA_DEMO_ACCOUNT_NAME'],
+    demo_account_password: ENV['BETA_DEMO_ACCOUNT_PWD']
+  }
+
+  pilot(api_key: api_key,
+        beta_app_review_info: beta_app_review_info,
+        changelog: beta_readme,
+        itc_provider: 'ArtsyInc',
+        distribute_external: true,
+        groups: ['Artsy People'])
+end
+
+lane :update_version_string do
+  new_version = prompt(text: "What is the new human-readable release version?")
+  app_json['version'] = new_version
+  File.open(app_json_path, 'w') do |file|
+    file.puts JSON.pretty_generate(app_json)
+  end
+end
+
+date_str = DateTime.now.strftime("%Y.%m.%d.%H")
+lane :set_build_version_ios do
+  ios_targets.each do |id, meta|
+    system("/usr/libexec/PlistBuddy -c \"Set CFBundleShortVersionString #{app_json['version']}\" #{meta[:plist_path]}")
+    system("/usr/libexec/PlistBuddy -c \"Set CFBundleVersion #{date_str}\" #{meta[:plist_path]}")
+  end
+end
+
+build_gradle = "../android/app/build.gradle"
+lane :set_build_version_android do |options|
+
+  version_code = options[:version_code]
+
+  next_version_name = app_json['version']
+
+  if version_code.nil?
+    current_version_code = google_play_track_version_codes(
+      track: "alpha",
+    ).first
+    version_code = current_version_code + 1
+  end
+
+  next_version_code = version_code
+
+  contents = File.read(build_gradle)
+
+  contents = contents.gsub(/(versionName) .*/, "\\1 \"#{next_version_name}\"")
+  contents = contents.gsub(/(versionCode) (.*)/, "\\1 #{next_version_code}")
+
+  File.open(build_gradle, 'w') do |file|
+    file.puts contents
+  end
+
+  [next_version_name, next_version_code]
+end
+
+git_commit_short_hash = `git log -n1 --format='%h'`.chomp
+git_commit_hash = `git log -n1 --format='%H'`.chomp
+git_commit_date_str = DateTime.parse(`git log -n1 --format='%ci'`.chomp).iso8601
+git_remote_origin_url = `git config --get remote.origin.url`.chomp
+lane :set_git_properties_ios do
+  system("/usr/libexec/PlistBuddy -c \"Set GITCommitShortHash #{git_commit_short_hash}\" #{app_plist}")
+  system("/usr/libexec/PlistBuddy -c \"Set GITCommitHash #{git_commit_hash}\" #{app_plist}")
+  system("/usr/libexec/PlistBuddy -c \"Set GITCommitDate #{git_commit_date_str}\" #{app_plist}")
+  system("/usr/libexec/PlistBuddy -c \"Set GITRemoteOriginURL #{git_remote_origin_url}\" #{app_plist}")
+end
+
+lane :set_git_properties_android do
+  contents = File.read(build_gradle)
+
+  contents = contents.gsub(/(GITCommitShortHash.* '").*("')/, "\\1#{git_commit_short_hash}\\2")
+  contents = contents.gsub(/(GITCommitHash.* '").*("')/, "\\1#{git_commit_hash}\\2")
+  contents = contents.gsub(/(GITCommitDate.* '").*("')/, "\\1#{git_commit_date_str}\\2")
+  contents = contents.gsub(/(GITRemoteOriginURL.* '").*("')/, "\\1#{git_remote_origin_url}\\2")
+
+  File.open(build_gradle, 'w') do |file|
+    file.puts contents
+  end
+end
+
+lane :ship_beta_android_play_store do
+  sh("yarn jetifier")
+  sh("yarn relay")
+
+  vname, vcode = set_build_version_android
+  tag_and_push(tag: "android-#{vname}-#{vcode}")
+
+  sentry_release_name = "android-#{vname}-#{vcode}"
+
+  # build again with flag set to false for release candidates
+  flag_android_beta(is_android_beta: false)
+
+  sh("mkdir -p android/app/src/main/assets && touch android/app/src/main/assets/index.android.bundle && yarn bundle:android")
+  gradle(
+    task: "bundle",
+    build_type: "Release",
+    project_dir: "android/",
+    flags: "--no-daemon -x bundleReleaseJsAndAssets",
+  )
+
+  upload_sentry_artifacts(sentry_release_name: sentry_release_name, dist_version: "#{vcode}", platform: "android")
+
+  supply(
+    track: "alpha",
+    skip_upload_apk: true,
+    skip_upload_metadata: true,
+    skip_upload_images: true,
+    skip_upload_screenshots: true,
+  )
+end
+
+lane :ship_beta_android_firebase do
+  sh("yarn jetifier")
+  sh("yarn relay")
+
+  flag_android_beta(is_android_beta: true)
+
+  vname, vcode = set_build_version_android
+
+  sentry_release_name = "android-#{vname}-#{vcode}"
+
+  sh("mkdir -p android/app/src/main/assets && touch android/app/src/main/assets/index.android.bundle && yarn bundle:android")
+  gradle(
+    task: "bundle",
+    build_type: "Release",
+    project_dir: "android/",
+    flags: "--no-daemon -x bundleReleaseJsAndAssets",
+  )
+
+  firebase_app_distribution(
+    app: ENV["FIREBASE_APP_ID"],
+    groups: 'artsy-people',
+    android_artifact_path: "./android/app/build/outputs/bundle/release/app-release.aab"
+  )
+end
+
+lane :promote_beta_android do
+  current_version_code = google_play_track_version_codes(
+    track: "alpha",
+  ).first
+
+  supply(
+    track: 'alpha',
+    version_code: current_version_code,
+    track_promote_to: 'production',
+    rollout: '0.1',
+    skip_upload_metadata: true,
+    skip_upload_images: true,
+    skip_upload_screenshots: true,
+  )
+
+  vname, vcode = set_build_version_android(version_code: current_version_code)
+  tag_and_push(tag: "android-#{vname}-#{vcode}-submission")
+end
+
+lane :promote_beta_ios do
+  api_key = app_store_connect_api_key(
+    key_id: ENV['ARTSY_APP_STORE_CONNECT_API_KEY_ID'],
+    issuer_id: ENV['ARTSY_APP_STORE_CONNECT_API_KEY_ISSUER_ID'],
+    key_content: ENV['ARTSY_APP_STORE_CONNECT_API_KEY_CONTENT_BASE64'],
+    is_key_content_base64: true,
+    in_house: false,
+  )
+
+   # There seems to be some delta between spaceship + deliver token format
+   token = Spaceship::ConnectAPI::Token.create(
+    key_id: ENV['ARTSY_APP_STORE_CONNECT_API_KEY_ID'],
+    issuer_id: ENV['ARTSY_APP_STORE_CONNECT_API_KEY_ISSUER_ID'],
+    key: ENV['ARTSY_APP_STORE_CONNECT_API_KEY_CONTENT_BASE64'],
+    is_key_content_base64: true,
+    in_house: false
+  )
+
+  Spaceship::ConnectAPI.token = token
+
+  app = Spaceship::ConnectAPI::App.find('net.artsy.artsy')
+  next_app_store_version = app.get_edit_app_store_version.version_string
+
+  # app.builds are listed most recent first; we are assuming that we're shipping the most recent beta.
+  latest_build = app.get_builds.first
+  build_number = latest_build.version
+
+  puts "Let's deliver beta #{next_app_store_version} (#{build_number}) with build number #{build_number}."
+  deliver(
+    api_key: api_key,
+    app_version: app_json['version'],
+    build_number: build_number,
+    force: true, # Skip HTMl report verification
+    skip_screenshots: true,
+    skip_binary_upload: true,
+    submit_for_review: true,
+    automatic_release: true,
+    phased_release: true,
+    precheck_include_in_app_purchases: false,
+    submission_information: {
+      add_id_info_limits_tracking: true,
+      add_id_info_serves_ads: false,
+      add_id_info_tracks_action: true,
+      add_id_info_tracks_install: true,
+      add_id_info_uses_idfa: false,
+      content_rights_has_rights: true,
+      content_rights_contains_third_party_content: true,
+      export_compliance_platform: 'ios',
+      export_compliance_compliance_required: false,
+      export_compliance_encryption_updated: false,
+      export_compliance_app_type: nil,
+      export_compliance_uses_encryption: false,
+      export_compliance_is_exempt: false,
+      export_compliance_contains_third_party_cryptography: false,
+      export_compliance_contains_proprietary_cryptography: false,
+      export_compliance_available_on_french_store: false
+    }
+  )
+
+  puts 'Tagging submission and pushing to GitHub.'
+
+  # Apple's API returns truncated version/build numbers (eg: 2020.03.19.18 becomes 2020.3.19.18)
+  # So we need to add back leading zeroes
+  build_version_components = build_number.split('.')
+  detruncated_components = build_version_components.map do |comp|
+    if comp.length == 1
+      '0' + comp
+    else
+      comp
+    end
+  end
+  build_version = detruncated_components.join('.')
+
+  tag_and_push(tag: "ios-#{next_app_store_version}-#{build_version}-submission")
+  puts 'All done.'
+end
+
+lane :flag_android_beta do |options|
+  is_android_beta = options[:is_android_beta]
+  app_json['isAndroidBeta'] = is_android_beta
+  File.open(app_json_path, 'w') do |file|
+    file.puts JSON.pretty_generate(app_json)
+  end
+end
+
+lane :upload_sentry_artifacts do |options|
+  sentry_release_name = options[:sentry_release_name]
+  platform = options[:platform]
+  dist_version = options[:dist_version]
+
+  project_slug = 'eigen'
+  org_slug = 'artsynet'
+
+  if sentry_release_name.nil?
+    UI.user_error!("Sentry release version not specified")
+  end
+
+  if dist_version.nil?
+    UI.user_error!("Sentry distribution version not specified")
+  end
+
+  source_map_path = ''
+  bundle_path = ''
+  outfile = ''
+  if platform == "ios"
+    source_map_path = 'emission/Pod/Assets/Emission.js.map'
+    bundle_path = 'emission/Pod/Assets/Emission.js'
+    outfile = '~/Emission.js'
+  else
+    # the bundle name, path and source map come from the react-native bundle step when running yarn bundle:android
+    source_map_path = 'android/app/src/main/assets/index.android.bundle.map'
+    bundle_path = 'android/app/src/main/assets/index.android.bundle'
+    outfile = '~/index.android.bundle'
+  end
+
+  sentry_create_release(auth_token: ENV['SentryUploadAuthKey'],
+                        org_slug: org_slug,
+                        project_slug: project_slug,
+                        version: sentry_release_name,
+                        finalize: false)
+  puts "Created a release for #{project_slug}"
+
+  if platform == "ios"
+    # make individual dSYM archives available to the sentry-cli tool.
+    root = File.expand_path('..', __dir__)
+    dsym_archive = File.join(root, 'Artsy.app.dSYM.zip')
+    dsyms_path = File.join(root, 'dSYMs')
+    sh "unzip -d #{dsyms_path} #{dsym_archive}"
+
+    Dir.glob(File.join(dsyms_path, '*.dSYM')).each do |dsym_path|
+      # No need to specify `dist` as the build number is encoded in the dSYM's Info.plist
+      sentry_upload_dsym(auth_token: ENV['SentryUploadAuthKey'],
+                         org_slug: org_slug,
+                         project_slug: project_slug,
+                         dsym_path: dsym_path)
+      puts "Uploaded dsym for #{project_slug}"
+    end
+  end
+
+  begin
+    sentry_upload_file(auth_token: ENV['SentryUploadAuthKey'],
+                         org_slug: org_slug,
+                         project_slug: project_slug,
+                         version: sentry_release_name,
+                         dist: dist_version,
+                         file: bundle_path,
+                         file_url: outfile)
+    puts "Uploaded source js for #{project_slug}"
+
+    sentry_upload_sourcemap(auth_token: ENV['SentryUploadAuthKey'],
+                            org_slug: org_slug,
+                            project_slug: project_slug,
+                            version: sentry_release_name,
+                            dist: dist_version,
+                            sourcemap: source_map_path,
+                            rewrite: true)
+    puts "Uploaded js.map for #{project_slug}"
+  rescue StandardError => e
+      message = 'Uploading the JS bundle and/or sourcemap to Sentry failed. This sometimes happens when shipping many builds to Sentry.'
+      puts message
+      slack(
+        message: message,
+        success: false,
+        payload: {
+          'Circle Build' => ENV['CIRCLE_BUILD_URL'],
+          'Exception' => e.message
+        },
+        default_payloads: [:last_git_commit_hash]
+      )
+      puts e.message
+      puts e.backtrace.join("\n\t")
+  end
+end
+
+lane :notify_if_new_license_agreement do
+  # TODO: This login method will no longer work for CI with 2fa being enforced
+  # Check spaceship docs for future support with api key
+  client = Spaceship::Tunes.login(ENV['FASTLANE_USERNAME'], ENV['FASTLANE_PASSWORD'])
+  client.team_id = '479887'
+  messages = Spaceship::Tunes.client.fetch_program_license_agreement_messages
+
+  # ignore membership expiration warnings, auto-renew should take care of
+  if messages.empty? || messages[0].include?('membership expiration')
+    puts 'No new developer agreements'
+  else
+    message = <<~MSG
+                :apple: :handshake: :pencil:
+                There is a new developer program agreement that needs to be signed to continue shipping!
+                Reach out to legal :scales: for approval before signing.
+                https://appstoreconnect.apple.com/agreements/#/
+              MSG
+    puts message
+    puts messages[0]
+    slack(
+      message: message,
+      success: false,
+      default_payloads: []
+    )
+  end
+end
+
+lane :notify_beta_failed do |options|
+  exception = options[:exception]
+  message = <<~MSG
+              :x: :iphone:
+              Looks like the latest beta failed to deploy!
+              See circle job for more details.
+            MSG
+  slack(
+    message: message,
+    success: false,
+    payload: {
+      'Circle Build' => ENV['CIRCLE_BUILD_URL'],
+      'Exception' => exception.message
+    },
+    default_payloads: []
+  )
+end
+
+lane :tag_and_push do |options|
+  # Do a tag, we use a http git remote so we can have push access
+  # as the default remote for circle is read-only
+  tag = options[:tag]
+  `git tag -d "#{tag}"`
+  add_git_tag tag: tag
+  `git remote add http https://github.com/artsy/eigen.git`
+  `git push http #{tag} -f`
+end
+
+# This is a lane that is used to release the app on Apple Store Connect
+# When it has been approved an it's pending developer release
+lane :release_ios_app do |options|
+
+  # There seems to be some delta between spaceship + deliver token format
+   token = Spaceship::ConnectAPI::Token.create(
+    key_id: ENV['ARTSY_APP_STORE_CONNECT_API_KEY_ID'],
+    issuer_id: ENV['ARTSY_APP_STORE_CONNECT_API_KEY_ISSUER_ID'],
+    key: ENV['ARTSY_APP_STORE_CONNECT_API_KEY_CONTENT_BASE64'],
+    is_key_content_base64: true,
+    in_house: false
+  )
+
+  Spaceship::ConnectAPI.token = token
+
+  app = Spaceship::ConnectAPI::App.find('net.artsy.artsy')
+  version = app.get_pending_release_app_store_version
+
+  unless version.nil?
+    Spaceship::ConnectAPI.post_app_store_version_release_request(app_store_version_id: version.id)
+  end
+end
+
+lane :create_next_app_version do |options|
+  api_key = app_store_connect_api_key(
+    key_id: ENV['ARTSY_APP_STORE_CONNECT_API_KEY_ID'],
+    issuer_id: ENV['ARTSY_APP_STORE_CONNECT_API_KEY_ISSUER_ID'],
+    key_content: ENV['ARTSY_APP_STORE_CONNECT_API_KEY_CONTENT_BASE64'],
+    is_key_content_base64: true,
+    in_house: false,
+  )
+
+  next_version = options[:next_version_code]
+
+  puts "Let's create a new app version #{next_version}."
+  deliver(
+    api_key: api_key,
+    app_version: next_version,
+    force: true, # Skip HTMl report verification
+    skip_screenshots: true,
+    skip_binary_upload: true,
+    skip_metadata: true,
+    submit_for_review: false,
+    precheck_include_in_app_purchases: false,
+  )
+end
+
+lane :check_if_app_is_pending_developer_release do |options|
+
+  # There seems to be some delta between spaceship + deliver token format
+   token = Spaceship::ConnectAPI::Token.create(
+    key_id: ENV['ARTSY_APP_STORE_CONNECT_API_KEY_ID'],
+    issuer_id: ENV['ARTSY_APP_STORE_CONNECT_API_KEY_ISSUER_ID'],
+    key: ENV['ARTSY_APP_STORE_CONNECT_API_KEY_CONTENT_BASE64'],
+    is_key_content_base64: true,
+    in_house: false
+  )
+
+  Spaceship::ConnectAPI.token = token
+
+  app = Spaceship::ConnectAPI::App.find('net.artsy.artsy')
+  version = app.get_pending_release_app_store_version
+
+  unless version.nil?
+    message = <<~MSG
+    🎉 The iOS App has been approved in App Store Connect and is now pending developer release
+    In order to release the app, follow the instructions here
+    https://github.com/artsy/eigen/blob/main/docs/deploy_to_app_store.md#release-to-app-store
+  MSG
+  slack(message: message, default_payloads: [])
+  end
+end
+
+
+lane :check_flags do
+  sh('yarn check-flags')
+  flag_file = File.read('./flags.json')
+  flags = JSON.parse(flag_file)
+  hidden_flags = flags['hiddenFlags']
+  released_flags = flags['releasedFlags']
+
+  hidden_flags_message = ''
+  hidden_flags.each do |flag_name|
+    hidden_flags_message += "\n :x: #{flag_name}"
+  end
+
+  released_flags_message = ''
+  released_flags.each do |flag_name|
+    released_flags_message += "\n :white_check_mark: #{flag_name}"
+  end
+
+  message = <<~MSG
+    :checkered_flag: :steam_locomotive:
+    We are getting ready for an app release!
+    Are your features ready?
+    *Features HIDDEN in the upcoming release*:
+    #{hidden_flags_message}
+    *Features LIVE in the upcoming release*:
+    #{released_flags_message}
+    If you see a feature that should be going out this release that isn't
+    marked ready please follow the docs here ahead of release QA:
+    https://github.com/artsy/eigen/blob/main/docs/developing_a_feature.md#releasing-a-feature
+  MSG
+  slack(message: message, default_payloads: [])
+end
+
+error do |lane, exception|
+  silence_beta_failures = ENV['FASTLANE_SILENCE_BETA_FAILURES']
+  if lane == :ship_beta or lane == :ship_beta_ios or lane == :ship_beta_android
+    if silence_beta_failures.to_s.downcase != "true"
+      notify_beta_failed(exception: exception)
+    end
+  end
+end

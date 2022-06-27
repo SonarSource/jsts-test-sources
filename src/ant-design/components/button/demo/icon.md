@@ -13,25 +13,75 @@ title:
 
 ## en-US
 
-`Button` components can contain an `Icon`. This is done by setting the `icon` property or placing an `Icon` component within the `Button`
+`Button` components can contain an `Icon`. This is done by setting the `icon` property or placing an `Icon` component within the `Button`.
 
 If you want specific control over the positioning and placement of the `Icon`, then that should be done by placing the `Icon` component within the `Button` rather than using the `icon` property.
 
-````jsx
-import { Button } from 'antd';
+```tsx
+import { SearchOutlined } from '@ant-design/icons';
+import { Button, Tooltip } from 'antd';
+import React from 'react';
 
-ReactDOM.render(
-  <div>
-    <Button type="primary" shape="circle" icon="search" />
-    <Button type="primary" icon="search">Search</Button>
-    <Button shape="circle" icon="search" />
-    <Button icon="search">Search</Button>
+const App: React.FC = () => (
+  <>
+    <Tooltip title="search">
+      <Button type="primary" shape="circle" icon={<SearchOutlined />} />
+    </Tooltip>
+    <Button type="primary" shape="circle">
+      A
+    </Button>
+    <Button type="primary" icon={<SearchOutlined />}>
+      Search
+    </Button>
+    <Tooltip title="search">
+      <Button shape="circle" icon={<SearchOutlined />} />
+    </Tooltip>
+    <Button icon={<SearchOutlined />}>Search</Button>
     <br />
-    <Button shape="circle" icon="search" />
-    <Button icon="search">Search</Button>
-    <Button type="dashed" shape="circle" icon="search" />
-    <Button type="dashed" icon="search">Search</Button>
-  </div>,
-  mountNode
+    <Tooltip title="search">
+      <Button shape="circle" icon={<SearchOutlined />} />
+    </Tooltip>
+    <Button icon={<SearchOutlined />}>Search</Button>
+    <Tooltip title="search">
+      <Button type="dashed" shape="circle" icon={<SearchOutlined />} />
+    </Tooltip>
+    <Button type="dashed" icon={<SearchOutlined />}>
+      Search
+    </Button>
+    <Button icon={<SearchOutlined />} href="https://www.google.com" />
+    <br />
+    <br />
+    <Tooltip title="search">
+      <Button type="primary" shape="circle" icon={<SearchOutlined />} size="large" />
+    </Tooltip>
+    <Button type="primary" shape="circle" size="large">
+      A
+    </Button>
+    <Button type="primary" icon={<SearchOutlined />} size="large">
+      Search
+    </Button>
+    <Tooltip title="search">
+      <Button shape="circle" icon={<SearchOutlined />} size="large" />
+    </Tooltip>
+    <Button icon={<SearchOutlined />} size="large">
+      Search
+    </Button>
+    <br />
+    <Tooltip title="search">
+      <Button shape="circle" icon={<SearchOutlined />} size="large" />
+    </Tooltip>
+    <Button icon={<SearchOutlined />} size="large">
+      Search
+    </Button>
+    <Tooltip title="search">
+      <Button type="dashed" shape="circle" icon={<SearchOutlined />} size="large" />
+    </Tooltip>
+    <Button type="dashed" icon={<SearchOutlined />} size="large">
+      Search
+    </Button>
+    <Button icon={<SearchOutlined />} size="large" href="https://www.google.com" />
+  </>
 );
-````
+
+export default App;
+```

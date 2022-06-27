@@ -1,53 +1,163 @@
 import * as React from 'react'
-import * as classNames from 'classnames'
+import classNames from 'classnames'
 
-import { FileChange } from '../../models/status'
-import { Octicon, OcticonSymbol } from '../octicons'
+import { Octicon } from '../octicons'
+import * as OcticonSymbol from '../octicons/octicons.generated'
 import { RichText } from '../lib/rich-text'
-import { LinkButton } from '../lib/link-button'
-import { IGitHubUser } from '../../lib/dispatcher'
 import { Repository } from '../../models/repository'
-import { CommitIdentity } from '../../models/commit-identity'
-import { Avatar } from '../lib/avatar'
+import { Commit } from '../../models/commit'
+import { getAvatarUsersForCommit, IAvatarUser } from '../../models/avatar'
+import { AvatarStack } from '../lib/avatar-stack'
+import { CommitAttribution } from '../lib/commit-attribution'
+import { Tokenizer, TokenResult } from '../../lib/text-token-parser'
+import { wrapRichTextCommitMessage } from '../../lib/wrap-rich-text-commit-message'
+import { DiffOptions } from '../diff/diff-options'
+import { RepositorySectionTab } from '../../lib/app-state'
+import { IChangesetData } from '../../lib/git'
+import { TooltippedContent } from '../lib/tooltipped-content'
+import { clipboard } from 'electron'
+import { TooltipDirection } from '../lib/tooltip'
+import { AppFileStatusKind } from '../../models/status'
+import _ from 'lodash'
 
 interface ICommitSummaryProps {
   readonly repository: Repository
-  readonly summary: string
-  readonly body: string
-  readonly sha: string
-  readonly author: CommitIdentity
-  readonly files: ReadonlyArray<FileChange>
+  readonly commits: ReadonlyArray<Commit>
+  readonly changesetData: IChangesetData
   readonly emoji: Map<string, string>
-  readonly isLocal: boolean
-  readonly gitHubUser: IGitHubUser | null
+
+  /**
+   * Whether or not the commit body container should
+   * be rendered expanded or not. In expanded mode the
+   * commit body container takes over the diff view
+   * allowing for full height, scrollable reading of
+   * the commit message body.
+   */
   readonly isExpanded: boolean
+
   readonly onExpandChanged: (isExpanded: boolean) => void
+
+  readonly onDescriptionBottomChanged: (descriptionBottom: Number) => void
+
+  readonly hideDescriptionBorder: boolean
+
+  readonly hideWhitespaceInDiff: boolean
+
+  /** Whether we should display side by side diffs. */
+  readonly showSideBySideDiff: boolean
+  readonly onHideWhitespaceInDiffChanged: (checked: boolean) => Promise<void>
+
+  /** Called when the user changes the side by side diffs setting. */
+  readonly onShowSideBySideDiffChanged: (checked: boolean) => void
+
+  /** Called when the user opens the diff options popover */
+  readonly onDiffOptionsOpened: () => void
 }
 
 interface ICommitSummaryState {
+  /**
+   * The commit message summary, i.e. the first line in the commit message.
+   * Note that this may differ from the body property in the commit object
+   * passed through props, see the createState method for more details.
+   */
+  readonly summary: ReadonlyArray<TokenResult>
+
+  /**
+   * The commit message body, i.e. anything after the first line of text in the
+   * commit message. Note that this may differ from the body property in the
+   * commit object passed through props, see the createState method for more
+   * details.
+   */
+  readonly body: ReadonlyArray<TokenResult>
+
+  /**
+   * Whether or not the commit body text overflows its container. Used in
+   * conjunction with the isExpanded prop.
+   */
   readonly isOverflowed: boolean
+
+  /**
+   * The avatars associated with this commit. Used when rendering
+   * the avatar stack and calculated whenever the commit prop changes.
+   */
+  readonly avatarUsers: ReadonlyArray<IAvatarUser>
 }
 
-// https://wicg.github.io/ResizeObserver/#resizeobserverentry
-interface IResizeObserverEntry {
-  readonly target: Element
-  readonly contentRect: ClientRect
-};
+/**
+ * Creates the state object for the CommitSummary component.
+ *
+ * Ensures that the commit summary never exceeds 72 characters and wraps it
+ * into the commit body if it does.
+ *
+ * @param isOverflowed Whether or not the component should render the commit
+ *                     body in expanded mode, see the documentation for the
+ *                     isOverflowed state property.
+ *
+ * @param props        The current commit summary prop object.
+ */
+function createState(
+  isOverflowed: boolean,
+  props: ICommitSummaryProps
+): ICommitSummaryState {
+  const { emoji, repository, commits } = props
+  const tokenizer = new Tokenizer(emoji, repository)
 
-export class CommitSummary extends React.Component<ICommitSummaryProps, ICommitSummaryState> {
-  private descriptionScrollViewRef: HTMLDivElement | null
-  private readonly resizeObserver: any | null = null
-  private updateOverflowTimeoutId: number | null = null
+  const plainTextBody =
+    commits.length > 1
+      ? commits
+          .map(
+            c =>
+              `${c.shortSha} - ${c.summary}${
+                c.body.trim() !== '' ? `\n${c.body}` : ''
+              }`
+          )
+          .join('\n\n')
+      : commits[0].body
+
+  const { summary, body } = wrapRichTextCommitMessage(
+    commits[0].summary,
+    plainTextBody,
+    tokenizer
+  )
+
+  const allAvatarUsers = commits.flatMap(c =>
+    getAvatarUsersForCommit(repository.gitHubRepository, c)
+  )
+  const avatarUsers = _.uniqWith(
+    allAvatarUsers,
+    (a, b) => a.email === b.email && a.name === b.name
+  )
+
+  return { isOverflowed, summary, body, avatarUsers }
+}
+
+/**
+ * Helper function which determines if two commit objects
+ * have the same commit summary and body.
+ */
+function messageEquals(x: Commit, y: Commit) {
+  return x.summary === y.summary && x.body === y.body
+}
+
+export class CommitSummary extends React.Component<
+  ICommitSummaryProps,
+  ICommitSummaryState
+> {
+  private descriptionScrollViewRef: HTMLDivElement | null = null
+  private readonly resizeObserver: ResizeObserver | null = null
+  private updateOverflowTimeoutId: NodeJS.Immediate | null = null
+  private descriptionRef: HTMLDivElement | null = null
 
   public constructor(props: ICommitSummaryProps) {
     super(props)
 
-    this.state = { isOverflowed: false }
+    this.state = createState(false, props)
 
-    const ResizeObserver = (window as any).ResizeObserver
+    const ResizeObserverClass: typeof ResizeObserver = (window as any)
+      .ResizeObserver
 
-    if (ResizeObserver || false) {
-      this.resizeObserver = new ResizeObserver((entries: ReadonlyArray<IResizeObserverEntry>) => {
+    if (ResizeObserverClass || false) {
+      this.resizeObserver = new ResizeObserverClass(entries => {
         for (const entry of entries) {
           if (entry.target === this.descriptionScrollViewRef) {
             // We might end up causing a recursive update by updating the state
@@ -65,6 +175,12 @@ export class CommitSummary extends React.Component<ICommitSummaryProps, ICommitS
   }
 
   private onResized = () => {
+    if (this.descriptionRef) {
+      const descriptionBottom =
+        this.descriptionRef.getBoundingClientRect().bottom
+      this.props.onDescriptionBottomChanged(descriptionBottom)
+    }
+
     if (this.props.isExpanded) {
       return
     }
@@ -86,19 +202,26 @@ export class CommitSummary extends React.Component<ICommitSummaryProps, ICommitS
     }
   }
 
+  private onDescriptionRef = (ref: HTMLDivElement | null) => {
+    this.descriptionRef = ref
+  }
+
   private renderExpander() {
-    if (!this.props.body.length || (!this.props.isExpanded && !this.state.isOverflowed)) {
+    if (
+      !this.state.body.length ||
+      (!this.props.isExpanded && !this.state.isOverflowed)
+    ) {
       return null
     }
 
     const expanded = this.props.isExpanded
     const onClick = expanded ? this.onCollapse : this.onExpand
-    const icon = expanded ? OcticonSymbol.unfold : OcticonSymbol.fold
+    const icon = expanded ? OcticonSymbol.fold : OcticonSymbol.unfold
 
     return (
-      <a onClick={onClick} className='expander'>
+      <a onClick={onClick} className="expander">
         <Octicon symbol={icon} />
-        { expanded ? 'Collapse' : 'Expand' }
+        {expanded ? 'Collapse' : 'Expand'}
       </a>
     )
   }
@@ -136,17 +259,25 @@ export class CommitSummary extends React.Component<ICommitSummaryProps, ICommitS
   }
 
   public componentWillUpdate(nextProps: ICommitSummaryProps) {
-    if (nextProps.body !== this.props.body) {
-      this.setState({ isOverflowed: false })
+    if (
+      nextProps.commits.length !== this.props.commits.length ||
+      !nextProps.commits.every((nextCommit, i) =>
+        messageEquals(nextCommit, this.props.commits[i])
+      )
+    ) {
+      this.setState(createState(false, nextProps))
     }
   }
 
-  public componentDidUpdate(prevProps: ICommitSummaryProps) {
+  public componentDidUpdate(
+    prevProps: ICommitSummaryProps,
+    prevState: ICommitSummaryState
+  ) {
     // No need to check if it overflows if we're expanded
     if (!this.props.isExpanded) {
       // If the body has changed or we've just toggled the expanded
       // state we'll recalculate whether we overflow or not.
-      if (prevProps.body !== this.props.body || prevProps.isExpanded) {
+      if (prevState.body !== this.state.body || prevProps.isExpanded) {
         this.updateOverflow()
       }
     } else {
@@ -158,19 +289,24 @@ export class CommitSummary extends React.Component<ICommitSummaryProps, ICommitS
   }
 
   private renderDescription() {
-
-    if (!this.props.body) {
+    if (this.state.body.length === 0) {
       return null
     }
 
     return (
-      <div className='commit-summary-description-container'>
-        <div className='commit-summary-description-scroll-view' ref={this.onDescriptionScrollViewRef}>
+      <div
+        className="commit-summary-description-container"
+        ref={this.onDescriptionRef}
+      >
+        <div
+          className="commit-summary-description-scroll-view"
+          ref={this.onDescriptionScrollViewRef}
+        >
           <RichText
-            className='commit-summary-description'
+            className="commit-summary-description"
             emoji={this.props.emoji}
             repository={this.props.repository}
-            text={this.props.body}
+            text={this.state.body}
           />
         </div>
 
@@ -179,74 +315,233 @@ export class CommitSummary extends React.Component<ICommitSummaryProps, ICommitS
     )
   }
 
+  private getShaRef = (useShortSha?: boolean) => {
+    const { commits } = this.props
+    const oldest = useShortSha ? commits[0].shortSha : commits[0].sha
+
+    if (commits.length === 1) {
+      return oldest
+    }
+
+    const latestCommit = commits.at(-1)
+    const latest = useShortSha ? latestCommit?.shortSha : latestCommit?.sha
+
+    return `${oldest}^..${latest}`
+  }
+
   public render() {
-    const fileCount = this.props.files.length
-    const filesPlural = fileCount === 1 ? 'file' : 'files'
-    const filesDescription = `${fileCount} changed ${filesPlural}`
-    const shortSHA = this.props.sha.slice(0, 7)
-
-    let url: string | null = null
-    if (!this.props.isLocal) {
-      const gitHubRepository = this.props.repository.gitHubRepository
-      if (gitHubRepository) {
-        url = `${gitHubRepository.htmlURL}/commit/${this.props.sha}`
-      }
-    }
-
-    const author = this.props.author
-    const authorTitle = `${author.name} <${author.email}>`
-    let avatarUser = undefined
-    if (this.props.gitHubUser) {
-      avatarUser = { ...author, avatarURL: this.props.gitHubUser.avatarURL }
-    }
-
     const className = classNames({
       expanded: this.props.isExpanded,
       collapsed: !this.props.isExpanded,
       'has-expander': this.props.isExpanded || this.state.isOverflowed,
+      'hide-description-border': this.props.hideDescriptionBorder,
+    })
+
+    const hasEmptySummary = this.state.summary.length === 0
+    const commitSummary = hasEmptySummary
+      ? 'Empty commit message'
+      : this.props.commits.length > 1
+      ? `Viewing the diff of ${this.props.commits.length} commits`
+      : this.state.summary
+
+    const summaryClassNames = classNames('commit-summary-title', {
+      'empty-summary': hasEmptySummary,
     })
 
     return (
-      <div id='commit-summary' className={className}>
-        <div className='commit-summary-header'>
+      <div id="commit-summary" className={className}>
+        <div className="commit-summary-header">
           <RichText
-            className='commit-summary-title'
+            className={summaryClassNames}
             emoji={this.props.emoji}
             repository={this.props.repository}
-            text={this.props.summary} />
+            text={commitSummary}
+          />
 
-          <ul className='commit-summary-meta'>
-            <li className='commit-summary-meta-item'
-              title={authorTitle} aria-label='Author'>
-              <span aria-hidden='true'>
-                <Avatar user={avatarUser} />
-              </span>
-
-              {author.name}
+          <ul className="commit-summary-meta">
+            <li
+              className="commit-summary-meta-item without-truncation"
+              aria-label="Author"
+            >
+              <AvatarStack users={this.state.avatarUsers} />
+              <CommitAttribution
+                gitHubRepository={this.props.repository.gitHubRepository}
+                commits={this.props.commits}
+              />
             </li>
 
-            <li className='commit-summary-meta-item'
-              title={shortSHA} aria-label='SHA'>
-              <span aria-hidden='true'>
-                <Octicon symbol={OcticonSymbol.gitCommit} />
-              </span>
-
-              {url ? <LinkButton uri={url}>{shortSHA}</LinkButton> : shortSHA}
+            <li
+              className="commit-summary-meta-item without-truncation"
+              aria-label="SHA"
+            >
+              <Octicon symbol={OcticonSymbol.gitCommit} />
+              <TooltippedContent
+                className="sha"
+                tooltip={this.renderShaTooltip()}
+                tooltipClassName="sha-hint"
+                interactive={true}
+                direction={TooltipDirection.SOUTH}
+              >
+                {this.getShaRef(true)}
+              </TooltippedContent>
             </li>
 
-            <li className='commit-summary-meta-item'
-              title={filesDescription}>
-              <span aria-hidden='true'>
-                <Octicon symbol={OcticonSymbol.diff} />
-              </span>
+            {this.renderChangedFilesDescription()}
+            {this.renderLinesChanged()}
+            {this.renderTags()}
 
-              {filesDescription}
+            <li
+              className="commit-summary-meta-item without-truncation"
+              title="Diff Options"
+            >
+              <DiffOptions
+                sourceTab={RepositorySectionTab.History}
+                hideWhitespaceChanges={this.props.hideWhitespaceInDiff}
+                onHideWhitespaceChangesChanged={
+                  this.props.onHideWhitespaceInDiffChanged
+                }
+                showSideBySideDiff={this.props.showSideBySideDiff}
+                onShowSideBySideDiffChanged={
+                  this.props.onShowSideBySideDiffChanged
+                }
+                onDiffOptionsOpened={this.props.onDiffOptionsOpened}
+              />
             </li>
           </ul>
         </div>
 
         {this.renderDescription()}
       </div>
+    )
+  }
+
+  private renderShaTooltip() {
+    return (
+      <>
+        <code>{this.getShaRef()}</code>
+        <button onClick={this.onCopyShaButtonClick}>Copy</button>
+      </>
+    )
+  }
+
+  private onCopyShaButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    clipboard.writeText(this.getShaRef())
+  }
+
+  private renderChangedFilesDescription = () => {
+    const fileCount = this.props.changesetData.files.length
+    const filesPlural = fileCount === 1 ? 'file' : 'files'
+    const filesShortDescription = `${fileCount} changed ${filesPlural}`
+
+    let filesAdded = 0
+    let filesModified = 0
+    let filesRemoved = 0
+    for (const file of this.props.changesetData.files) {
+      switch (file.status.kind) {
+        case AppFileStatusKind.New:
+          filesAdded += 1
+          break
+        case AppFileStatusKind.Modified:
+          filesModified += 1
+          break
+        case AppFileStatusKind.Deleted:
+          filesRemoved += 1
+          break
+      }
+    }
+
+    const filesLongDescription = (
+      <>
+        {filesAdded > 0 ? (
+          <span>
+            <Octicon
+              className="files-added-icon"
+              symbol={OcticonSymbol.diffAdded}
+            />
+            {filesAdded} added
+          </span>
+        ) : null}
+        {filesModified > 0 ? (
+          <span>
+            <Octicon
+              className="files-modified-icon"
+              symbol={OcticonSymbol.diffModified}
+            />
+            {filesModified} modified
+          </span>
+        ) : null}
+        {filesRemoved > 0 ? (
+          <span>
+            <Octicon
+              className="files-deleted-icon"
+              symbol={OcticonSymbol.diffRemoved}
+            />
+            {filesRemoved} deleted
+          </span>
+        ) : null}
+      </>
+    )
+
+    return (
+      <TooltippedContent
+        className="commit-summary-meta-item without-truncation"
+        tooltipClassName="changed-files-description-tooltip"
+        tooltip={fileCount > 0 ? filesLongDescription : undefined}
+      >
+        <Octicon symbol={OcticonSymbol.diff} />
+        {filesShortDescription}
+      </TooltippedContent>
+    )
+  }
+
+  private renderLinesChanged() {
+    const linesAdded = this.props.changesetData.linesAdded
+    const linesDeleted = this.props.changesetData.linesDeleted
+    if (linesAdded + linesDeleted === 0) {
+      return null
+    }
+
+    const linesAddedPlural = linesAdded === 1 ? 'line' : 'lines'
+    const linesDeletedPlural = linesDeleted === 1 ? 'line' : 'lines'
+    const linesAddedTitle = `${linesAdded} ${linesAddedPlural} added`
+    const linesDeletedTitle = `${linesDeleted} ${linesDeletedPlural} deleted`
+
+    return (
+      <>
+        <TooltippedContent
+          tagName="li"
+          className="commit-summary-meta-item without-truncation lines-added"
+          tooltip={linesAddedTitle}
+        >
+          +{linesAdded}
+        </TooltippedContent>
+        <TooltippedContent
+          tagName="li"
+          className="commit-summary-meta-item without-truncation lines-deleted"
+          tooltip={linesDeletedTitle}
+        >
+          -{linesDeleted}
+        </TooltippedContent>
+      </>
+    )
+  }
+
+  private renderTags() {
+    const tags = this.props.commits.flatMap(c => c.tags) || []
+
+    if (tags.length === 0) {
+      return null
+    }
+
+    return (
+      <li className="commit-summary-meta-item" title={tags.join('\n')}>
+        <span aria-label="Tags">
+          <Octicon symbol={OcticonSymbol.tag} />
+        </span>
+
+        <span className="tags">{tags.join(', ')}</span>
+      </li>
     )
   }
 }

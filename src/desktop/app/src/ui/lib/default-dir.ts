@@ -1,10 +1,14 @@
-import * as OS from 'os'
+import * as Path from 'path'
+import { getDocumentsPath } from './app-proxy'
 
 const localStorageKey = 'last-clone-location'
 
 /** The path to the default directory. */
-export function getDefaultDir(): string {
-  return localStorage.getItem(localStorageKey) || OS.homedir()
+export async function getDefaultDir(): Promise<string> {
+  return (
+    localStorage.getItem(localStorageKey) ||
+    Path.join(await getDocumentsPath(), 'GitHub')
+  )
 }
 
 export function setDefaultDir(path: string) {

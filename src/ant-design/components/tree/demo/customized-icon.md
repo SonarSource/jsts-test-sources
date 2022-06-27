@@ -1,6 +1,5 @@
 ---
 order: 6
-debug: true
 title:
   zh-CN: 自定义图标
   en-US: Customize Icon
@@ -8,79 +7,53 @@ title:
 
 ## zh-CN
 
-可以针对不同节点采用样式覆盖的方式定制图标。
+可以针对不同的节点定制图标。
 
 ## en-US
 
-You can customize icons for different nodes by styles override.
+You can customize icons for different nodes.
 
-````jsx
+```tsx
+import {
+  DownOutlined,
+  FrownFilled,
+  FrownOutlined,
+  MehOutlined,
+  SmileOutlined,
+} from '@ant-design/icons';
 import { Tree } from 'antd';
-const TreeNode = Tree.TreeNode;
+import type { DataNode } from 'antd/lib/tree';
+import React from 'react';
 
-class Demo extends React.Component {
-  onSelect = (selectedKeys, info) => {
-    console.log('selected', selectedKeys, info);
-  }
-  render() {
-    return (
-      <Tree
-        showIcon
-        showLine
-        defaultExpandedKeys={['0-0-0', '0-0-1']}
-        defaultSelectedKeys={['0-0-0', '0-0-1']}
-        onSelect={this.onSelect}
-      >
-        <TreeNode title="parent 1" key="0-0">
-          <TreeNode title="parent 1-0" key="0-0-0">
-            <TreeNode title="leaf" key="0-0-0-0" />
-            <TreeNode title="leaf" key="0-0-0-1" />
-          </TreeNode>
-          <TreeNode title="parent 1-1" key="0-0-1">
-            <TreeNode title="leaf" key="0-0-1-0" />
-          </TreeNode>
-          <TreeNode title="leaf" key="0-0-2" />
-        </TreeNode>
-      </Tree>
-    );
-  }
-}
+const treeData: DataNode[] = [
+  {
+    title: 'parent 1',
+    key: '0-0',
+    icon: <SmileOutlined />,
+    children: [
+      {
+        title: 'leaf',
+        key: '0-0-0',
+        icon: <MehOutlined />,
+      },
+      {
+        title: 'leaf',
+        key: '0-0-1',
+        icon: ({ selected }) => (selected ? <FrownFilled /> : <FrownOutlined />),
+      },
+    ],
+  },
+];
 
-ReactDOM.render(<Demo />, mountNode);
-````
+const App: React.FC = () => (
+  <Tree
+    showIcon
+    defaultExpandAll
+    defaultSelectedKeys={['0-0-0']}
+    switcherIcon={<DownOutlined />}
+    treeData={treeData}
+  />
+);
 
-```css
-#components-tree-demo-customized-icon .ant-tree-iconEle {
-  position: absolute;
-  left: 0;
-  background: #fff;
-}
-#components-tree-demo-customized-icon .ant-tree-iconEle::after {
-  font-size: 12px;
-  zoom: 1;
-  display: inline-block;
-  font-family: 'anticon';
-  text-rendering: optimizeLegibility;
-  color: #999;
-  transition: transform .3s ease;
-  margin-top: 2px;
-  background: #fff;
-}
-#components-tree-demo-customized-icon .ant-tree-iconEle.ant-tree-icon__docu::after {
-  content: "\E664";
-}
-#components-tree-demo-customized-icon .ant-tree-iconEle.ant-tree-icon__open::after {
-  content: "\E699";
-}
-#components-tree-demo-customized-icon .ant-tree-iconEle.ant-tree-icon__close::after {
-  content: "\E662";
-}
-#components-tree-demo-customized-icon .ant-tree-switcher {
-  position: relative;
-  z-index: 1;
-  background: transparent;
-}
-#components-tree-demo-customized-icon .ant-tree-switcher::after {
-  opacity: 0;
-}
+export default App;
 ```

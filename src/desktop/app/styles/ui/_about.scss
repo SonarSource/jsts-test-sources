@@ -1,11 +1,11 @@
 dialog#about {
-
   .dialog-content {
     .row-component {
       justify-content: center;
     }
 
-    p, h2 {
+    p,
+    h2 {
       text-align: center;
     }
 
@@ -14,6 +14,20 @@ dialog#about {
     // (and don't you say <br/>) so we'll just kill off the bottom margin.
     p.no-padding {
       margin-bottom: 0;
+    }
+
+    .version-text {
+      cursor: pointer;
+      .octicon {
+        color: transparentize(black, 0.5);
+        height: 12px;
+        margin-bottom: -1px;
+        transition: color 0.4s;
+        cursor: pointer;
+      }
+      &:hover .octicon {
+        color: black;
+      }
     }
   }
 
@@ -26,7 +40,6 @@ dialog#about {
   }
 
   .update-status {
-
     .octicon.spin {
       // Make sure the spinner is aligned with the text.
       align-self: center;

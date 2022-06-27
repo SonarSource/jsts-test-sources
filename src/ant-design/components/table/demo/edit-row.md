@@ -1,5 +1,5 @@
 ---
-order: 23
+order: 24
 title:
   en-US: Editable Rows
   zh-CN: 可编辑行
@@ -9,188 +9,201 @@ title:
 
 带行编辑功能的表格。
 
+> 🛎️ 想要 3 分钟实现？试试 [ProTable 的可编辑表格](https://procomponents.ant.design/components/editable-table)！
+
 ## en-US
 
 Table with editable rows.
 
-````jsx
-import { Table, Input, Popconfirm } from 'antd';
+```tsx
+import { Form, Input, InputNumber, Popconfirm, Table, Typography } from 'antd';
+import React, { useState } from 'react';
 
-class EditableCell extends React.Component {
-  state = {
-    value: this.props.value,
-    editable: this.props.editable || false,
-  }
-  componentWillReceiveProps(nextProps) {
-    if (nextProps.editable !== this.state.editable) {
-      this.setState({ editable: nextProps.editable });
-      if (nextProps.editable) {
-        this.cacheValue = this.state.value;
-      }
-    }
-    if (nextProps.status && nextProps.status !== this.props.status) {
-      if (nextProps.status === 'save') {
-        this.props.onChange(this.state.value);
-      } else if (nextProps.status === 'cancel') {
-        this.setState({ value: this.cacheValue });
-        this.props.onChange(this.cacheValue);
-      }
-    }
-  }
-  shouldComponentUpdate(nextProps, nextState) {
-    return nextProps.editable !== this.state.editable ||
-           nextState.value !== this.state.value;
-  }
-  handleChange(e) {
-    const value = e.target.value;
-    this.setState({ value });
-  }
-  render() {
-    const { value, editable } = this.state;
-    return (
-      <div>
-        {
-          editable ?
-            <div>
-              <Input
-                value={value}
-                onChange={e => this.handleChange(e)}
-              />
-            </div>
-            :
-            <div className="editable-row-text">
-              {value.toString() || ' '}
-            </div>
-        }
-      </div>
-    );
-  }
+interface Item {
+  key: string;
+  name: string;
+  age: number;
+  address: string;
 }
 
-class EditableTable extends React.Component {
-  constructor(props) {
-    super(props);
-    this.columns = [{
+const originData: Item[] = [];
+for (let i = 0; i < 100; i++) {
+  originData.push({
+    key: i.toString(),
+    name: `Edrward ${i}`,
+    age: 32,
+    address: `London Park no. ${i}`,
+  });
+}
+interface EditableCellProps extends React.HTMLAttributes<HTMLElement> {
+  editing: boolean;
+  dataIndex: string;
+  title: any;
+  inputType: 'number' | 'text';
+  record: Item;
+  index: number;
+  children: React.ReactNode;
+}
+
+const EditableCell: React.FC<EditableCellProps> = ({
+  editing,
+  dataIndex,
+  title,
+  inputType,
+  record,
+  index,
+  children,
+  ...restProps
+}) => {
+  const inputNode = inputType === 'number' ? <InputNumber /> : <Input />;
+
+  return (
+    <td {...restProps}>
+      {editing ? (
+        <Form.Item
+          name={dataIndex}
+          style={{ margin: 0 }}
+          rules={[
+            {
+              required: true,
+              message: `Please Input ${title}!`,
+            },
+          ]}
+        >
+          {inputNode}
+        </Form.Item>
+      ) : (
+        children
+      )}
+    </td>
+  );
+};
+
+const App: React.FC = () => {
+  const [form] = Form.useForm();
+  const [data, setData] = useState(originData);
+  const [editingKey, setEditingKey] = useState('');
+
+  const isEditing = (record: Item) => record.key === editingKey;
+
+  const edit = (record: Partial<Item> & { key: React.Key }) => {
+    form.setFieldsValue({ name: '', age: '', address: '', ...record });
+    setEditingKey(record.key);
+  };
+
+  const cancel = () => {
+    setEditingKey('');
+  };
+
+  const save = async (key: React.Key) => {
+    try {
+      const row = (await form.validateFields()) as Item;
+
+      const newData = [...data];
+      const index = newData.findIndex(item => key === item.key);
+      if (index > -1) {
+        const item = newData[index];
+        newData.splice(index, 1, {
+          ...item,
+          ...row,
+        });
+        setData(newData);
+        setEditingKey('');
+      } else {
+        newData.push(row);
+        setData(newData);
+        setEditingKey('');
+      }
+    } catch (errInfo) {
+      console.log('Validate Failed:', errInfo);
+    }
+  };
+
+  const columns = [
+    {
       title: 'name',
       dataIndex: 'name',
       width: '25%',
-      render: (text, record, index) => this.renderColumns(this.state.data, index, 'name', text),
-    }, {
+      editable: true,
+    },
+    {
       title: 'age',
       dataIndex: 'age',
       width: '15%',
-      render: (text, record, index) => this.renderColumns(this.state.data, index, 'age', text),
-    }, {
+      editable: true,
+    },
+    {
       title: 'address',
       dataIndex: 'address',
       width: '40%',
-      render: (text, record, index) => this.renderColumns(this.state.data, index, 'address', text),
-    }, {
+      editable: true,
+    },
+    {
       title: 'operation',
       dataIndex: 'operation',
-      render: (text, record, index) => {
-        const { editable } = this.state.data[index].name;
-        return (
-          <div className="editable-row-operations">
-            {
-              editable ?
-                <span>
-                  <a onClick={() => this.editDone(index, 'save')}>Save</a>
-                  <Popconfirm title="Sure to cancel?" onConfirm={() => this.editDone(index, 'cancel')}>
-                    <a>Cancel</a>
-                  </Popconfirm>
-                </span>
-                :
-                <span>
-                  <a onClick={() => this.edit(index)}>Edit</a>
-                </span>
-            }
-          </div>
+      render: (_: any, record: Item) => {
+        const editable = isEditing(record);
+        return editable ? (
+          <span>
+            <Typography.Link onClick={() => save(record.key)} style={{ marginRight: 8 }}>
+              Save
+            </Typography.Link>
+            <Popconfirm title="Sure to cancel?" onConfirm={cancel}>
+              <a>Cancel</a>
+            </Popconfirm>
+          </span>
+        ) : (
+          <Typography.Link disabled={editingKey !== ''} onClick={() => edit(record)}>
+            Edit
+          </Typography.Link>
         );
       },
-    }];
-    this.state = {
-      data: [{
-        key: '0',
-        name: {
-          editable: false,
-          value: 'Edward King 0',
-        },
-        age: {
-          editable: false,
-          value: '32',
-        },
-        address: {
-          value: 'London, Park Lane no. 0',
-        },
-      }],
-    };
-  }
-  renderColumns(data, index, key, text) {
-    const { editable, status } = data[index][key];
-    if (typeof editable === 'undefined') {
-      return text;
+    },
+  ];
+
+  const mergedColumns = columns.map(col => {
+    if (!col.editable) {
+      return col;
     }
-    return (<EditableCell
-      editable={editable}
-      value={text}
-      onChange={value => this.handleChange(key, index, value)}
-      status={status}
-    />);
-  }
-  handleChange(key, index, value) {
-    const { data } = this.state;
-    data[index][key].value = value;
-    this.setState({ data });
-  }
-  edit(index) {
-    const { data } = this.state;
-    Object.keys(data[index]).forEach((item) => {
-      if (data[index][item] && typeof data[index][item].editable !== 'undefined') {
-        data[index][item].editable = true;
-      }
-    });
-    this.setState({ data });
-  }
-  editDone(index, type) {
-    const { data } = this.state;
-    Object.keys(data[index]).forEach((item) => {
-      if (data[index][item] && typeof data[index][item].editable !== 'undefined') {
-        data[index][item].editable = false;
-        data[index][item].status = type;
-      }
-    });
-    this.setState({ data }, () => {
-      Object.keys(data[index]).forEach((item) => {
-        if (data[index][item] && typeof data[index][item].editable !== 'undefined') {
-          delete data[index][item].status;
-        }
-      });
-    });
-  }
-  render() {
-    const { data } = this.state;
-    const dataSource = data.map((item) => {
-      const obj = {};
-      Object.keys(item).forEach((key) => {
-        obj[key] = key === 'key' ? item[key] : item[key].value;
-      });
-      return obj;
-    });
-    const columns = this.columns;
-    return <Table bordered dataSource={dataSource} columns={columns} />;
-  }
-}
+    return {
+      ...col,
+      onCell: (record: Item) => ({
+        record,
+        inputType: col.dataIndex === 'age' ? 'number' : 'text',
+        dataIndex: col.dataIndex,
+        title: col.title,
+        editing: isEditing(record),
+      }),
+    };
+  });
 
-ReactDOM.render(<EditableTable />, mountNode);
-````
+  return (
+    <Form form={form} component={false}>
+      <Table
+        components={{
+          body: {
+            cell: EditableCell,
+          },
+        }}
+        bordered
+        dataSource={data}
+        columns={mergedColumns}
+        rowClassName="editable-row"
+        pagination={{
+          onChange: cancel,
+        }}
+      />
+    </Form>
+  );
+};
 
-````css
-.editable-row-text {
-  padding: 5px;
-}
+export default App;
+```
 
-.editable-row-operations a {
-  margin-right: 8px;
+```css
+.editable-row .ant-form-item-explain {
+  position: absolute;
+  top: 100%;
+  font-size: 12px;
 }
-````
+```

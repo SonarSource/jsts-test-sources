@@ -7,21 +7,37 @@ title:
 
 ## zh-CN
 
-幽灵按钮将其他按钮的内容反色，背景变为透明，常用在有色背景上。
+幽灵按钮将按钮的内容反色，背景变为透明，常用在有色背景上。
 
 ## en-US
 
-`ghost` property will make button's background transparent, it is common used in colored background.
+`ghost` property will make button's background transparent, it is commonly used in colored background.
 
-````jsx
+```tsx
 import { Button } from 'antd';
+import React from 'react';
 
-ReactDOM.render(
-  <div style={{ background: 'rgb(190, 200, 200)', padding: '26px 16px 16px' }}>
-    <Button type="primary" ghost>Primary</Button>
+const App: React.FC = () => (
+  <div className="site-button-ghost-wrapper">
+    <Button type="primary" ghost>
+      Primary
+    </Button>
     <Button ghost>Default</Button>
-    <Button type="dashed" ghost>Dashed</Button>
-    <Button type="danger" ghost>danger</Button>
+    <Button type="dashed" ghost>
+      Dashed
+    </Button>
+    <Button type="primary" danger ghost>
+      Danger
+    </Button>
   </div>
-, mountNode);
-````
+);
+
+export default App;
+```
+
+```css
+.site-button-ghost-wrapper {
+  padding: 26px 16px 16px;
+  background: rgb(190, 200, 200);
+}
+```

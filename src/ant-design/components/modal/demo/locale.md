@@ -13,57 +13,59 @@ title:
 
 To customize the text of the buttons, you need to set `okText` and `cancelText` props.
 
-````jsx
-import { Modal, Button } from 'antd';
+```tsx
+import { ExclamationCircleOutlined } from '@ant-design/icons';
+import { Button, Modal, Space } from 'antd';
+import React, { useState } from 'react';
 
-class LocalizedModal extends React.Component {
-  state = { visible: false }
-  showModal = () => {
-    this.setState({
-      visible: true,
-    });
-  }
-  hideModal = () => {
-    this.setState({
-      visible: false,
-    });
-  }
-  render() {
-    return (
-      <div>
-        <Button type="primary" onClick={this.showModal}>Modal</Button>
-        <Modal
-          title="Modal"
-          visible={this.state.visible}
-          onOk={this.hideModal}
-          onCancel={this.hideModal}
-          okText="确认"
-          cancelText="取消"
-        >
-          <p>Bla bla ...</p>
-          <p>Bla bla ...</p>
-          <p>Bla bla ...</p>
-        </Modal>
-      </div>
-    );
-  }
-}
+const LocalizedModal = () => {
+  const [visible, setVisible] = useState(false);
 
-function confirm() {
+  const showModal = () => {
+    setVisible(true);
+  };
+
+  const hideModal = () => {
+    setVisible(false);
+  };
+
+  return (
+    <>
+      <Button type="primary" onClick={showModal}>
+        Modal
+      </Button>
+      <Modal
+        title="Modal"
+        visible={visible}
+        onOk={hideModal}
+        onCancel={hideModal}
+        okText="确认"
+        cancelText="取消"
+      >
+        <p>Bla bla ...</p>
+        <p>Bla bla ...</p>
+        <p>Bla bla ...</p>
+      </Modal>
+    </>
+  );
+};
+
+const confirm = () => {
   Modal.confirm({
     title: 'Confirm',
+    icon: <ExclamationCircleOutlined />,
     content: 'Bla bla ...',
     okText: '确认',
     cancelText: '取消',
   });
-}
+};
 
-ReactDOM.render(
-  <div>
+const App: React.FC = () => (
+  <Space>
     <LocalizedModal />
-    <br />
     <Button onClick={confirm}>Confirm</Button>
-  </div>,
-  mountNode
+  </Space>
 );
-````
+
+export default App;
+```

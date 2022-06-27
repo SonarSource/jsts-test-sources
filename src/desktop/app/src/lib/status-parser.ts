@@ -1,3 +1,9 @@
+import {
+  FileEntry,
+  GitStatusEntry,
+  UnmergedEntrySummary,
+} from '../models/status'
+
 type StatusItem = IStatusHeader | IStatusEntry
 
 export interface IStatusHeader {
@@ -10,13 +16,25 @@ export interface IStatusEntry {
   readonly kind: 'entry'
 
   /** The path to the file relative to the repository root */
-  readonly path: string,
+  readonly path: string
 
   /** The two character long status code */
   readonly statusCode: string
 
   /** The original path in the case of a renamed file */
   readonly oldPath?: string
+}
+
+export function isStatusHeader(
+  statusItem: StatusItem
+): statusItem is IStatusHeader {
+  return statusItem.kind === 'header'
+}
+
+export function isStatusEntry(
+  statusItem: StatusItem
+): statusItem is IStatusEntry {
+  return statusItem.kind === 'entry'
 }
 
 const ChangedEntryType = '1'
@@ -26,7 +44,9 @@ const UntrackedEntryType = '?'
 const IgnoredEntryType = '!'
 
 /** Parses output from git status --porcelain -z into file status entries */
-export function parsePorcelainStatus(output: string): ReadonlyArray<StatusItem> {
+export function parsePorcelainStatus(
+  output: string
+): ReadonlyArray<StatusItem> {
   const entries = new Array<StatusItem>()
 
   // See https://git-scm.com/docs/git-status
@@ -43,22 +63,21 @@ export function parsePorcelainStatus(output: string): ReadonlyArray<StatusItem> 
   // containing special characters are not specially formatted; no quoting or
   // backslash-escaping is performed.
 
-  const fields = output.split('\0')
-  let field: string | undefined
+  const tokens = output.split('\0')
 
-  while (field = fields.shift()) {
-
+  for (let i = 0; i < tokens.length; i++) {
+    const field = tokens[i]
     if (field.startsWith('# ') && field.length > 2) {
-      entries.push({ kind: 'header', value: field.substr(2) })
+      entries.push({ kind: 'header', value: field.substring(2) })
       continue
     }
 
-    const entryKind = field.substr(0, 1)
+    const entryKind = field.substring(0, 1)
 
     if (entryKind === ChangedEntryType) {
       entries.push(parseChangedEntry(field))
     } else if (entryKind === RenamedOrCopiedEntryType) {
-      entries.push(parsedRenamedOrCopiedEntry(field, fields.shift()))
+      entries.push(parsedRenamedOrCopiedEntry(field, tokens[++i]))
     } else if (entryKind === UnmergedEntryType) {
       entries.push(parseUnmergedEntry(field))
     } else if (entryKind === UntrackedEntryType) {
@@ -72,52 +91,54 @@ export function parsePorcelainStatus(output: string): ReadonlyArray<StatusItem> 
 }
 
 // 1 <XY> <sub> <mH> <mI> <mW> <hH> <hI> <path>
-const changedEntryRe = /^1 ([MADRCU?!.]{2}) (N\.\.\.|S[C.][M.][U.]) (\d+) (\d+) (\d+) ([a-f0-9]+) ([a-f0-9]+) (.*?)$/
+const changedEntryRe =
+  /^1 ([MADRCUTX?!.]{2}) (N\.\.\.|S[C.][M.][U.]) (\d+) (\d+) (\d+) ([a-f0-9]+) ([a-f0-9]+) ([\s\S]*?)$/
 
 function parseChangedEntry(field: string): IStatusEntry {
   const match = changedEntryRe.exec(field)
 
   if (!match) {
-    throw new Error(`Failed to parse status line for changed entry: ${field}`)
+    log.debug(`parseChangedEntry parse error: ${field}`)
+    throw new Error(`Failed to parse status line for changed entry`)
   }
 
-  return {
-    kind: 'entry',
-    statusCode: match[1],
-    path: match[8],
-  }
+  return { kind: 'entry', statusCode: match[1], path: match[8] }
 }
 
 // 2 <XY> <sub> <mH> <mI> <mW> <hH> <hI> <X><score> <path><sep><origPath>
-const renamedOrCopiedEntryRe = /^2 ([MADRCU?!.]{2}) (N\.\.\.|S[C.][M.][U.]) (\d+) (\d+) (\d+) ([a-f0-9]+) ([a-f0-9]+) ([RC]\d+) (.*?)$/
+const renamedOrCopiedEntryRe =
+  /^2 ([MADRCUTX?!.]{2}) (N\.\.\.|S[C.][M.][U.]) (\d+) (\d+) (\d+) ([a-f0-9]+) ([a-f0-9]+) ([RC]\d+) ([\s\S]*?)$/
 
-function parsedRenamedOrCopiedEntry(field: string, oldPath: string | undefined): IStatusEntry {
+function parsedRenamedOrCopiedEntry(
+  field: string,
+  oldPath: string | undefined
+): IStatusEntry {
   const match = renamedOrCopiedEntryRe.exec(field)
 
   if (!match) {
-    throw new Error(`Failed to parse status line for renamed or copied entry: ${field}`)
+    log.debug(`parsedRenamedOrCopiedEntry parse error: ${field}`)
+    throw new Error(`Failed to parse status line for renamed or copied entry`)
   }
 
   if (!oldPath) {
-    throw new Error('Failed to parse renamed or copied entry, could not parse old path')
+    throw new Error(
+      'Failed to parse renamed or copied entry, could not parse old path'
+    )
   }
 
-  return {
-    kind: 'entry',
-    statusCode: match[1],
-    oldPath,
-    path: match[9],
-  }
+  return { kind: 'entry', statusCode: match[1], oldPath, path: match[9] }
 }
 
 // u <xy> <sub> <m1> <m2> <m3> <mW> <h1> <h2> <h3> <path>
-const unmergedEntryRe = /^u ([DAU]{2}) (N\.\.\.|S[C.][M.][U.]) (\d+) (\d+) (\d+) (\d+) ([a-f0-9]+) ([a-f0-9]+) ([a-f0-9]+) (.*?)$/
+const unmergedEntryRe =
+  /^u ([DAU]{2}) (N\.\.\.|S[C.][M.][U.]) (\d+) (\d+) (\d+) (\d+) ([a-f0-9]+) ([a-f0-9]+) ([a-f0-9]+) ([\s\S]*?)$/
 
 function parseUnmergedEntry(field: string): IStatusEntry {
   const match = unmergedEntryRe.exec(field)
 
   if (!match) {
-    throw new Error(`Failed to parse status line for unmerged entry: ${field}`)
+    log.debug(`parseUnmergedEntry parse error: ${field}`)
+    throw new Error(`Failed to parse status line for unmerged entry`)
   }
 
   return {
@@ -128,12 +149,210 @@ function parseUnmergedEntry(field: string): IStatusEntry {
 }
 
 function parseUntrackedEntry(field: string): IStatusEntry {
-  const path = field.substr(2)
+  const path = field.substring(2)
   return {
     kind: 'entry',
     // NOTE: We return ?? instead of ? here to play nice with mapStatus,
     // might want to consider changing this (and mapStatus) in the future.
     statusCode: '??',
     path,
+  }
+}
+
+/**
+ * Map the raw status text from Git to a structure we can work with in the app.
+ */
+export function mapStatus(status: string): FileEntry {
+  if (status === '??') {
+    return { kind: 'untracked' }
+  }
+
+  if (status === '.M') {
+    return {
+      kind: 'ordinary',
+      type: 'modified',
+      index: GitStatusEntry.Unchanged,
+      workingTree: GitStatusEntry.Modified,
+    }
+  }
+
+  if (status === 'M.') {
+    return {
+      kind: 'ordinary',
+      type: 'modified',
+      index: GitStatusEntry.Modified,
+      workingTree: GitStatusEntry.Unchanged,
+    }
+  }
+
+  if (status === '.A') {
+    return {
+      kind: 'ordinary',
+      type: 'added',
+      index: GitStatusEntry.Unchanged,
+      workingTree: GitStatusEntry.Added,
+    }
+  }
+
+  if (status === 'A.') {
+    return {
+      kind: 'ordinary',
+      type: 'added',
+      index: GitStatusEntry.Added,
+      workingTree: GitStatusEntry.Unchanged,
+    }
+  }
+
+  if (status === '.D') {
+    return {
+      kind: 'ordinary',
+      type: 'deleted',
+      index: GitStatusEntry.Unchanged,
+      workingTree: GitStatusEntry.Deleted,
+    }
+  }
+
+  if (status === 'D.') {
+    return {
+      kind: 'ordinary',
+      type: 'deleted',
+      index: GitStatusEntry.Deleted,
+      workingTree: GitStatusEntry.Unchanged,
+    }
+  }
+
+  if (status === 'R.') {
+    return {
+      kind: 'renamed',
+      index: GitStatusEntry.Renamed,
+      workingTree: GitStatusEntry.Unchanged,
+    }
+  }
+
+  if (status === '.R') {
+    return {
+      kind: 'renamed',
+      index: GitStatusEntry.Unchanged,
+      workingTree: GitStatusEntry.Renamed,
+    }
+  }
+
+  if (status === 'C.') {
+    return {
+      kind: 'copied',
+      index: GitStatusEntry.Copied,
+      workingTree: GitStatusEntry.Unchanged,
+    }
+  }
+
+  if (status === '.C') {
+    return {
+      kind: 'copied',
+      index: GitStatusEntry.Unchanged,
+      workingTree: GitStatusEntry.Copied,
+    }
+  }
+
+  if (status === 'AD') {
+    return {
+      kind: 'ordinary',
+      type: 'added',
+      index: GitStatusEntry.Added,
+      workingTree: GitStatusEntry.Deleted,
+    }
+  }
+
+  if (status === 'AM') {
+    return {
+      kind: 'ordinary',
+      type: 'added',
+      index: GitStatusEntry.Added,
+      workingTree: GitStatusEntry.Modified,
+    }
+  }
+
+  if (status === 'RM') {
+    return {
+      kind: 'renamed',
+      index: GitStatusEntry.Renamed,
+      workingTree: GitStatusEntry.Modified,
+    }
+  }
+
+  if (status === 'RD') {
+    return {
+      kind: 'renamed',
+      index: GitStatusEntry.Renamed,
+      workingTree: GitStatusEntry.Deleted,
+    }
+  }
+
+  if (status === 'DD') {
+    return {
+      kind: 'conflicted',
+      action: UnmergedEntrySummary.BothDeleted,
+      us: GitStatusEntry.Deleted,
+      them: GitStatusEntry.Deleted,
+    }
+  }
+
+  if (status === 'AU') {
+    return {
+      kind: 'conflicted',
+      action: UnmergedEntrySummary.AddedByUs,
+      us: GitStatusEntry.Added,
+      them: GitStatusEntry.UpdatedButUnmerged,
+    }
+  }
+
+  if (status === 'UD') {
+    return {
+      kind: 'conflicted',
+      action: UnmergedEntrySummary.DeletedByThem,
+      us: GitStatusEntry.UpdatedButUnmerged,
+      them: GitStatusEntry.Deleted,
+    }
+  }
+
+  if (status === 'UA') {
+    return {
+      kind: 'conflicted',
+      action: UnmergedEntrySummary.AddedByThem,
+      us: GitStatusEntry.UpdatedButUnmerged,
+      them: GitStatusEntry.Added,
+    }
+  }
+
+  if (status === 'DU') {
+    return {
+      kind: 'conflicted',
+      action: UnmergedEntrySummary.DeletedByUs,
+      us: GitStatusEntry.Deleted,
+      them: GitStatusEntry.UpdatedButUnmerged,
+    }
+  }
+
+  if (status === 'AA') {
+    return {
+      kind: 'conflicted',
+      action: UnmergedEntrySummary.BothAdded,
+      us: GitStatusEntry.Added,
+      them: GitStatusEntry.Added,
+    }
+  }
+
+  if (status === 'UU') {
+    return {
+      kind: 'conflicted',
+      action: UnmergedEntrySummary.BothModified,
+      us: GitStatusEntry.UpdatedButUnmerged,
+      them: GitStatusEntry.UpdatedButUnmerged,
+    }
+  }
+
+  // as a fallback, we assume the file is modified in some way
+  return {
+    kind: 'ordinary',
+    type: 'modified',
   }
 }

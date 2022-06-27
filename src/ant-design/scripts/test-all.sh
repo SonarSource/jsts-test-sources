@@ -1,9 +1,40 @@
 #!/bin/sh
 
-npm run lint && \
-npm run dist && \
-node ./tests/dekko/dist.test.js && \
-npm run compile && \
-node ./tests/dekko/lib.test.js && \
-npm test -- --coverage -w $MAX_WORKERS && \
-npm test -- --config .jest.node.json -w $MAX_WORKERS
+echo "[TEST ALL] test changlog"
+node ./scripts/check-version-md.js
+
+echo "[TEST ALL] check-commit"
+npm run check-commit
+
+echo "[TEST ALL] lint"
+npm run lint
+
+if [ "$1" != "--skip-build" ]; then
+  echo "[TEST ALL] dist"
+  npm run dist
+
+  echo "[TEST ALL] compile"
+  npm run compile
+else
+  echo "Skip build..."	
+fi
+
+echo "[TEST ALL] dekko dist"
+node ./tests/dekko/dist.test.js
+
+echo "[TEST ALL] dist test"
+LIB_DIR=dist npm test
+
+echo "[TEST ALL] dekko lib"
+
+echo "[TEST ALL] test es"
+LIB_DIR=es npm test
+
+echo "[TEST ALL] test lib"
+LIB_DIR=lib npm test
+
+echo "[TEST ALL] test"
+npm test
+
+echo "[TEST ALL] test node"
+npm run test-node

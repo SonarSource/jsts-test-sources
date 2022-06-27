@@ -13,38 +13,56 @@ title:
 
 Allow only select parent options.
 
-````jsx
+```tsx
 import { Cascader } from 'antd';
+import React from 'react';
 
-const options = [{
-  value: 'zhejiang',
-  label: 'Zhejiang',
-  children: [{
-    value: 'hangzhou',
-    label: 'Hanzhou',
-    children: [{
-      value: 'xihu',
-      label: 'West Lake',
-    }],
-  }],
-}, {
-  value: 'jiangsu',
-  label: 'Jiangsu',
-  children: [{
-    value: 'nanjing',
-    label: 'Nanjing',
-    children: [{
-      value: 'zhonghuamen',
-      label: 'Zhong Hua Men',
-    }],
-  }],
-}];
-
-function onChange(value) {
-  console.log(value);
+interface Option {
+  value: string;
+  label: string;
+  children?: Option[];
 }
 
-ReactDOM.render(
-  <Cascader options={options} onChange={onChange} changeOnSelect />
-, mountNode);
-````
+const options: Option[] = [
+  {
+    value: 'zhejiang',
+    label: 'Zhejiang',
+    children: [
+      {
+        value: 'hangzhou',
+        label: 'Hanzhou',
+        children: [
+          {
+            value: 'xihu',
+            label: 'West Lake',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    value: 'jiangsu',
+    label: 'Jiangsu',
+    children: [
+      {
+        value: 'nanjing',
+        label: 'Nanjing',
+        children: [
+          {
+            value: 'zhonghuamen',
+            label: 'Zhong Hua Men',
+          },
+        ],
+      },
+    ],
+  },
+];
+
+const onChange = (value: string[]) => {
+  console.log(value);
+};
+
+const App: React.FC = () => <Cascader options={options} onChange={onChange} changeOnSelect />;
+
+export default App;
+```

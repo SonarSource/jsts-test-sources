@@ -4,12 +4,17 @@ import { IFilterListGroup, IFilterListItem } from '../lib/filter-list'
 export type BranchGroupIdentifier = 'default' | 'recent' | 'other'
 
 export interface IBranchListItem extends IFilterListItem {
-  readonly text: string
+  readonly text: ReadonlyArray<string>
   readonly id: string
   readonly branch: Branch
 }
 
-export function groupBranches(defaultBranch: Branch | null, currentBranch: Branch | null, allBranches: ReadonlyArray<Branch>, recentBranches: ReadonlyArray<Branch>): ReadonlyArray<IFilterListGroup<IBranchListItem>> {
+export function groupBranches(
+  defaultBranch: Branch | null,
+  currentBranch: Branch | null,
+  allBranches: ReadonlyArray<Branch>,
+  recentBranches: ReadonlyArray<Branch>
+): ReadonlyArray<IFilterListGroup<IBranchListItem>> {
   const groups = new Array<IFilterListGroup<IBranchListItem>>()
 
   if (defaultBranch) {
@@ -17,7 +22,7 @@ export function groupBranches(defaultBranch: Branch | null, currentBranch: Branc
       identifier: 'default',
       items: [
         {
-          text: defaultBranch.name,
+          text: [defaultBranch.name],
           id: defaultBranch.name,
           branch: defaultBranch,
         },
@@ -27,13 +32,15 @@ export function groupBranches(defaultBranch: Branch | null, currentBranch: Branc
 
   const recentBranchNames = new Set<string>()
   const defaultBranchName = defaultBranch ? defaultBranch.name : null
-  const recentBranchesWithoutDefault = recentBranches.filter(b => b.name !== defaultBranchName)
+  const recentBranchesWithoutDefault = recentBranches.filter(
+    b => b.name !== defaultBranchName
+  )
   if (recentBranchesWithoutDefault.length > 0) {
     const recentBranches = new Array<IBranchListItem>()
 
     for (const branch of recentBranchesWithoutDefault) {
       recentBranches.push({
-        text: branch.name,
+        text: [branch.name],
         id: branch.name,
         branch,
       })
@@ -46,14 +53,18 @@ export function groupBranches(defaultBranch: Branch | null, currentBranch: Branc
     })
   }
 
-  const remainingBranches = allBranches.filter(b => b.name !== defaultBranchName && !recentBranchNames.has(b.name))
-  const remainingItems = remainingBranches.map(b => (
-    {
-      text: b.name,
-      id: b.name,
-      branch: b,
-    }
-  ))
+  const remainingBranches = allBranches.filter(
+    b =>
+      b.name !== defaultBranchName &&
+      !recentBranchNames.has(b.name) &&
+      !b.isDesktopForkRemoteBranch
+  )
+
+  const remainingItems = remainingBranches.map(b => ({
+    text: [b.name],
+    id: b.name,
+    branch: b,
+  }))
   groups.push({
     identifier: 'other',
     items: remainingItems,

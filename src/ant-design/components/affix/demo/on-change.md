@@ -13,13 +13,15 @@ title:
 
 Callback with affixed state.
 
-````jsx
+```tsx
 import { Affix, Button } from 'antd';
+import React from 'react';
 
-ReactDOM.render(
+const App: React.FC = () => (
   <Affix offsetTop={120} onChange={affixed => console.log(affixed)}>
     <Button>120px to affix top</Button>
-  </Affix>,
-  mountNode
+  </Affix>
 );
-````
+
+export default App;
+```

@@ -1,7 +1,5 @@
 import * as React from 'react'
-import { Dialog, DialogContent, DialogFooter } from '../dialog'
-import { ButtonGroup } from '../lib/button-group'
-import { Button } from '../lib/button'
+import { Dialog, DialogContent, DefaultDialogFooter } from '../dialog'
 import { LinkButton } from '../lib/link-button'
 
 interface ITermsAndConditionsProps {
@@ -9,43 +7,25 @@ interface ITermsAndConditionsProps {
   readonly onDismissed: () => void
 }
 
-export class TermsAndConditions extends React.Component<ITermsAndConditionsProps, void> {
+const contact = 'https://github.com/contact'
+const logos = 'https://github.com/logos'
+const privacyStatement =
+  'https://help.github.com/articles/github-privacy-statement/'
+const license = 'https://creativecommons.org/licenses/by/4.0/'
 
-  private dialogContainerRef: HTMLDivElement | null = null
-  private closeButtonRef: HTMLButtonElement | null = null
-
-  private onDialogContainerRef = (element: HTMLDivElement | null) => {
-    this.dialogContainerRef = element
-  }
-
-  private onCloseButtonRef = (element: HTMLButtonElement | null) => {
-    this.closeButtonRef = element
-  }
-
-  public componentDidMount() {
-    // When the dialog is mounted it automatically moves focus to the first
-    // focusable element which in this case is a link far down in the terms
-    // and conditions which will cause the contents to scroll down. We don't
-    // want that so let's just reset it.
-    if (this.dialogContainerRef) {
-      this.dialogContainerRef.scrollTop = 0
-    }
-
-    // And let's just move focus to the close button.
-    if (this.closeButtonRef) {
-      this.closeButtonRef.focus()
-    }
-  }
-
+export class TermsAndConditions extends React.Component<
+  ITermsAndConditionsProps,
+  {}
+> {
   public render() {
     return (
       <Dialog
-        id='terms-and-conditions'
-        title='GitHub Open Source Applications Terms and Conditions'
+        id="terms-and-conditions"
+        title="GitHub Open Source Applications Terms and Conditions"
         onSubmit={this.props.onDismissed}
         onDismissed={this.props.onDismissed}
       >
-        <DialogContent onRef={this.onDialogContainerRef}>
+        <DialogContent>
           <p>
             These GitHub Open Source Applications Terms and Conditions
             ("Application Terms") are a legal agreement between you (either as
@@ -63,10 +43,11 @@ export class TermsAndConditions extends React.Component<ITermsAndConditionsProps
 
           <p>
             If you configure the Software to work with one or more accounts on
-            the GitHub.com website or with an instance of GitHub Enterprise,
-            your use of the Software will also be governed your applicable
-            GitHub.com website Terms of Service and/or the license agreement
-            applicable to your instance of GitHub Enterprise ("GitHub Terms").
+            the GitHub.com website or with an instance of GitHub Enterprise
+            Server, your use of the Software will also be governed your
+            applicable GitHub.com website Terms of Service and/or the license
+            agreement applicable to your instance of GitHub Enterprise ("GitHub
+            Terms").
           </p>
 
           <p>
@@ -87,8 +68,8 @@ export class TermsAndConditions extends React.Component<ITermsAndConditionsProps
             To the extent the terms of the licenses applicable to open source
             components require GitHub to make an offer to provide source code in
             connection with the Software, such offer is hereby made, and you may
-            exercise it by contacting GitHub: <LinkButton uri='https://github.com/contact'>
-            https://github.com/contact</LinkButton>.
+            exercise it by contacting GitHub:{' '}
+            <LinkButton uri={contact}>contact</LinkButton>.
           </p>
 
           <p>
@@ -117,7 +98,8 @@ export class TermsAndConditions extends React.Component<ITermsAndConditionsProps
             Windows, Atom, the Octocat, and related GitHub logos and/or stylized
             names are trademarks of GitHub. You agree not to display or use
             these trademarks in any manner without GitHub's prior, written
-            permission, except as allowed by GitHub's Logos and Usage Policy: <LinkButton uri='https://github.com/logos'>https://github.com/logos</LinkButton>.
+            permission, except as allowed by GitHub's Logos and Usage Policy:{' '}
+            <LinkButton uri={logos}>logos</LinkButton>.
           </p>
 
           <h2>Privacy</h2>
@@ -127,7 +109,10 @@ export class TermsAndConditions extends React.Component<ITermsAndConditionsProps
             information the Software collects in the settings panel. If the
             Software does collect personal information on GitHub's behalf,
             GitHub will process that information in accordance with the
-            <LinkButton uri='https://help.github.com/articles/github-privacy-statement/'>GitHub Privacy Statement</LinkButton>.
+            <LinkButton uri={privacyStatement}>
+              GitHub Privacy Statement
+            </LinkButton>
+            .
           </p>
 
           <h2>Additional Services</h2>
@@ -229,22 +214,23 @@ export class TermsAndConditions extends React.Component<ITermsAndConditionsProps
 
             <li>
               License to GitHub Policies. These Application Terms are licensed
-              under the <LinkButton uri='https://creativecommons.org/licenses/by/4.0/'>Creative Commons Attribution license</LinkButton>.
-              You may use it freely under the terms of the Creative Commons license.
+              under the{' '}
+              <LinkButton uri={license}>
+                Creative Commons Attribution license
+              </LinkButton>
+              . You may use it freely under the terms of the Creative Commons
+              license.
             </li>
 
             <li>
               Contact Us. Please send any questions about these Application
-              Terms to <LinkButton uri='https://github.com/contact'>support@github.com</LinkButton>.
+              Terms to <LinkButton uri={contact}>support@github.com</LinkButton>
+              .
             </li>
           </ol>
         </DialogContent>
 
-        <DialogFooter>
-          <ButtonGroup>
-            <Button type='submit' onButtonRef={this.onCloseButtonRef}>Close</Button>
-          </ButtonGroup>
-        </DialogFooter>
+        <DefaultDialogFooter />
       </Dialog>
     )
   }

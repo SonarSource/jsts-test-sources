@@ -1,33 +1,38 @@
 ---
 order: 4
-debug: true
 title:
-  zh-CN: 大数据性能测试
-  en-US: Performance Test
+  zh-CN: 分页
+  en-US: Pagination
 ---
 
 ## zh-CN
 
-2000 条数据。
+大数据下使用分页。
 
 ## en-US
 
-2000 items.
+large count of items with pagination.
 
-````jsx
-import { Transfer } from 'antd';
+```tsx
+import { Switch, Transfer } from 'antd';
+import type { TransferDirection } from 'antd/es/transfer';
+import React, { useEffect, useState } from 'react';
 
-class App extends React.Component {
-  state = {
-    mockData: [],
-    targetKeys: [],
-  }
-  componentDidMount() {
-    this.getMock();
-  }
-  getMock = () => {
-    const targetKeys = [];
-    const mockData = [];
+interface RecordType {
+  key: string;
+  title: string;
+  description: string;
+  chosen: boolean;
+}
+
+const App: React.FC = () => {
+  const [oneWay, setOneWay] = useState(false);
+  const [mockData, setMockData] = useState<RecordType[]>([]);
+  const [targetKeys, setTargetKeys] = useState<string[]>([]);
+
+  useEffect(() => {
+    const newTargetKeys = [];
+    const newMockData = [];
     for (let i = 0; i < 2000; i++) {
       const data = {
         key: i.toString(),
@@ -36,27 +41,40 @@ class App extends React.Component {
         chosen: Math.random() * 2 > 1,
       };
       if (data.chosen) {
-        targetKeys.push(data.key);
+        newTargetKeys.push(data.key);
       }
-      mockData.push(data);
+      newMockData.push(data);
     }
-    this.setState({ mockData, targetKeys });
-  }
-  handleChange = (targetKeys, direction, moveKeys) => {
-    console.log(targetKeys, direction, moveKeys);
-    this.setState({ targetKeys });
-  }
-  render() {
-    return (
-      <Transfer
-        dataSource={this.state.mockData}
-        targetKeys={this.state.targetKeys}
-        onChange={this.handleChange}
-        render={item => item.title}
-      />
-    );
-  }
-}
 
-ReactDOM.render(<App />, mountNode);
-````
+    setTargetKeys(newTargetKeys);
+    setMockData(newMockData);
+  }, []);
+
+  const onChange = (newTargetKeys: string[], direction: TransferDirection, moveKeys: string[]) => {
+    console.log(newTargetKeys, direction, moveKeys);
+    setTargetKeys(newTargetKeys);
+  };
+
+  return (
+    <>
+      <Transfer
+        dataSource={mockData}
+        targetKeys={targetKeys}
+        onChange={onChange}
+        render={item => item.title}
+        oneWay={oneWay}
+        pagination
+      />
+      <br />
+      <Switch
+        unCheckedChildren="one way"
+        checkedChildren="one way"
+        checked={oneWay}
+        onChange={setOneWay}
+      />
+    </>
+  );
+};
+
+export default App;
+```

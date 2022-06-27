@@ -13,36 +13,36 @@ title:
 
 This property provide an additional time selection. When `showTime` is an Object, its properties will be passed on to built-in `TimePicker`.
 
-````jsx
-import { DatePicker } from 'antd';
+```tsx
+import { DatePicker, Space } from 'antd';
+import type { DatePickerProps, RangePickerProps } from 'antd/es/date-picker';
+import React from 'react';
+
 const { RangePicker } = DatePicker;
 
-function onChange(value, dateString) {
+const onChange = (
+  value: DatePickerProps['value'] | RangePickerProps['value'],
+  dateString: [string, string] | string,
+) => {
   console.log('Selected Time: ', value);
   console.log('Formatted Selected Time: ', dateString);
-}
+};
 
-function onOk(value) {
+const onOk = (value: DatePickerProps['value'] | RangePickerProps['value']) => {
   console.log('onOk: ', value);
-}
+};
 
-ReactDOM.render(
-  <div>
-    <DatePicker
-      showTime
-      format="YYYY-MM-DD HH:mm:ss"
-      placeholder="Select Time"
-      onChange={onChange}
-      onOk={onOk}
-    />
-    <br />
+const App: React.FC = () => (
+  <Space direction="vertical" size={12}>
+    <DatePicker showTime onChange={onChange} onOk={onOk} />
     <RangePicker
-      showTime
-      format="YYYY-MM-DD HH:mm:ss"
-      placeholder={['Start Time', 'End Time']}
+      showTime={{ format: 'HH:mm' }}
+      format="YYYY-MM-DD HH:mm"
       onChange={onChange}
       onOk={onOk}
     />
-  </div>
-, mountNode);
-````
+  </Space>
+);
+
+export default App;
+```

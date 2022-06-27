@@ -1,27 +1,21 @@
 import * as React from 'react'
 
-import { Button } from './lib/button'
-import { ButtonGroup } from './lib/button-group'
-import { Dialog, DialogContent, DialogFooter } from './dialog'
-import { LinkButton } from './lib/link-button'
-import { dialogTransitionEnterTimeout, dialogTransitionLeaveTimeout } from './app'
-import { GitError } from '../lib/git/core'
-import { GitError as GitErrorType } from 'dugite'
-import { Popup, PopupType } from '../lib/app-state'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DefaultDialogFooter,
+} from './dialog'
+import { dialogTransitionTimeout } from './app'
+import { GitError, isAuthFailureError } from '../lib/git/core'
+import { Popup, PopupType } from '../models/popup'
+import { TransitionGroup, CSSTransition } from 'react-transition-group'
+import { OkCancelButtonGroup } from './dialog/ok-cancel-button-group'
 import { ErrorWithMetadata } from '../lib/error-with-metadata'
-import { remote } from 'electron'
-import { CSSTransitionGroup } from 'react-transition-group'
-
-/**
- * Inspect the error metadata to see if this is an uncaught error
- */
-function isUncaughtError(error: Error): boolean {
-  if (error instanceof ErrorWithMetadata) {
-    return error.metadata.uncaught || false
-  } else {
-    return false
-  }
-}
+import { RetryActionType, RetryAction } from '../models/retry-actions'
+import { Ref } from './lib/ref'
+import memoizeOne from 'memoize-one'
+import { parseCarriageReturn } from '../lib/parse-carriage-return'
 
 interface IAppErrorProps {
   /** The list of queued, app-wide, errors  */
@@ -33,6 +27,7 @@ interface IAppErrorProps {
    */
   readonly onClearError: (error: Error) => void
   readonly onShowPopup: (popupType: Popup) => void | undefined
+  readonly onRetryAction: (retryAction: RetryAction) => void
 }
 
 interface IAppErrorState {
@@ -52,6 +47,9 @@ interface IAppErrorState {
  * in the order they were queued.
  */
 export class AppError extends React.Component<IAppErrorProps, IAppErrorState> {
+  private dialogContent: HTMLDivElement | null = null
+  private formatGitErrorMessage = memoizeOne(parseCarriageReturn)
+
   public constructor(props: IAppErrorProps) {
     super(props)
     this.state = {
@@ -73,15 +71,15 @@ export class AppError extends React.Component<IAppErrorProps, IAppErrorState> {
   private onDismissed = () => {
     const currentError = this.state.error
 
-    if (currentError) {
+    if (currentError !== null) {
       this.setState({ error: null, disabled: true })
 
       // Give some time for the dialog to nicely transition
       // out before we clear the error and, potentially, deal
       // with the next error in the queue.
-      setTimeout(() => {
+      window.setTimeout(() => {
         this.props.onClearError(currentError)
-      }, dialogTransitionLeaveTimeout)
+      }, dialogTransitionTimeout.exit)
     }
   }
 
@@ -90,75 +88,44 @@ export class AppError extends React.Component<IAppErrorProps, IAppErrorState> {
 
     //This is a hacky solution to resolve multiple dialog windows
     //being open at the same time.
-    setTimeout(() => {
+    window.setTimeout(() => {
       this.props.onShowPopup({ type: PopupType.Preferences })
-    }, dialogTransitionLeaveTimeout)
+    }, dialogTransitionTimeout.exit)
   }
 
-  private closeAndExit = () => {
+  private onRetryAction = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault()
     this.onDismissed()
 
-    // this gives a brief pause between dismissing the dialog and
-    // exiting the app completely - choosing 500ms but it can be
-    // relative to some other value
-    setTimeout(() => {
-      remote.app.exit()
-    }, 5 * dialogTransitionLeaveTimeout)
-  }
+    const { error } = this.state
 
-  private renderGitErrorFooter(error: GitError) {
-    const gitErrorType = error.result.gitError
-
-    switch (gitErrorType)  {
-      case GitErrorType.HTTPSAuthenticationFailed: {
-        return (
-          <ButtonGroup>
-            <Button type='submit'>Close</Button>
-            <Button onClick={this.showPreferencesDialog}>
-              {__DARWIN__ ? 'Open Preferences' : 'Open options'}
-            </Button>
-          </ButtonGroup>)
+    if (error !== null && isErrorWithMetaData(error)) {
+      const { retryAction } = error.metadata
+      if (retryAction !== undefined) {
+        this.props.onRetryAction(retryAction)
       }
-      default:
-        return (
-          <ButtonGroup>
-            <Button type='submit'>Close</Button>
-          </ButtonGroup>)
     }
   }
 
-  private renderErrorMessage(error: Error, unhandled: boolean) {
-    if (unhandled) {
-      const errorDetails = error.stack
-        ? <p className='monospace'>{error.stack}</p>
-        : <p>{error.message}</p>
+  private renderErrorMessage(error: Error) {
+    const e = getUnderlyingError(error)
 
-      return (
-        <div>
-          <p>GitHub Desktop encountered an uncaught exception, leaving it in an invalid state.</p>
-          <p>
-            This has been reported to the team, but if you encounter this repeatedly please report this issue to the GitHub Desktop <LinkButton uri='https://github.com/desktop/desktop/issues'>issue tracker</LinkButton>.
-          </p>
-          {errorDetails}
-          <p>Due to this error, the application will now quit and will need to be restarted.</p>
-        </div>
-      )
+    // If the error message is just the raw git output, display it in
+    // fixed-width font
+    if (isRawGitError(e)) {
+      const formattedMessage = this.formatGitErrorMessage(e.message)
+      return <p className="monospace">{formattedMessage}</p>
     }
 
-    let monospace = false
+    return <p>{e.message}</p>
+  }
 
-    if (error instanceof GitError) {
-      // See getResultMessage in core.ts
-      // If the error message is the same as stderr or stdout then we know
-      // it's output from git and we'll display it in fixed-width font
-      if (error.message === error.result.stderr || error.message === error.result.stdout) {
-        monospace = true
-      }
+  private getTitle(error: Error) {
+    if (isCloneError(error)) {
+      return 'Clone failed'
     }
 
-    const className = monospace ? 'monospace' : undefined
-
-    return <p className={className}>{error.message}</p>
+    return 'Error'
   }
 
   private renderDialog() {
@@ -168,57 +135,166 @@ export class AppError extends React.Component<IAppErrorProps, IAppErrorState> {
       return null
     }
 
-    const unhandled = isUncaughtError(error)
-    const title = unhandled ? 'Unhandled Exception' : 'Error'
-
     return (
       <Dialog
-        id='app-error'
-        type='error'
-        key='error'
-        title={title}
-        dismissable={!unhandled}
+        id="app-error"
+        type="error"
+        key="error"
+        title={this.getTitle(error)}
+        dismissable={false}
+        onSubmit={this.onDismissed}
         onDismissed={this.onDismissed}
-        disabled={this.state.disabled}>
-        <DialogContent>
-          {this.renderErrorMessage(error, unhandled)}
+        disabled={this.state.disabled}
+        className={
+          isRawGitError(this.state.error) ? 'raw-git-error' : undefined
+        }
+      >
+        <DialogContent onRef={this.onDialogContentRef}>
+          {this.renderErrorMessage(error)}
+          {this.renderContentAfterErrorMessage(error)}
         </DialogContent>
-        <DialogFooter>
-          {this.renderFooter(error, unhandled)}
-        </DialogFooter>
+        {this.renderFooter(error)}
       </Dialog>
     )
   }
 
-  private renderFooter(error: Error, unhandled: boolean) {
-    if (unhandled) {
+  private renderContentAfterErrorMessage(error: Error) {
+    if (!isErrorWithMetaData(error)) {
+      return undefined
+    }
+
+    const { retryAction } = error.metadata
+
+    if (retryAction && retryAction.type === RetryActionType.Clone) {
       return (
-        <ButtonGroup>
-          <Button onClick={this.closeAndExit} type='submit'>Quit</Button>
-        </ButtonGroup>
+        <p>
+          Would you like to retry cloning <Ref>{retryAction.name}</Ref>?
+        </p>
       )
     }
 
-    if (error instanceof GitError) {
-      return this.renderGitErrorFooter(error)
+    return undefined
+  }
+
+  private onDialogContentRef = (ref: HTMLDivElement | null) => {
+    this.dialogContent = ref
+  }
+
+  private scrollToBottomOfGitErrorMessage() {
+    if (this.dialogContent === null || this.state.error === null) {
+      return
     }
 
+    const e = getUnderlyingError(this.state.error)
+
+    if (isRawGitError(e)) {
+      this.dialogContent.scrollTop = this.dialogContent.scrollHeight
+    }
+  }
+
+  public componentDidMount() {
+    this.scrollToBottomOfGitErrorMessage()
+  }
+
+  public componentDidUpdate(
+    prevProps: IAppErrorProps,
+    prevState: IAppErrorState
+  ) {
+    if (prevState.error !== this.state.error) {
+      this.scrollToBottomOfGitErrorMessage()
+    }
+  }
+
+  private onCloseButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    this.onDismissed()
+  }
+
+  private renderFooter(error: Error) {
+    if (isCloneError(error)) {
+      return this.renderRetryCloneFooter()
+    }
+
+    const underlyingError = getUnderlyingError(error)
+
+    if (isGitError(underlyingError)) {
+      const { gitError } = underlyingError.result
+      if (gitError !== null && isAuthFailureError(gitError)) {
+        return this.renderOpenPreferencesFooter()
+      }
+    }
+
+    return this.renderDefaultFooter()
+  }
+
+  private renderRetryCloneFooter() {
     return (
-      <ButtonGroup>
-        <Button type='submit'>Close</Button>
-      </ButtonGroup>)
+      <DialogFooter>
+        <OkCancelButtonGroup
+          okButtonText={__DARWIN__ ? 'Retry Clone' : 'Retry clone'}
+          onOkButtonClick={this.onRetryAction}
+          onCancelButtonClick={this.onCloseButtonClick}
+        />
+      </DialogFooter>
+    )
+  }
+
+  private renderOpenPreferencesFooter() {
+    return (
+      <DialogFooter>
+        <OkCancelButtonGroup
+          okButtonText="Close"
+          onOkButtonClick={this.onCloseButtonClick}
+          cancelButtonText={__DARWIN__ ? 'Open Preferences' : 'Open options'}
+          onCancelButtonClick={this.showPreferencesDialog}
+        />
+      </DialogFooter>
+    )
+  }
+
+  private renderDefaultFooter() {
+    return <DefaultDialogFooter onButtonClick={this.onCloseButtonClick} />
   }
 
   public render() {
+    const dialogContent = this.renderDialog()
+
     return (
-      <CSSTransitionGroup
-        transitionName='modal'
-        component='div'
-        transitionEnterTimeout={dialogTransitionEnterTimeout}
-        transitionLeaveTimeout={dialogTransitionLeaveTimeout}
-      >
-        {this.renderDialog()}
-      </CSSTransitionGroup>
+      <TransitionGroup>
+        {dialogContent && (
+          <CSSTransition classNames="modal" timeout={dialogTransitionTimeout}>
+            {dialogContent}
+          </CSSTransition>
+        )}
+      </TransitionGroup>
     )
   }
+}
+
+function getUnderlyingError(error: Error): Error {
+  return isErrorWithMetaData(error) ? error.underlyingError : error
+}
+
+function isErrorWithMetaData(error: Error): error is ErrorWithMetadata {
+  return error instanceof ErrorWithMetadata
+}
+
+function isGitError(error: Error): error is GitError {
+  return error instanceof GitError
+}
+
+function isRawGitError(error: Error | null) {
+  if (!error) {
+    return false
+  }
+  const e = getUnderlyingError(error)
+  return e instanceof GitError && e.isRawMessage
+}
+
+function isCloneError(error: Error) {
+  if (!isErrorWithMetaData(error)) {
+    return false
+  }
+  const { retryAction } = error.metadata
+  return retryAction !== undefined && retryAction.type === RetryActionType.Clone
 }

@@ -11,57 +11,52 @@ title:
 
 ## en-US
 
-Asynchronously close a modal dialog when a user clicked OK button, for example,
-you can use this pattern when you submit a form.
+Asynchronously close a modal dialog when the OK button is pressed. For example, you can use this pattern when you submit a form.
 
-````jsx
-import { Modal, Button } from 'antd';
+```tsx
+import { Button, Modal } from 'antd';
+import React, { useState } from 'react';
 
-class App extends React.Component {
-  state = {
-    ModalText: 'Content of the modal',
-    visible: false,
-  }
-  showModal = () => {
-    this.setState({
-      visible: true,
-    });
-  }
-  handleOk = () => {
-    this.setState({
-      ModalText: 'The modal will be closed after two seconds',
-      confirmLoading: true,
-    });
+const App: React.FC = () => {
+  const [visible, setVisible] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [modalText, setModalText] = useState('Content of the modal');
+
+  const showModal = () => {
+    setVisible(true);
+  };
+
+  const handleOk = () => {
+    setModalText('The modal will be closed after two seconds');
+    setConfirmLoading(true);
     setTimeout(() => {
-      this.setState({
-        visible: false,
-        confirmLoading: false,
-      });
+      setVisible(false);
+      setConfirmLoading(false);
     }, 2000);
-  }
-  handleCancel = () => {
-    console.log('Clicked cancel button');
-    this.setState({
-      visible: false,
-    });
-  }
-  render() {
-    const { visible, confirmLoading, ModalText } = this.state;
-    return (
-      <div>
-        <Button type="primary" onClick={this.showModal}>Open</Button>
-        <Modal title="Title"
-          visible={visible}
-          onOk={this.handleOk}
-          confirmLoading={confirmLoading}
-          onCancel={this.handleCancel}
-        >
-          <p>{ModalText}</p>
-        </Modal>
-      </div>
-    );
-  }
-}
+  };
 
-ReactDOM.render(<App />, mountNode);
-````
+  const handleCancel = () => {
+    console.log('Clicked cancel button');
+    setVisible(false);
+  };
+
+  return (
+    <>
+      <Button type="primary" onClick={showModal}>
+        Open Modal with async logic
+      </Button>
+      <Modal
+        title="Title"
+        visible={visible}
+        onOk={handleOk}
+        confirmLoading={confirmLoading}
+        onCancel={handleCancel}
+      >
+        <p>{modalText}</p>
+      </Modal>
+    </>
+  );
+};
+
+export default App;
+```

@@ -11,28 +11,23 @@ title:
 
 ## en-US
 
-This will simply display a red badge, without a specific count.
+This will simply display a red badge, without a specific count. If count equals 0, it won't display the dot.
 
-````jsx
-import { Badge, Icon } from 'antd';
+```tsx
+import { NotificationOutlined } from '@ant-design/icons';
+import { Badge } from 'antd';
+import React from 'react';
 
-ReactDOM.render(
-  <div>
+const App: React.FC = () => (
+  <>
     <Badge dot>
-      <Icon type="notification" />
+      <NotificationOutlined style={{ fontSize: 16 }} />
     </Badge>
     <Badge dot>
       <a href="#">Link something</a>
     </Badge>
-  </div>
-, mountNode);
-````
+  </>
+);
 
-<style>
-.anticon-notification {
-  width: 16px;
-  height: 16px;
-  line-height: 16px;
-  font-size: 16px;
-}
-</style>
+export default App;
+```

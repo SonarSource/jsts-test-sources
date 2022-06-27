@@ -1,9 +1,13 @@
 import * as React from 'react'
-import { Octicon, OcticonSymbol } from '../octicons'
+import { Octicon, OcticonSymbolType } from '../octicons'
+import * as OcticonSymbol from '../octicons/octicons.generated'
 import { assertNever } from '../../lib/fatal-error'
 import { ToolbarButton, ToolbarButtonStyle } from './button'
 import { rectEquals } from '../lib/rect'
-import * as classNames from 'classnames'
+import classNames from 'classnames'
+import FocusTrap from 'focus-trap-react'
+import { Options as FocusTrapOptions } from 'focus-trap'
+import { TooltipTarget } from '../lib/tooltip'
 
 export type DropdownState = 'open' | 'closed'
 
@@ -18,7 +22,7 @@ export interface IToolbarDropdownProps {
   readonly tooltip?: string
 
   /** An optional symbol to be displayed next to the button text */
-  readonly icon?: OcticonSymbol
+  readonly icon?: OcticonSymbolType
 
   /**
    * The state for of the drop down button.
@@ -33,7 +37,10 @@ export interface IToolbarDropdownProps {
    * @param source   - Whether the state change was caused by a keyboard or
    *                   pointer interaction.
    */
-  readonly onDropdownStateChanged: (state: DropdownState, source: 'keyboard' | 'pointer') => void
+  readonly onDropdownStateChanged: (
+    state: DropdownState,
+    source: 'keyboard' | 'pointer'
+  ) => void
 
   /**
    * A function that's called when the user hovers over the button with
@@ -59,6 +66,19 @@ export interface IToolbarDropdownProps {
   readonly dropdownContentRenderer: () => JSX.Element | null
 
   /**
+   * A callback which is invoked when the button's context menu
+   * is activated. The source event is passed along and can be
+   * used to prevent the default action or stop the event from bubbling.
+   */
+  readonly onContextMenu?: (event: React.MouseEvent<HTMLButtonElement>) => void
+
+  /**
+   * A function that's called whenever something is dragged over the
+   * dropdown.
+   */
+  readonly onDragOver?: (event: React.DragEvent<HTMLDivElement>) => void
+
+  /**
    * An optional classname that will be appended to the default
    * class name 'toolbar-button dropdown open|closed'
    */
@@ -69,6 +89,9 @@ export interface IToolbarDropdownProps {
 
   /** The button's style. Defaults to `ToolbarButtonStyle.Standard`. */
   readonly style?: ToolbarButtonStyle
+
+  /** Whether the dropdown will trap focus or not. Defaults to true. */
+  readonly enableFocusTrap?: boolean
 
   /**
    * Sets the styles for the dropdown's foldout. Useful for custom positioning
@@ -119,6 +142,34 @@ export interface IToolbarDropdownProps {
    * operation is currently in flight.
    */
   readonly progressValue?: number
+
+  readonly role?: string
+  readonly buttonRole?: string
+
+  /** Classes to be appended to `ToolbarButton` component */
+  readonly buttonClassName?: string
+
+  /**
+   * Whether to only show the tooltip when the tooltip target overflows its
+   * bounds. Typically this is used in conjunction with an ellipsis CSS ruleset.
+   */
+  readonly onlyShowTooltipWhenOverflowed?: boolean
+
+  /**
+   * Optional, custom overrided of the Tooltip components internal logic for
+   * determining whether the tooltip target is overflowed or not.
+   *
+   * The internal overflow logic is simple and relies on the target itself
+   * having the `text-overflow` CSS rule applied to it. In some scenarios
+   * consumers may have a deep child element which is the one that should be
+   * tested for overflow while still having the parent element be the pointer
+   * device hit area.
+   *
+   * Consumers may pass a boolean if the overflowed state is known at render
+   * time or they may pass a function which gets executed just before showing
+   * the tooltip.
+   */
+  readonly isOverflowed?: ((target: TooltipTarget) => boolean) | boolean
 }
 
 interface IToolbarDropdownState {
@@ -128,16 +179,32 @@ interface IToolbarDropdownState {
 /**
  * A toolbar dropdown button
  */
-export class ToolbarDropdown extends React.Component<IToolbarDropdownProps, IToolbarDropdownState> {
-
+export class ToolbarDropdown extends React.Component<
+  IToolbarDropdownProps,
+  IToolbarDropdownState
+> {
   private innerButton: ToolbarButton | null = null
+  private focusTrapOptions: FocusTrapOptions
 
   public constructor(props: IToolbarDropdownProps) {
     super(props)
     this.state = { clientRect: null }
+
+    this.focusTrapOptions = {
+      allowOutsideClick: true,
+
+      // Explicitly disable deactivation from the FocusTrap, since in that case
+      // we would lose the "source" of the event (keyboard vs pointer).
+      clickOutsideDeactivates: false,
+      escapeDeactivates: false,
+    }
   }
 
-  private dropdownIcon(state: DropdownState): OcticonSymbol {
+  private get isOpen() {
+    return this.props.dropdownState === 'open'
+  }
+
+  private dropdownIcon(state: DropdownState): OcticonSymbolType {
     // @TODO: Remake triangle octicon in a 12px version,
     // right now it's scaled badly on normal dpi monitors.
     if (state === 'open') {
@@ -150,17 +217,20 @@ export class ToolbarDropdown extends React.Component<IToolbarDropdownProps, IToo
   }
 
   private renderDropdownArrow(): JSX.Element | null {
-    if (this.props.showDisclosureArrow === false) { return null }
+    if (this.props.showDisclosureArrow === false) {
+      return null
+    }
 
     const state = this.props.dropdownState
 
-    return <Octicon symbol={this.dropdownIcon(state)} className='dropdownArrow' />
+    return (
+      <Octicon symbol={this.dropdownIcon(state)} className="dropdownArrow" />
+    )
   }
 
   private onClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    const newState: DropdownState = this.props.dropdownState === 'open'
-      ? 'closed'
-      : 'open'
+    const newState: DropdownState =
+      this.props.dropdownState === 'open' ? 'closed' : 'open'
 
     // This is probably one of the hackiest things I've ever done.
     // We need to be able to determine whether the button was clicked
@@ -170,15 +240,17 @@ export class ToolbarDropdown extends React.Component<IToolbarDropdownProps, IToo
     // pointer device. So far, the only way I've been able to tell the
     // two apart is that keyboard derived clicks don't have a pointer
     // position.
-    const source = !event.clientX && !event.clientY
-      ? 'keyboard'
-      : 'pointer'
+    const source = !event.clientX && !event.clientY ? 'keyboard' : 'pointer'
 
     this.props.onDropdownStateChanged(newState, source)
   }
 
+  private onContextMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
+    this.props.onContextMenu?.(event)
+  }
+
   private updateClientRectIfNecessary() {
-    if (this.props.dropdownState  === 'open' && this.innerButton) {
+    if (this.props.dropdownState === 'open' && this.innerButton) {
       const newRect = this.innerButton.getButtonBoundingClientRect()
       if (newRect) {
         const currentRect = this.state.clientRect
@@ -198,7 +270,7 @@ export class ToolbarDropdown extends React.Component<IToolbarDropdownProps, IToo
     this.innerButton = null
   }
 
-  public componentDidUpdate = () => {
+  public componentDidUpdate() {
     this.updateClientRectIfNecessary()
   }
 
@@ -240,6 +312,13 @@ export class ToolbarDropdown extends React.Component<IToolbarDropdownProps, IToo
     }
   }
 
+  private onFoldoutKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+    if (!event.defaultPrevented && this.isOpen && event.key === 'Escape') {
+      event.preventDefault()
+      this.props.onDropdownStateChanged('closed', 'keyboard')
+    }
+  }
+
   private renderDropdownContents = (): JSX.Element | null => {
     if (this.props.dropdownState !== 'open') {
       return null
@@ -250,16 +329,30 @@ export class ToolbarDropdown extends React.Component<IToolbarDropdownProps, IToo
     // bar to instantly close before even receiving the onDropdownStateChanged
     // event from us.
     return (
-      <div id='foldout-container' style={this.getFoldoutContainerStyle()}>
-        <div className='overlay' tabIndex={-1} onClick={this.handleOverlayClick}></div>
-        <div className='foldout' style={this.getFoldoutStyle()}>
-          {this.props.dropdownContentRenderer()}
+      <FocusTrap
+        active={this.props.enableFocusTrap ?? true}
+        focusTrapOptions={this.focusTrapOptions}
+      >
+        <div id="foldout-container" style={this.getFoldoutContainerStyle()}>
+          <div
+            className="overlay"
+            tabIndex={-1}
+            onClick={this.handleOverlayClick}
+          />
+          <div
+            className="foldout"
+            style={this.getFoldoutStyle()}
+            tabIndex={-1}
+            onKeyDown={this.onFoldoutKeyDown}
+          >
+            {this.props.dropdownContentRenderer()}
+          </div>
         </div>
-      </div>
+      </FocusTrap>
     )
   }
 
-  private onRef = (ref: ToolbarButton) => {
+  private onRef = (ref: ToolbarButton | null) => {
     this.innerButton = ref
   }
 
@@ -273,29 +366,43 @@ export class ToolbarDropdown extends React.Component<IToolbarDropdownProps, IToo
   }
 
   public render() {
-
     const className = classNames(
       'toolbar-dropdown',
       this.props.dropdownState,
-      this.props.className,
+      this.props.className
     )
 
+    const ariaExpanded = this.props.dropdownState === 'open' ? 'true' : 'false'
+
     return (
-      <div className={className} onKeyDown={this.props.onKeyDown}>
+      <div
+        className={className}
+        onKeyDown={this.props.onKeyDown}
+        role={this.props.role}
+        aria-expanded={ariaExpanded}
+        onDragOver={this.props.onDragOver}
+      >
         {this.renderDropdownContents()}
         <ToolbarButton
+          className={this.props.buttonClassName}
           ref={this.onRef}
           icon={this.props.icon}
           title={this.props.title}
           description={this.props.description}
           tooltip={this.props.tooltip}
           onClick={this.onClick}
+          onContextMenu={this.onContextMenu}
           onMouseEnter={this.props.onMouseEnter}
           style={this.props.style}
           iconClassName={this.props.iconClassName}
           disabled={this.props.disabled}
           tabIndex={this.props.tabIndex}
           progressValue={this.props.progressValue}
+          role={this.props.buttonRole}
+          onlyShowTooltipWhenOverflowed={
+            this.props.onlyShowTooltipWhenOverflowed
+          }
+          isOverflowed={this.props.isOverflowed}
         >
           {this.props.children}
           {this.renderDropdownArrow()}

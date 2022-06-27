@@ -1,17 +1,24 @@
-import React from 'react';
 import classNames from 'classnames';
-
-export type ButtonSize = 'small' | 'large';
+import * as React from 'react';
+import { ConfigContext } from '../config-provider';
+import type { SizeType } from '../config-provider/SizeContext';
+import warning from '../_util/warning';
 
 export interface ButtonGroupProps {
-  size?: ButtonSize;
+  size?: SizeType;
   style?: React.CSSProperties;
   className?: string;
   prefixCls?: string;
+  children?: React.ReactNode;
 }
 
-export default function ButtonGroup(props: ButtonGroupProps) {
-  const { prefixCls = 'ant-btn-group', size = '', className, ...others } = props;
+export const GroupSizeContext = React.createContext<SizeType | undefined>(undefined);
+
+const ButtonGroup: React.FC<ButtonGroupProps> = props => {
+  const { getPrefixCls, direction } = React.useContext(ConfigContext);
+
+  const { prefixCls: customizePrefixCls, size, className, ...others } = props;
+  const prefixCls = getPrefixCls('btn-group', customizePrefixCls);
 
   // large => lg
   // small => sm
@@ -22,13 +29,28 @@ export default function ButtonGroup(props: ButtonGroupProps) {
       break;
     case 'small':
       sizeCls = 'sm';
-    default:
       break;
+    case 'middle':
+    case undefined:
+      break;
+    default:
+      warning(!size, 'Button.Group', 'Invalid prop `size`.');
   }
 
-  const classes = classNames(prefixCls, {
-    [`${prefixCls}-${sizeCls}`]: sizeCls,
-  }, className);
+  const classes = classNames(
+    prefixCls,
+    {
+      [`${prefixCls}-${sizeCls}`]: sizeCls,
+      [`${prefixCls}-rtl`]: direction === 'rtl',
+    },
+    className,
+  );
 
-  return <div {...others} className={classes} />;
-}
+  return (
+    <GroupSizeContext.Provider value={size}>
+      <div {...others} className={classes} />
+    </GroupSizeContext.Provider>
+  );
+};
+
+export default ButtonGroup;

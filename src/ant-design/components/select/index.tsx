@@ -1,157 +1,221 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import RcSelect, { Option, OptGroup } from 'rc-select';
-import classNames from 'classnames';
-import warning from '../_util/warning';
+// TODO: 4.0 - codemod should help to change `filterOption` to support node props.
 
-export interface AbstractSelectProps {
-  prefixCls?: string;
-  className?: string;
-  size?: 'default' | 'large' | 'small';
-  notFoundContent?: React.ReactNode | null;
-  transitionName?: string;
-  choiceTransitionName?: string;
-  showSearch?: boolean;
-  allowClear?: boolean;
-  disabled?: boolean;
-  style?: React.CSSProperties;
-  placeholder?: string;
-}
+import classNames from 'classnames';
+import type { SelectProps as RcSelectProps } from 'rc-select';
+import RcSelect, { BaseSelectRef, OptGroup, Option } from 'rc-select';
+import { OptionProps } from 'rc-select/lib/Option';
+import type { BaseOptionType, DefaultOptionType } from 'rc-select/lib/Select';
+import omit from 'rc-util/lib/omit';
+import * as React from 'react';
+import { useContext } from 'react';
+import { ConfigContext } from '../config-provider';
+import defaultRenderEmpty from '../config-provider/defaultRenderEmpty';
+import DisabledContext from '../config-provider/DisabledContext';
+import type { SizeType } from '../config-provider/SizeContext';
+import SizeContext from '../config-provider/SizeContext';
+import { FormItemInputContext } from '../form/context';
+import type { SelectCommonPlacement } from '../_util/motion';
+import { getTransitionDirection, getTransitionName } from '../_util/motion';
+import type { InputStatus } from '../_util/statusUtils';
+import { getMergedStatus, getStatusClassNames } from '../_util/statusUtils';
+import getIcons from './utils/iconUtil';
+
+type RawValue = string | number;
+
+export { OptionProps, BaseSelectRef as RefSelectProps, BaseOptionType, DefaultOptionType };
 
 export interface LabeledValue {
-  key: string;
+  key?: string;
+  value: RawValue;
   label: React.ReactNode;
 }
 
-export type SelectValue = string | any[] | LabeledValue | LabeledValue[];
+export type SelectValue = RawValue | RawValue[] | LabeledValue | LabeledValue[] | undefined;
 
-export interface SelectProps extends AbstractSelectProps {
-  value?: SelectValue;
-  defaultValue?: SelectValue;
-  mode?: 'default' | 'multiple' | 'tags' | 'combobox';
-  multiple?: boolean;
-  tags?: boolean;
-  combobox?: boolean;
-  optionLabelProp?: string;
-  filterOption?: boolean | ((inputValue: string, option: Object) => any);
-  onChange?: (value: SelectValue) => void;
-  onSelect?: (value: SelectValue, option: Object) => any;
-  onDeselect?: (value: SelectValue) => any;
-  onSearch?: (value: string) => any;
-  dropdownMatchSelectWidth?: boolean;
-  optionFilterProp?: string;
-  defaultActiveFirstOption?: boolean;
-  labelInValue?: boolean;
-  getPopupContainer?: (triggerNode: Element) => HTMLElement;
-  dropdownStyle?: React.CSSProperties;
-  dropdownMenuStyle?: React.CSSProperties;
-  tokenSeparators?: string[];
-  getInputElement?: () => React.ReactElement<any>;
-}
-
-export interface OptionProps {
+export interface InternalSelectProps<
+  ValueType = any,
+  OptionType extends BaseOptionType | DefaultOptionType = DefaultOptionType,
+> extends Omit<RcSelectProps<ValueType, OptionType>, 'mode'> {
+  suffixIcon?: React.ReactNode;
+  size?: SizeType;
   disabled?: boolean;
-  value?: any;
+  mode?: 'multiple' | 'tags' | 'SECRET_COMBOBOX_MODE_DO_NOT_USE';
+  bordered?: boolean;
 }
 
-export interface OptGroupProps {
-  label?: string | React.ReactElement<any>;
+export interface SelectProps<
+  ValueType = any,
+  OptionType extends BaseOptionType | DefaultOptionType = DefaultOptionType,
+> extends Omit<
+    InternalSelectProps<ValueType, OptionType>,
+    'inputIcon' | 'mode' | 'getInputElement' | 'getRawInputElement' | 'backfill' | 'placement'
+  > {
+  placement?: SelectCommonPlacement;
+  mode?: 'multiple' | 'tags';
+  status?: InputStatus;
 }
 
-export interface SelectContext {
-  antLocale?: {
-    Select?: any,
-  };
-}
+const SECRET_COMBOBOX_MODE_DO_NOT_USE = 'SECRET_COMBOBOX_MODE_DO_NOT_USE';
 
-// => It is needless to export the declaration of below two inner components.
-// export { Option, OptGroup };
+const InternalSelect = <OptionType extends BaseOptionType | DefaultOptionType = DefaultOptionType>(
+  {
+    prefixCls: customizePrefixCls,
+    bordered = true,
+    className,
+    getPopupContainer,
+    dropdownClassName,
+    listHeight = 256,
+    placement,
+    listItemHeight = 24,
+    size: customizeSize,
+    disabled: customDisabled,
+    notFoundContent,
+    status: customStatus,
+    showArrow,
+    ...props
+  }: SelectProps<OptionType>,
+  ref: React.Ref<BaseSelectRef>,
+) => {
+  const {
+    getPopupContainer: getContextPopupContainer,
+    getPrefixCls,
+    renderEmpty,
+    direction,
+    virtual,
+    dropdownMatchSelectWidth,
+  } = React.useContext(ConfigContext);
+  const size = React.useContext(SizeContext);
 
-export default class Select extends React.Component<SelectProps, any> {
-  static Option = Option as React.ClassicComponentClass<OptionProps>;
-  static OptGroup = OptGroup as React.ClassicComponentClass<OptGroupProps>;
+  const prefixCls = getPrefixCls('select', customizePrefixCls);
+  const rootPrefixCls = getPrefixCls();
 
-  static defaultProps = {
-    prefixCls: 'ant-select',
-    showSearch: false,
-    transitionName: 'slide-up',
-    choiceTransitionName: 'zoom',
-  };
+  const mode = React.useMemo(() => {
+    const { mode: m } = props as InternalSelectProps<OptionType>;
 
-  static propTypes = {
-    prefixCls: PropTypes.string,
-    className: PropTypes.string,
-    size: PropTypes.oneOf(['default', 'large', 'small']),
-    combobox: PropTypes.bool,
-    notFoundContent: PropTypes.any,
-    showSearch: PropTypes.bool,
-    optionLabelProp: PropTypes.string,
-    transitionName: PropTypes.string,
-    choiceTransitionName: PropTypes.string,
-  };
-
-  static contextTypes = {
-    antLocale: PropTypes.object,
-  };
-
-  context: SelectContext;
-
-  getLocale() {
-    const { antLocale } = this.context;
-    if (antLocale && antLocale.Select) {
-      return antLocale.Select;
-    }
-    return {
-      notFoundContent: '无匹配结果',
-    };
-  }
-
-  render() {
-    const {
-      prefixCls,
-      className = '',
-      size,
-      mode,
-      // @deprecated
-      multiple,
-      tags,
-      combobox,
-      ...restProps,
-    } = this.props;
-    warning(
-      !multiple && !tags && !combobox,
-      '`Select[multiple|tags|combobox]` is deprecated, please use `Select[mode]` instead.',
-    );
-
-    const cls = classNames({
-      [`${prefixCls}-lg`]: size === 'large',
-      [`${prefixCls}-sm`]: size === 'small',
-    }, className);
-
-    const locale = this.getLocale();
-    let { notFoundContent = locale.notFoundContent, optionLabelProp } = this.props;
-    const isCombobox = mode === 'combobox' || combobox;
-    if (isCombobox) {
-      notFoundContent = null;
-      // children 带 dom 结构时，无法填入输入框
-      optionLabelProp = optionLabelProp || 'value';
+    if ((m as any) === 'combobox') {
+      return undefined;
     }
 
-    const modeConfig = {
-      multiple: mode === 'multiple' || multiple,
-      tags: mode === 'tags' || tags,
-      combobox: isCombobox,
-    };
+    if (m === SECRET_COMBOBOX_MODE_DO_NOT_USE) {
+      return 'combobox';
+    }
 
-    return (
-      <RcSelect
-        {...restProps}
-        {...modeConfig}
-        prefixCls={prefixCls}
-        className={cls}
-        optionLabelProp={optionLabelProp || 'children'}
-        notFoundContent={notFoundContent}
-      />
-    );
+    return m;
+  }, [props.mode]);
+
+  const isMultiple = mode === 'multiple' || mode === 'tags';
+  const mergedShowArrow =
+    showArrow !== undefined ? showArrow : props.loading || !(isMultiple || mode === 'combobox');
+
+  // ===================== Form Status =====================
+  const {
+    status: contextStatus,
+    hasFeedback,
+    isFormItemInput,
+    feedbackIcon,
+  } = useContext(FormItemInputContext);
+  const mergedStatus = getMergedStatus(contextStatus, customStatus);
+
+  // ===================== Empty =====================
+  let mergedNotFound: React.ReactNode;
+  if (notFoundContent !== undefined) {
+    mergedNotFound = notFoundContent;
+  } else if (mode === 'combobox') {
+    mergedNotFound = null;
+  } else {
+    mergedNotFound = (renderEmpty || defaultRenderEmpty)('Select');
   }
-}
+
+  // ===================== Icons =====================
+  const { suffixIcon, itemIcon, removeIcon, clearIcon } = getIcons({
+    ...props,
+    multiple: isMultiple,
+    hasFeedback,
+    feedbackIcon,
+    showArrow: mergedShowArrow,
+    prefixCls,
+  });
+
+  const selectProps = omit(props as typeof props & { itemIcon: any }, ['suffixIcon', 'itemIcon']);
+
+  const rcSelectRtlDropdownClassName = classNames(dropdownClassName, {
+    [`${prefixCls}-dropdown-${direction}`]: direction === 'rtl',
+  });
+
+  const mergedSize = customizeSize || size;
+
+  // ===================== Disabled =====================
+  const disabled = React.useContext(DisabledContext);
+  const mergedDisabled = customDisabled || disabled;
+
+  const mergedClassName = classNames(
+    {
+      [`${prefixCls}-lg`]: mergedSize === 'large',
+      [`${prefixCls}-sm`]: mergedSize === 'small',
+      [`${prefixCls}-rtl`]: direction === 'rtl',
+      [`${prefixCls}-borderless`]: !bordered,
+      [`${prefixCls}-in-form-item`]: isFormItemInput,
+    },
+    getStatusClassNames(prefixCls, mergedStatus, hasFeedback),
+    className,
+  );
+
+  // ===================== Placement =====================
+  const getPlacement = () => {
+    if (placement !== undefined) {
+      return placement;
+    }
+    return direction === 'rtl'
+      ? ('bottomRight' as SelectCommonPlacement)
+      : ('bottomLeft' as SelectCommonPlacement);
+  };
+
+  return (
+    <RcSelect<any, any>
+      ref={ref as any}
+      virtual={virtual}
+      dropdownMatchSelectWidth={dropdownMatchSelectWidth}
+      {...selectProps}
+      transitionName={getTransitionName(
+        rootPrefixCls,
+        getTransitionDirection(placement),
+        props.transitionName,
+      )}
+      listHeight={listHeight}
+      listItemHeight={listItemHeight}
+      mode={mode as any}
+      prefixCls={prefixCls}
+      placement={getPlacement()}
+      direction={direction}
+      inputIcon={suffixIcon}
+      menuItemSelectedIcon={itemIcon}
+      removeIcon={removeIcon}
+      clearIcon={clearIcon}
+      notFoundContent={mergedNotFound}
+      className={mergedClassName}
+      getPopupContainer={getPopupContainer || getContextPopupContainer}
+      dropdownClassName={rcSelectRtlDropdownClassName}
+      showArrow={hasFeedback || showArrow}
+      disabled={mergedDisabled}
+    />
+  );
+};
+
+const Select = React.forwardRef(InternalSelect) as unknown as (<
+  ValueType = any,
+  OptionType extends BaseOptionType | DefaultOptionType = DefaultOptionType,
+>(
+  props: React.PropsWithChildren<SelectProps<ValueType, OptionType>> & {
+    ref?: React.Ref<BaseSelectRef>;
+  },
+) => React.ReactElement) & {
+  SECRET_COMBOBOX_MODE_DO_NOT_USE: string;
+  Option: typeof Option;
+  OptGroup: typeof OptGroup;
+};
+
+Select.SECRET_COMBOBOX_MODE_DO_NOT_USE = SECRET_COMBOBOX_MODE_DO_NOT_USE;
+Select.Option = Option;
+Select.OptGroup = OptGroup;
+
+export default Select;

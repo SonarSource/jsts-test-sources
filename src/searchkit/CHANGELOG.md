@@ -1,265 +1,663 @@
-## 1.0.0 - Beta 7 (23th Feb, 2017)
-- fix: Set default size to 20 for `HierarchicalMenuFilter` #398
-- Abort axios requests which will not be used. E.g. search as you type
+# Change Log
 
-## 1.0.0 - Beta 6 (19th Feb, 2017)
-- new feature: Ability for custom highlighting options #355
+All notable changes to this project will be documented in this file.
+See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-## 1.0.0 - Beta 5 (17th Feb, 2017)
-- new feature: Axios upgrade, expose timeout #396
-- updated dev guide
+# [3.0.0-canary.56](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.53...v3.0.0-canary.56) (2022-06-23)
 
-## 1.0.0 - Beta 4 (14th Feb, 2017)
-- fix: Elasticsearch 5 compat fix
-
-## 1.0.0 - Beta 3 (14th Feb, 2017)
-- fix: Typo in error message
-- fix: fix typo on indexing documentation
-- fix: small fix on checkbox filters when filter option name is too long #335
-
-## 1.0.0 - Beta 2 (13th Feb, 2017)
-- fix: Circle CI build
-
-## 1.0.0 - Beta 1 (13th Feb, 2017)
-- fix: `ViewSwitcherHits` mutating props. React 15 gives warning.
-- fix: `Pagination` works. Lodash regression issue
-
-## 1.0.0 - Beta 0 (4rd Feb, 2017)
-### Dependencies Updates
-- Added React 15 to peer dependencies + fix tests for react 15.4
-- history to 2.1.1
-- typescript to 2.1.4
-- type definitions managed by npm
-- lodash to 4.14
-- rc-slider to 5.4.3
-- protractor to 4.0.0
-
-## 0.10.1 (10th August, 2016)
-- fix pagination regression due to lodash change of api
-
-## 0.10.0 (4th June, 2016)
-- `SearchkitManager` is more intelligent with reregistering url listeners
-- `RefinementListFilter`, `MenuFilter`, `NumericRefinementListFilter` and `RangeFilter` now supports `fieldOptions` for `nested`/`child` fields
-- `RefinementListFilter`, `MenuFilter` inject missing selected filters
-- `RefinementListFilter`, `MenuFilter` have new `bucketsTransform` prop function to manipulate the elastic search buckets returned.
-- Bug fix to itemComponent, listComponent, \*Component which allows context in stateless components
-- MenuFilter fix to support booleans
-- HierarchicalRefinementFilter disabled state fix
-- update history dependency to `2.1.1` which should be compatible with react-router 2.x
-- fix `DynamicRangeFilter` rounding issues
-- Added `countFormatter` count formatting support to `RefinementListFilter`, `MenuFilter`, `NumericRefinementListFilter`, `HierarchicalMenuFilter`, `HierarchicalRefinementFilter`, `HitsStats`
-- Added `rangeFormatter` range display support to `RangeFilter`, `DynamicRangeFilter`
-- Fix corner cases to BoolMustNot queries
-- `SearchkitManager` `searchOnLoad` now works without history
-- `SearchkitManager.addResultsListener` to register a callback when ever new results are recieved
-- Fix input filter styling
-- Fix FacetFilter 'View All' link edge case
-
-## 0.9.2 (7th April, 2016)
-### Notable changes
-- fix `NoHits` styling so it uses scss vars
-- fix `CheckboxFilter` disabled state
-- fix `SearchBox`, `InputFilter` when searchOnChange=false disabled state
-- introduce `blurAction` to `SearchBox`, `InputFilter`
-  - `blurAction="search" will search on blur`
-  - `blurAction="restore" will restore text to previous state on blur`
-
-## 0.9.1 (6th April, 2016)
-### Notable changes
-- fix scss dep management, so vars.scss can be overriden
-- add a dark theme example app in our test folder
-
-## 0.9.0 (3rd April, 2016)
-### Breaking changes
-- layout classnames `sk-action-bar__info` + `sk-action-bar__filter` renamed to `sk-action-bar-row`.
-  - We strongly advise to use the new layout components.
-
-### Notable Changes
- - New `Layout` components to be used instead of specific div + classname markup
-   - `Layout`, `TopBar`, `LayoutBody`, `SideBar`, `LayoutResults`, `ActionBar`, `ActionBarRow`
-   - precursor to responsive layout where we make these layout components more intelligent.
- - New `CheckboxFilter` component which does a on/off checkbox based on arbitrary query
- - New `InputFilter` component which is a free text filter, great if you need to filter on specific fields.
- - New `DynamicRangeFilter` component which will dynamically calculates the possible min/max based on your search results.
-  - note this filter only supports range slider UI.
- - New `TagFilter` components, Used to have clickable tags within your search results.
- - `SearchBox` enhancements
-  - `prefixQueryOptions` prop if you want to customize the elastic options for this query
-  - `queryBuilder` prop if you want to customize how the query is built, defaults to `SimpleQueryString`    
- - `SortSelector` now supports multiple sort fields (e.g. secondary sort), be sure to provide the mandatory key
- - `SearchkitManager` has new `reloadSearch` method, used if you want to just reload the search even with the same query.
+**Note:** Version bump only for package searchkit
 
 
-## 0.8.3 (17th March, 2016)
+
+
+
+# [3.0.0-canary.55](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.53...v3.0.0-canary.55) (2022-05-05)
+
+**Note:** Version bump only for package searchkit
+
+
+
+
+
+# [3.0.0-canary.54](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.46...v3.0.0-canary.54) (2022-04-18)
+
+**Note:** Version bump only for package searchkit
+
+
+
+
+
+# [3.0.0-canary.53](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.46...v3.0.0-canary.53) (2022-03-25)
+
+**Note:** Version bump only for package searchkit
+
+
+
+
+
+# [3.0.0-canary.52](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.46...v3.0.0-canary.52) (2022-03-22)
+
+**Note:** Version bump only for package searchkit
+
+
+
+
+
+# [3.0.0-canary.51](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.46...v3.0.0-canary.51) (2022-03-16)
+
+**Note:** Version bump only for package searchkit
+
+
+
+
+
+# [3.0.0-canary.50](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.46...v3.0.0-canary.50) (2022-03-14)
+
+**Note:** Version bump only for package searchkit
+
+
+
+
+
+# [3.0.0-canary.49](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.46...v3.0.0-canary.49) (2022-03-12)
+
+**Note:** Version bump only for package searchkit
+
+
+
+
+
+# [3.0.0-canary.48](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.46...v3.0.0-canary.48) (2022-03-08)
+
+**Note:** Version bump only for package searchkit
+
+
+
+
+
+# [3.0.0-canary.47](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.46...v3.0.0-canary.47) (2022-01-29)
+
+**Note:** Version bump only for package searchkit
+
+
+
+
+
+# [3.0.0-canary.46](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.27...v3.0.0-canary.46) (2021-11-01)
+
+
+### Features
+
+* Add highlight support for matched words ([#880](https://github.com/searchkit/searchkit/issues/880)) ([a7b971e](https://github.com/searchkit/searchkit/commit/a7b971e778bc017f9feb535cd848a7776f82778e))
+* **rangefilter:** allow min / max & dateMin / dateMax to be optional ([#859](https://github.com/searchkit/searchkit/issues/859)) ([a27e774](https://github.com/searchkit/searchkit/commit/a27e774692c9e8860fddc82334aa8910d7422fb1)), closes [#844](https://github.com/searchkit/searchkit/issues/844)
+* add optional postProcessRequest ([#857](https://github.com/searchkit/searchkit/issues/857)) ([fc98800](https://github.com/searchkit/searchkit/commit/fc9880037ad04c7089af22a1bd0bc4ec3715b9c4))
+
+
+
+
+
+# [3.0.0-canary.45](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.27...v3.0.0-canary.45) (2021-10-09)
+
+
+### Features
+
+* Add highlight support for matched words ([#880](https://github.com/searchkit/searchkit/issues/880)) ([a7b971e](https://github.com/searchkit/searchkit/commit/a7b971e778bc017f9feb535cd848a7776f82778e))
+* **rangefilter:** allow min / max & dateMin / dateMax to be optional ([#859](https://github.com/searchkit/searchkit/issues/859)) ([a27e774](https://github.com/searchkit/searchkit/commit/a27e774692c9e8860fddc82334aa8910d7422fb1)), closes [#844](https://github.com/searchkit/searchkit/issues/844)
+* add optional postProcessRequest ([#857](https://github.com/searchkit/searchkit/issues/857)) ([fc98800](https://github.com/searchkit/searchkit/commit/fc9880037ad04c7089af22a1bd0bc4ec3715b9c4))
+
+
+
+
+
+# [3.0.0-canary.44](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.27...v3.0.0-canary.44) (2021-09-22)
+
+
+### Features
+
+* Add highlight support for matched words ([#880](https://github.com/searchkit/searchkit/issues/880)) ([a7b971e](https://github.com/searchkit/searchkit/commit/a7b971e778bc017f9feb535cd848a7776f82778e))
+* **rangefilter:** allow min / max & dateMin / dateMax to be optional ([#859](https://github.com/searchkit/searchkit/issues/859)) ([a27e774](https://github.com/searchkit/searchkit/commit/a27e774692c9e8860fddc82334aa8910d7422fb1)), closes [#844](https://github.com/searchkit/searchkit/issues/844)
+* add optional postProcessRequest ([#857](https://github.com/searchkit/searchkit/issues/857)) ([fc98800](https://github.com/searchkit/searchkit/commit/fc9880037ad04c7089af22a1bd0bc4ec3715b9c4))
+
+
+
+
+
+# [3.0.0-canary.43](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.27...v3.0.0-canary.43) (2021-09-14)
+
+
+### Features
+
+* Add highlight support for matched words ([#880](https://github.com/searchkit/searchkit/issues/880)) ([a7b971e](https://github.com/searchkit/searchkit/commit/a7b971e778bc017f9feb535cd848a7776f82778e))
+* **rangefilter:** allow min / max & dateMin / dateMax to be optional ([#859](https://github.com/searchkit/searchkit/issues/859)) ([a27e774](https://github.com/searchkit/searchkit/commit/a27e774692c9e8860fddc82334aa8910d7422fb1)), closes [#844](https://github.com/searchkit/searchkit/issues/844)
+* add optional postProcessRequest ([#857](https://github.com/searchkit/searchkit/issues/857)) ([fc98800](https://github.com/searchkit/searchkit/commit/fc9880037ad04c7089af22a1bd0bc4ec3715b9c4))
+
+
+
+
+
+# [3.0.0-canary.42](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.27...v3.0.0-canary.42) (2021-08-26)
+
+
+### Features
+
+* Add highlight support for matched words ([#880](https://github.com/searchkit/searchkit/issues/880)) ([a7b971e](https://github.com/searchkit/searchkit/commit/a7b971e778bc017f9feb535cd848a7776f82778e))
+* **rangefilter:** allow min / max & dateMin / dateMax to be optional ([#859](https://github.com/searchkit/searchkit/issues/859)) ([a27e774](https://github.com/searchkit/searchkit/commit/a27e774692c9e8860fddc82334aa8910d7422fb1)), closes [#844](https://github.com/searchkit/searchkit/issues/844)
+* add optional postProcessRequest ([#857](https://github.com/searchkit/searchkit/issues/857)) ([fc98800](https://github.com/searchkit/searchkit/commit/fc9880037ad04c7089af22a1bd0bc4ec3715b9c4))
+
+
+
+
+
+# [3.0.0-canary.41](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.27...v3.0.0-canary.41) (2021-07-24)
+
+
+### Features
+
+* Add highlight support for matched words ([#880](https://github.com/searchkit/searchkit/issues/880)) ([a7b971e](https://github.com/searchkit/searchkit/commit/a7b971e778bc017f9feb535cd848a7776f82778e))
+* **rangefilter:** allow min / max & dateMin / dateMax to be optional ([#859](https://github.com/searchkit/searchkit/issues/859)) ([a27e774](https://github.com/searchkit/searchkit/commit/a27e774692c9e8860fddc82334aa8910d7422fb1)), closes [#844](https://github.com/searchkit/searchkit/issues/844)
+* add optional postProcessRequest ([#857](https://github.com/searchkit/searchkit/issues/857)) ([fc98800](https://github.com/searchkit/searchkit/commit/fc9880037ad04c7089af22a1bd0bc4ec3715b9c4))
+
+
+
+
+
+# [3.0.0-canary.40](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.27...v3.0.0-canary.40) (2021-06-25)
+
+
+### Features
+
+* Add highlight support for matched words ([#880](https://github.com/searchkit/searchkit/issues/880)) ([a7b971e](https://github.com/searchkit/searchkit/commit/a7b971e778bc017f9feb535cd848a7776f82778e))
+* **rangefilter:** allow min / max & dateMin / dateMax to be optional ([#859](https://github.com/searchkit/searchkit/issues/859)) ([a27e774](https://github.com/searchkit/searchkit/commit/a27e774692c9e8860fddc82334aa8910d7422fb1)), closes [#844](https://github.com/searchkit/searchkit/issues/844)
+* add optional postProcessRequest ([#857](https://github.com/searchkit/searchkit/issues/857)) ([fc98800](https://github.com/searchkit/searchkit/commit/fc9880037ad04c7089af22a1bd0bc4ec3715b9c4))
+
+
+
+
+
+# [3.0.0-canary.39](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.27...v3.0.0-canary.39) (2021-06-17)
+
+
+### Features
+
+* Add highlight support for matched words ([#880](https://github.com/searchkit/searchkit/issues/880)) ([a7b971e](https://github.com/searchkit/searchkit/commit/a7b971e778bc017f9feb535cd848a7776f82778e))
+* **rangefilter:** allow min / max & dateMin / dateMax to be optional ([#859](https://github.com/searchkit/searchkit/issues/859)) ([a27e774](https://github.com/searchkit/searchkit/commit/a27e774692c9e8860fddc82334aa8910d7422fb1)), closes [#844](https://github.com/searchkit/searchkit/issues/844)
+* add optional postProcessRequest ([#857](https://github.com/searchkit/searchkit/issues/857)) ([fc98800](https://github.com/searchkit/searchkit/commit/fc9880037ad04c7089af22a1bd0bc4ec3715b9c4))
+
+
+
+
+
+# [3.0.0-canary.38](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.27...v3.0.0-canary.38) (2021-06-10)
+
+
+### Features
+
+* Add highlight support for matched words ([#880](https://github.com/searchkit/searchkit/issues/880)) ([a7b971e](https://github.com/searchkit/searchkit/commit/a7b971e778bc017f9feb535cd848a7776f82778e))
+* **rangefilter:** allow min / max & dateMin / dateMax to be optional ([#859](https://github.com/searchkit/searchkit/issues/859)) ([a27e774](https://github.com/searchkit/searchkit/commit/a27e774692c9e8860fddc82334aa8910d7422fb1)), closes [#844](https://github.com/searchkit/searchkit/issues/844)
+* add optional postProcessRequest ([#857](https://github.com/searchkit/searchkit/issues/857)) ([fc98800](https://github.com/searchkit/searchkit/commit/fc9880037ad04c7089af22a1bd0bc4ec3715b9c4))
+
+
+
+
+
+# [3.0.0-canary.37](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.27...v3.0.0-canary.37) (2021-06-09)
+
+
+### Features
+
+* Add highlight support for matched words ([#880](https://github.com/searchkit/searchkit/issues/880)) ([a7b971e](https://github.com/searchkit/searchkit/commit/a7b971e778bc017f9feb535cd848a7776f82778e))
+* **rangefilter:** allow min / max & dateMin / dateMax to be optional ([#859](https://github.com/searchkit/searchkit/issues/859)) ([a27e774](https://github.com/searchkit/searchkit/commit/a27e774692c9e8860fddc82334aa8910d7422fb1)), closes [#844](https://github.com/searchkit/searchkit/issues/844)
+* add optional postProcessRequest ([#857](https://github.com/searchkit/searchkit/issues/857)) ([fc98800](https://github.com/searchkit/searchkit/commit/fc9880037ad04c7089af22a1bd0bc4ec3715b9c4))
+
+
+
+
+
+# [3.0.0-canary.36](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.27...v3.0.0-canary.36) (2021-06-09)
+
+
+### Features
+
+* Add highlight support for matched words ([#880](https://github.com/searchkit/searchkit/issues/880)) ([a7b971e](https://github.com/searchkit/searchkit/commit/a7b971e778bc017f9feb535cd848a7776f82778e))
+* **rangefilter:** allow min / max & dateMin / dateMax to be optional ([#859](https://github.com/searchkit/searchkit/issues/859)) ([a27e774](https://github.com/searchkit/searchkit/commit/a27e774692c9e8860fddc82334aa8910d7422fb1)), closes [#844](https://github.com/searchkit/searchkit/issues/844)
+* add optional postProcessRequest ([#857](https://github.com/searchkit/searchkit/issues/857)) ([fc98800](https://github.com/searchkit/searchkit/commit/fc9880037ad04c7089af22a1bd0bc4ec3715b9c4))
+
+
+
+
+
+# [3.0.0-canary.35](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.27...v3.0.0-canary.35) (2021-06-06)
+
+
+### Features
+
+* Add highlight support for matched words ([#880](https://github.com/searchkit/searchkit/issues/880)) ([a7b971e](https://github.com/searchkit/searchkit/commit/a7b971e778bc017f9feb535cd848a7776f82778e))
+* **rangefilter:** allow min / max & dateMin / dateMax to be optional ([#859](https://github.com/searchkit/searchkit/issues/859)) ([a27e774](https://github.com/searchkit/searchkit/commit/a27e774692c9e8860fddc82334aa8910d7422fb1)), closes [#844](https://github.com/searchkit/searchkit/issues/844)
+* add optional postProcessRequest ([#857](https://github.com/searchkit/searchkit/issues/857)) ([fc98800](https://github.com/searchkit/searchkit/commit/fc9880037ad04c7089af22a1bd0bc4ec3715b9c4))
+
+
+
+
+
+# [3.0.0-canary.34](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.27...v3.0.0-canary.34) (2021-06-02)
+
+
+### Features
+
+* Add highlight support for matched words ([#880](https://github.com/searchkit/searchkit/issues/880)) ([a7b971e](https://github.com/searchkit/searchkit/commit/a7b971e778bc017f9feb535cd848a7776f82778e))
+* **rangefilter:** allow min / max & dateMin / dateMax to be optional ([#859](https://github.com/searchkit/searchkit/issues/859)) ([a27e774](https://github.com/searchkit/searchkit/commit/a27e774692c9e8860fddc82334aa8910d7422fb1)), closes [#844](https://github.com/searchkit/searchkit/issues/844)
+* add optional postProcessRequest ([#857](https://github.com/searchkit/searchkit/issues/857)) ([fc98800](https://github.com/searchkit/searchkit/commit/fc9880037ad04c7089af22a1bd0bc4ec3715b9c4))
+
+
+
+
+
+# [3.0.0-canary.33](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.27...v3.0.0-canary.33) (2021-05-28)
+
+
+### Features
+
+* Add highlight support for matched words ([#880](https://github.com/searchkit/searchkit/issues/880)) ([a7b971e](https://github.com/searchkit/searchkit/commit/a7b971e778bc017f9feb535cd848a7776f82778e))
+* **rangefilter:** allow min / max & dateMin / dateMax to be optional ([#859](https://github.com/searchkit/searchkit/issues/859)) ([a27e774](https://github.com/searchkit/searchkit/commit/a27e774692c9e8860fddc82334aa8910d7422fb1)), closes [#844](https://github.com/searchkit/searchkit/issues/844)
+* add optional postProcessRequest ([#857](https://github.com/searchkit/searchkit/issues/857)) ([fc98800](https://github.com/searchkit/searchkit/commit/fc9880037ad04c7089af22a1bd0bc4ec3715b9c4))
+
+
+
+
+
+# [3.0.0-canary.32](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.27...v3.0.0-canary.32) (2021-05-25)
+
+
+### Features
+
+* Add highlight support for matched words ([#880](https://github.com/searchkit/searchkit/issues/880)) ([a7b971e](https://github.com/searchkit/searchkit/commit/a7b971e778bc017f9feb535cd848a7776f82778e))
+* **rangefilter:** allow min / max & dateMin / dateMax to be optional ([#859](https://github.com/searchkit/searchkit/issues/859)) ([a27e774](https://github.com/searchkit/searchkit/commit/a27e774692c9e8860fddc82334aa8910d7422fb1)), closes [#844](https://github.com/searchkit/searchkit/issues/844)
+* add optional postProcessRequest ([#857](https://github.com/searchkit/searchkit/issues/857)) ([fc98800](https://github.com/searchkit/searchkit/commit/fc9880037ad04c7089af22a1bd0bc4ec3715b9c4))
+
+
+
+
+
+# [3.0.0-canary.31](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.27...v3.0.0-canary.31) (2021-05-25)
+
+
+### Features
+
+* Add highlight support for matched words ([#880](https://github.com/searchkit/searchkit/issues/880)) ([a7b971e](https://github.com/searchkit/searchkit/commit/a7b971e778bc017f9feb535cd848a7776f82778e))
+* **rangefilter:** allow min / max & dateMin / dateMax to be optional ([#859](https://github.com/searchkit/searchkit/issues/859)) ([a27e774](https://github.com/searchkit/searchkit/commit/a27e774692c9e8860fddc82334aa8910d7422fb1)), closes [#844](https://github.com/searchkit/searchkit/issues/844)
+* add optional postProcessRequest ([#857](https://github.com/searchkit/searchkit/issues/857)) ([fc98800](https://github.com/searchkit/searchkit/commit/fc9880037ad04c7089af22a1bd0bc4ec3715b9c4))
+
+
+
+
+
+# [3.0.0-canary.30](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.27...v3.0.0-canary.30) (2021-02-13)
+
+
+### Features
+
+* **rangefilter:** allow min / max & dateMin / dateMax to be optional ([#859](https://github.com/searchkit/searchkit/issues/859)) ([a27e774](https://github.com/searchkit/searchkit/commit/a27e774692c9e8860fddc82334aa8910d7422fb1)), closes [#844](https://github.com/searchkit/searchkit/issues/844)
+* add optional postProcessRequest ([#857](https://github.com/searchkit/searchkit/issues/857)) ([fc98800](https://github.com/searchkit/searchkit/commit/fc9880037ad04c7089af22a1bd0bc4ec3715b9c4))
+
+
+
+
+
+# [3.0.0-canary.29](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.27...v3.0.0-canary.29) (2021-02-09)
+
+
+### Features
+
+* add optional postProcessRequest ([#857](https://github.com/searchkit/searchkit/issues/857)) ([fc98800](https://github.com/searchkit/searchkit/commit/fc9880037ad04c7089af22a1bd0bc4ec3715b9c4))
+
+
+
+
+
+# [3.0.0-canary.28](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.27...v3.0.0-canary.28) (2021-02-09)
+
+**Note:** Version bump only for package searchkit
+
+
+
+
+
+# [3.0.0-canary.27](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.19...v3.0.0-canary.27) (2021-01-02)
+
+
 ### Bug Fixes
- - SortingSelector handles for app reload.
 
-## 0.8.2 (17th March, 2016)
+* **searchkit/cli:** fix issue with cli not working ([#826](https://github.com/searchkit/searchkit/issues/826)) ([1a9784d](https://github.com/searchkit/searchkit/commit/1a9784d634fe6331b42b0af63a4dbe37a95269f3))
+
+
+### Features
+
+* add the ability to apply request specific base filters to the elasticsearch request ([e3aee9b](https://github.com/searchkit/searchkit/commit/e3aee9ba45d0d7ef0c73e79b2505edf320c6cbce))
+* **resolvers:** add id for filters ([#833](https://github.com/searchkit/searchkit/issues/833)) ([4a06d07](https://github.com/searchkit/searchkit/commit/4a06d075cb92deac013252e4c98bb6480e67e66c))
+
+
+
+
+
+# [3.0.0-canary.26](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.19...v3.0.0-canary.26) (2020-12-31)
+
+
 ### Bug Fixes
- - PageSizeSelector synchronises state correctly with url
 
-## 0.8.1 (16th March, 2016)
+* rename the types to reflect changes ([fb82ab6](https://github.com/searchkit/searchkit/commit/fb82ab6a25e95b2acf2c286b1ea07d5aa80ead48))
+* **searchkit/cli:** fix issue with cli not working ([#826](https://github.com/searchkit/searchkit/issues/826)) ([1a9784d](https://github.com/searchkit/searchkit/commit/1a9784d634fe6331b42b0af63a4dbe37a95269f3))
+
+
+### Features
+
+* **resolvers:** add id for filters ([#833](https://github.com/searchkit/searchkit/issues/833)) ([4a06d07](https://github.com/searchkit/searchkit/commit/4a06d075cb92deac013252e4c98bb6480e67e66c))
+
+
+
+
+
+# [3.0.0-canary.25](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.19...v3.0.0-canary.25) (2020-12-31)
+
+
 ### Bug Fixes
- - support Classic components using react.createClass properly in our prop overrides such as listComponent, itemComponent etc.
 
-## 0.8.0 (15th March, 2016)
-### Breaking Changes
- - Classname changes,in `RefinementListFilter`, `MenuFilter`, `NumericRefinementListFilter`, `Pagination`, `ViewSwitcherToggle`, `SortingSelector`. We have updated the theme to be backwards compatible, but if you have custom css for those components, you may need to update them.
-
-### Notable Changes
- - New UI Components  
-  - List components (`Toggle`, `Select`, `ItemList`, `CheckboxItemList`, `ItemHistogramList`, `Tabs`, `TagCloud`)
-    - supported by `RefinementListFilter`, `MenuFilter`, `Pagination`, `ViewSwitcherToggle`, `SortingSelector`, `NumericRefinementListFilter`
-  - Panel, all left hand filter components use Panel which can be collapsable now.  
-- RefinementListFilter, MenuFilter itemComponent changes
-  - If you have implemented a custom itemComponent, the toggleFilter action function has been renamed to onClick, be sure to rename so that clicking facets works as expected.
- - Added range input capability to `RangeFilter`
-
- - Added `PageSizeSelector` for selecting how many results per page
- - `Hits` + `ViewSwitcherHits` now supports listComponent to fully handled the list container.
- - `Pagination` now supports showText property, `PaginationSelect` is a select based implementation of Pagination
- - `SearchkitManager` now supports `searchOnLoad` property which controls whether the initial search runs.
- - `SearchkitManager` has a `searchUrlPath` property which controls the endpoint name (defaults to \_search)
- - exclude/include properties added to `RefinementListFilter`, `MenuFilter`. These are just a pass through property to ElasticSearch's Terms Aggregation
-
-## 0.7.0 (15th feb, 2016)
-### Breaking Changes
-- `Theming`, 0.7 has major changes to component classnames and overall theming approach. Searchkit classes are now prefixed with `sk-` in order to avoid collisions, we also provide a set of variables which control various aspects of the theme. See theming section in docs.
-- `Hits` component requires `mod="sk-hits-grid"` to retain grid styling
-- If you are using the cdn, we only ship `themes.css` and no longer `styles.css`
-```html
-<link href="//cdn.jsdelivr.net/searchkit/0.7.0/theme.css" rel="stylesheet"/>
-```
-- [Example pull request to update to 0.7.0](https://github.com/PAK90/Gatherer2/pull/2/files)
-- [Searchkit Theming documentation](http://docs.searchkit.co/stable/docs/theming/using-searchkit-theme.html)
+* **searchkit/cli:** fix issue with cli not working ([#826](https://github.com/searchkit/searchkit/issues/826)) ([1a9784d](https://github.com/searchkit/searchkit/commit/1a9784d634fe6331b42b0af63a4dbe37a95269f3))
 
 
-### Notable Changes
-- `setQueryProcessor` added to `SearchkitManager` which allows post processing of query before it is sent to elasticsearch.  [#131](https://github.com/searchkit/searchkit/issues/131)
-- `SortingSelector` now allows empty field, sort properties, useful if you need to add a None option or you want to rely on elasticsearch defaults for sort direction. [#116](https://github.com/searchkit/searchkit/issues/116)
-- `ViewSwitcherHits` and `ViewSwitcherToggle` toggle components which allows view switch functionality, e.g. grid or list view. Our theming updates also provide good defaults for grid + list views. [#30](https://github.com/searchkit/searchkit/issues/116)
-- `ResetFilter` now accepts reset options. This allows the which features(filter, query, pagination) influence the resetting disabled state, and what gets reset once the component has been clicked. [#107](https://github.com/searchkit/searchkit/issues/107)
+### Features
 
-## 0.6.2 (9th feb, 2016)
-### Notable Changes
-- Fix regression in RefinementListFilter not showing view more options
-
-## 0.6.1 (8th feb, 2016)
-### Notable Changes
-- Fix pagination bug where last page was not clickable.
-- Fix documentation references for sourceFilter which lead to incomplete demo
-
-## 0.6.0 (8th feb, 2016)
-### Notable Changes
-- `Hits` now supports the `sourceFilter` prop, we strongly advise you to use this as it will speed up your search and reduce a lot of wasted bandwidth [#20](https://github.com/searchkit/searchkit/issues/20)
-```jsx
-<Hits hitsPerPage={50} sourceFilter={["title", "poster", "imdbId"]} itemComponent={HitItem}/>
-```
-- `SortingSelector` Component now supports `defaultOption` prop, and we have fixed issues in selection. [#89](https://github.com/searchkit/searchkit/issues/89)
-- `RefinementListFilter`, `MenuFilter`, `HierarchicalMenuFilter` all support sorting on intrinsic order fields via the the `orderKey` and `orderDirection` props. [#46](https://github.com/searchkit/searchkit/issues/46)
-- `NoHits`, `ResetFilters` now support customization via high order react components
-- `HitStats` now supports customization via higher order react component, note
-if you previously extended HitStats, you will need to change your code to use the `component` prop
-- ScrollToTop improvements, now configurable on `Hits` component and will scroll to top on any result changes, this is via the `scrollTo` prop. [#48](https://github.com/searchkit/searchkit/issues/48)
-- ErrorHandling, we now display a more meaningful message when an error in elastic or the http call occurs. The `NoHits` component displays this, and is also configurable via the `errorComponent` higher order component prop.[#18](https://github.com/searchkit/searchkit/issues/18)
-- `ResetFilters` now ignores defaultQueries.[#44](https://github.com/searchkit/searchkit/issues/44)
-
-## 0.5.1 (3rd Feb, 2016)
-- missing theme css
-
-## 0.5.0 (3rd Feb, 2016)
-
-### Notable changes
-- remove lib from git. If you install package not via npm, you need to `npm run-script build` in root of project. [#37](https://github.com/searchkit/searchkit/issues/37)
-
-### New Features
-* InitialView component [#34](https://github.com/searchkit/searchkit/issues/34)
-
-
-### Improvements
-* Avoid duplicate redundant searches [#71](https://github.com/searchkit/searchkit/issues/71)
-* Discourage extending searchkit components, use `itemComponent` and `component` to override display with your own React components. The following components support this feature. See component docs for more information. [#17](https://github.com/searchkit/searchkit/issues/17)
-  - Hits
-  - InitialLoader
-  - Menu
-  - Refinement List
-  - Reset
-  - Selected Filters
-
-* Pagination supports showing links [#40](https://github.com/searchkit/searchkit/issues/40)
-* Range Filter no filter applied if range min max equals component min and max [#16](https://github.com/searchkit/searchkit/issues/16)
-* Configurable search throttle time via prop on searchbox component [#55](https://github.com/searchkit/searchkit/issues/55)
-
-### Bugs
-* No throttling of search query [#35](https://github.com/searchkit/searchkit/issues/35)
-* componentWillUnmount not removing accessor [#25](https://github.com/searchkit/searchkit/issues/25)
-* NumericRefinementListFilter does not add `.is-disabled` class when has no options [#50](https://github.com/searchkit/searchkit/issues/50)
+* **resolvers:** add id for filters ([#833](https://github.com/searchkit/searchkit/issues/833)) ([4a06d07](https://github.com/searchkit/searchkit/commit/4a06d075cb92deac013252e4c98bb6480e67e66c))
+* **schema:** customise typename for root and ([fdd8ab0](https://github.com/searchkit/searchkit/commit/fdd8ab000cca44747e6ec414909e2f614a8cbb24))
 
 
 
-## 0.4.0 (26th Jan, 2016)
-* update to lodash 4.0 with individual function imports (smaller footprint)
-* Breaking api change to internal query builder RangeQuery
-* Increased unit test coverage to 99%
-* Increase e2e test coverage
-
-## 0.3.5 (21st Jan, 2016)
-
-* New RangeFilter slider component
-* More QueryDSL builds
-* Improved tsting
 
 
-## 0.3.2 (18th Jan, 2016)
-
-* Correct Searchkit.version
-
-## 0.3.1 (18th Jan, 2016)
-
-* Better Documentation
-
-## 0.3.0 (18th Jan, 2016)
-
-### Overview
-* Complete rewrite of query builder
-* More test coverage ( 92% coverage )
-
-### Improvements
-* More comprehensive support for [translations]()
-* Better Documentation
-
-### New
-* New `NoHits` Component
-
-### Breaking Changes
-* No results blank state now handled by `NoHits` component, removed responsibility from `Hits` component. Please use `NoHits` component instead for this state.
+# [3.0.0-canary.24](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.19...v3.0.0-canary.24) (2020-12-27)
 
 
-## 0.2.0 (11 Jan, 2016)
+### Bug Fixes
 
-### New
-* New [Hierarchical Filter Component](http://docs.searchkit.co/stable/docs/components/navigation/hierarchical-refinement-filter.html)
+* **searchkit/cli:** fix issue with cli not working ([#826](https://github.com/searchkit/searchkit/issues/826)) ([1a9784d](https://github.com/searchkit/searchkit/commit/1a9784d634fe6331b42b0af63a4dbe37a95269f3))
 
-### Improvements
-* `Searchbox`: `prefixQueryFields` uses `queryFields` if not specified and `searchOnChange` prop is enabled
 
-## 0.1.13  (4th Jan, 2016)
-* Changed licence to Apache 2.0
+### Features
 
-## 0.1.12 (4th Jan, 2016)
+* **resolvers:** add id for filters ([#833](https://github.com/searchkit/searchkit/issues/833)) ([4a06d07](https://github.com/searchkit/searchkit/commit/4a06d075cb92deac013252e4c98bb6480e67e66c))
 
-* Better Documentation
 
-### Improvements
-* Searchbox uses replacestate as you type, pushstate on no change after 400ms
 
-## 0.1.11 (3rd Jan, 2016)
 
-* Better Documentation
 
-### Improvements
-* Searchbox uses replacestate as you type, pushstate on no change after 400ms
+# [3.0.0-canary.23](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.19...v3.0.0-canary.23) (2020-12-20)
 
-## 0.1.8 (Jan 1st 2016)
 
-* Initial public release
+### Bug Fixes
+
+* **client:** bug fix for unable to remove filter when range min is 0 ([93bd74e](https://github.com/searchkit/searchkit/commit/93bd74eeda712fb658f2deeb9b5908f087268bd9))
+* **rangeslider:** fix slider when boundaries are not 0-100 ([ee22887](https://github.com/searchkit/searchkit/commit/ee2288780702a6799c2f27b87c2f2721983181ca)), closes [#827](https://github.com/searchkit/searchkit/issues/827)
+* **searchkit/cli:** fix issue with cli not working ([#826](https://github.com/searchkit/searchkit/issues/826)) ([1a9784d](https://github.com/searchkit/searchkit/commit/1a9784d634fe6331b42b0af63a4dbe37a95269f3))
+
+
+### Features
+
+* re-order facets ([1f28f4c](https://github.com/searchkit/searchkit/commit/1f28f4c36c9089fcecc6d45f985d889784796949))
+
+
+
+
+
+# [3.0.0-canary.22](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.19...v3.0.0-canary.22) (2020-12-19)
+
+**Note:** Version bump only for package searchkit
+
+
+
+
+
+# [3.0.0-canary.21](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.19...v3.0.0-canary.21) (2020-12-17)
+
+**Note:** Version bump only for package searchkit
+
+
+
+
+
+# [3.0.0-canary.20](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.19...v3.0.0-canary.20) (2020-12-13)
+
+
+### Bug Fixes
+
+* fix error where input was uncontrolled ([9f474ff](https://github.com/searchkit/searchkit/commit/9f474ffdad59262d85433ee332799cd5046cd467))
+
+
+### Features
+
+* allow query to be adjusted ([407384f](https://github.com/searchkit/searchkit/commit/407384fea64c6a7c2e7651934d7ae080798734ce)), closes [#806](https://github.com/searchkit/searchkit/issues/806)
+* **searchbar:** if query is set, use it as default value ([b7543aa](https://github.com/searchkit/searchkit/commit/b7543aaf4c1ac2d5cb0c8b33ae6b9cf6c1aff30e)), closes [#809](https://github.com/searchkit/searchkit/issues/809)
+
+
+
+
+
+# [3.0.0-canary.19](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.12...v3.0.0-canary.19) (2020-12-07)
+
+
+### Bug Fixes
+
+* facet size can be configured / changed at query time ([#796](https://github.com/searchkit/searchkit/issues/796)) ([beb567f](https://github.com/searchkit/searchkit/commit/beb567f931ffe7013d11251e7d8beeaf4a473f35)), closes [#791](https://github.com/searchkit/searchkit/issues/791)
+* fix apollo client cache issues ([#800](https://github.com/searchkit/searchkit/issues/800)) ([3aa1385](https://github.com/searchkit/searchkit/commit/3aa1385da6d9d338e951e89b950a3963f7931392)), closes [#797](https://github.com/searchkit/searchkit/issues/797)
+* link ([#783](https://github.com/searchkit/searchkit/issues/783)) ([55f6f6f](https://github.com/searchkit/searchkit/commit/55f6f6f541f274f4c9249da63f98088be3f6ba4e))
+
+
+### Performance Improvements
+
+* **searchkitrequest:** improve https performance using custom http agent ([f20ae3c](https://github.com/searchkit/searchkit/commit/f20ae3cb5703ef49a3ecf4b844826c9244a9f362))
+
+
+### BREAKING CHANGES
+
+* For all facets, id now is identifier. Apollo client network policy is now the
+default cache-first strategy
+
+
+
+
+
+# [3.0.0-canary.18](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.12...v3.0.0-canary.18) (2020-12-06)
+
+
+### Bug Fixes
+
+* **combobox:** issue with combobox applying filters ([42b3a8c](https://github.com/searchkit/searchkit/commit/42b3a8c613232fb420378930182eada964958ccb))
+* facet size can be configured / changed at query time ([#796](https://github.com/searchkit/searchkit/issues/796)) ([beb567f](https://github.com/searchkit/searchkit/commit/beb567f931ffe7013d11251e7d8beeaf4a473f35)), closes [#791](https://github.com/searchkit/searchkit/issues/791)
+* fix apollo client cache issues ([#800](https://github.com/searchkit/searchkit/issues/800)) ([3aa1385](https://github.com/searchkit/searchkit/commit/3aa1385da6d9d338e951e89b950a3963f7931392)), closes [#797](https://github.com/searchkit/searchkit/issues/797)
+* link ([#783](https://github.com/searchkit/searchkit/issues/783)) ([55f6f6f](https://github.com/searchkit/searchkit/commit/55f6f6f541f274f4c9249da63f98088be3f6ba4e))
+
+
+### BREAKING CHANGES
+
+* For all facets, id now is identifier. Apollo client network policy is now the
+default cache-first strategy
+
+
+
+
+
+# [3.0.0-canary.17](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.12...v3.0.0-canary.17) (2020-12-05)
+
+
+### Bug Fixes
+
+* facet size can be configured / changed at query time ([#796](https://github.com/searchkit/searchkit/issues/796)) ([beb567f](https://github.com/searchkit/searchkit/commit/beb567f931ffe7013d11251e7d8beeaf4a473f35)), closes [#791](https://github.com/searchkit/searchkit/issues/791)
+* fix apollo client cache issues ([da9191b](https://github.com/searchkit/searchkit/commit/da9191b4528fc72f73ffdbf3e1f92de3f88231fc)), closes [#797](https://github.com/searchkit/searchkit/issues/797)
+* link ([#783](https://github.com/searchkit/searchkit/issues/783)) ([55f6f6f](https://github.com/searchkit/searchkit/commit/55f6f6f541f274f4c9249da63f98088be3f6ba4e))
+
+
+### BREAKING CHANGES
+
+* For all facets, id now is identifier. Apollo client network policy is now the
+default cache-first strategy
+
+
+
+
+
+# [3.0.0-canary.16](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.12...v3.0.0-canary.16) (2020-12-04)
+
+
+### Bug Fixes
+
+* better compatibility support for es6 / es7 over total ([ce6a92c](https://github.com/searchkit/searchkit/commit/ce6a92cf6e9a3f14f46f08fe9f75b38561e511b2)), closes [#792](https://github.com/searchkit/searchkit/issues/792)
+* link ([#783](https://github.com/searchkit/searchkit/issues/783)) ([55f6f6f](https://github.com/searchkit/searchkit/commit/55f6f6f541f274f4c9249da63f98088be3f6ba4e))
+
+
+
+
+
+# [3.0.0-canary.15](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.12...v3.0.0-canary.15) (2020-12-03)
+
+
+### Bug Fixes
+
+* link ([#783](https://github.com/searchkit/searchkit/issues/783)) ([55f6f6f](https://github.com/searchkit/searchkit/commit/55f6f6f541f274f4c9249da63f98088be3f6ba4e))
+
+
+
+
+
+# [3.0.0-canary.14](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.12...v3.0.0-canary.14) (2020-12-01)
+
+
+### Bug Fixes
+
+* link ([#783](https://github.com/searchkit/searchkit/issues/783)) ([55f6f6f](https://github.com/searchkit/searchkit/commit/55f6f6f541f274f4c9249da63f98088be3f6ba4e))
+
+
+
+
+
+# [3.0.0-canary.13](https://github.com/searchkit/searchkit/compare/v3.0.0-canary.12...v3.0.0-canary.13) (2020-11-18)
+
+**Note:** Version bump only for package searchkit
+
+
+
+
+
+# [3.0.0-canary.12](https://github.com/searchkit/searchkit/compare/v2.3.0...v3.0.0-canary.12) (2020-11-16)
+
+
+### Features
+
+* fix deployment ([71a1c26](https://github.com/searchkit/searchkit/commit/71a1c264a0c01519ad14f28b6966380f85102513))
+
+
+
+
+
+# [3.0.0-canary.11](https://github.com/searchkit/searchkit/compare/v2.3.0...v3.0.0-canary.11) (2020-11-14)
+
+
+### Features
+
+* fix deployment ([71a1c26](https://github.com/searchkit/searchkit/commit/71a1c264a0c01519ad14f28b6966380f85102513))
+
+
+
+
+
+# [3.0.0-canary.10](https://github.com/searchkit/searchkit/compare/v2.3.0...v3.0.0-canary.10) (2020-11-13)
+
+
+### Features
+
+* fix deployment ([71a1c26](https://github.com/searchkit/searchkit/commit/71a1c264a0c01519ad14f28b6966380f85102513))
+
+
+
+
+
+# [3.0.0-canary.9](https://github.com/searchkit/searchkit/compare/v2.3.0...v3.0.0-canary.9) (2020-11-13)
+
+
+### Features
+
+* fix deployment ([71a1c26](https://github.com/searchkit/searchkit/commit/71a1c264a0c01519ad14f28b6966380f85102513))
+
+
+
+
+
+# [3.0.0-canary.8](https://github.com/searchkit/searchkit/compare/v2.3.0...v3.0.0-canary.8) (2020-11-11)
+
+
+### Features
+
+* fix deployment ([71a1c26](https://github.com/searchkit/searchkit/commit/71a1c264a0c01519ad14f28b6966380f85102513))
+
+
+
+
+
+# [3.0.0-canary.7](https://github.com/searchkit/searchkit/compare/v2.3.0...v3.0.0-canary.7) (2020-11-10)
+
+
+### Features
+
+* fix deployment ([71a1c26](https://github.com/searchkit/searchkit/commit/71a1c264a0c01519ad14f28b6966380f85102513))
+
+
+
+
+
+# [3.0.0-canary.6](https://github.com/searchkit/searchkit/compare/v2.3.0...v3.0.0-canary.6) (2020-11-10)
+
+
+### Features
+
+* fix deployment ([71a1c26](https://github.com/searchkit/searchkit/commit/71a1c264a0c01519ad14f28b6966380f85102513))
+
+
+
+
+
+# [3.0.0-canary.5](https://github.com/searchkit/searchkit/compare/v2.3.0...v3.0.0-canary.5) (2020-11-08)
+
+
+### Features
+
+* fix deployment ([71a1c26](https://github.com/searchkit/searchkit/commit/71a1c264a0c01519ad14f28b6966380f85102513))
+
+
+
+
+
+# [3.0.0-canary.4](https://github.com/searchkit/searchkit/compare/v2.3.0...v3.0.0-canary.4) (2020-11-08)
+
+
+### Features
+
+* fix deployment ([71a1c26](https://github.com/searchkit/searchkit/commit/71a1c264a0c01519ad14f28b6966380f85102513))
+
+
+
+
+
+# [3.0.0-canary.3](https://github.com/searchkit/searchkit/compare/v2.3.0...v3.0.0-canary.3) (2020-10-11)
+
+
+### Features
+
+* fix deployment ([71a1c26](https://github.com/searchkit/searchkit/commit/71a1c264a0c01519ad14f28b6966380f85102513))
+
+
+
+
+
+# [3.0.0-canary.2](https://github.com/searchkit/searchkit/compare/v2.3.0...v3.0.0-canary.2) (2020-10-11)
+
+
+### Features
+
+* fix deployment ([71a1c26](https://github.com/searchkit/searchkit/commit/71a1c264a0c01519ad14f28b6966380f85102513))

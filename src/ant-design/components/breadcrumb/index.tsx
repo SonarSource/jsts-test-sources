@@ -1,5 +1,6 @@
 import Breadcrumb from './Breadcrumb';
-import BreadcrumbItem from './BreadcrumbItem';
 
-Breadcrumb.Item = BreadcrumbItem;
+export { BreadcrumbProps } from './Breadcrumb';
+export { BreadcrumbItemProps } from './BreadcrumbItem';
+
 export default Breadcrumb;

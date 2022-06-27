@@ -1,10 +1,10 @@
-@import "../../mixins";
+@import '../../mixins';
 
 /** A React component holding the selected commit's detailed information */
 #commit-summary {
-
   display: flex;
   flex-direction: column;
+  min-height: 0;
 
   .avatar {
     width: 16px;
@@ -24,13 +24,8 @@
   }
 
   &.expanded {
-
-    .commit-summary-description-container {
-      border-bottom: none;
-    }
-
     .commit-summary-description-scroll-view {
-      max-height: none;
+      max-height: 400px;
       overflow: auto;
 
       &:before {
@@ -39,9 +34,30 @@
     }
   }
 
+  &.hide-description-border {
+    .commit-summary-description-container {
+      border-bottom: none;
+    }
+  }
+
   &.has-expander {
     .commit-summary-description {
       padding-right: 100px;
+    }
+
+    // When the description area can be, but isn't yet, expanded
+    // we'll add a small shadow towards the bottom to hint that
+    // there's more content available.
+    &:not(.expanded) {
+      .commit-summary-description:before {
+        content: '';
+        background: var(--box-overflow-shadow-background);
+        position: absolute;
+        height: 30px;
+        bottom: 0px;
+        width: 100%;
+        pointer-events: none;
+      }
     }
   }
 }
@@ -55,6 +71,14 @@
   &-title,
   &-meta {
     padding: var(--spacing);
+
+    .lines-added {
+      color: var(--color-new);
+    }
+
+    .lines-deleted {
+      color: var(--color-deleted);
+    }
   }
 
   &-title {
@@ -63,38 +87,38 @@
     line-height: 16px;
     padding: var(--spacing);
     word-wrap: break-word;
+
+    &.empty-summary {
+      color: var(--text-secondary-color);
+    }
   }
 
   &-description-container {
     display: flex;
-
     // So that we have something to position the expander against
     position: relative;
     border-bottom: var(--base-border);
+    min-height: 0;
   }
 
   &-description-scroll-view {
     overflow: hidden;
     // The extra pixel makes the space align up with the commit list.
-    max-height: 61px;
-
-    &:before {
-      content: "";
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0) 40px, rgba(255, 255, 255, 0.5) 40px, white 60px);
-      position: absolute;
-      height: 100%;
-      width: 100%;
-    }
+    max-height: 69px;
+    flex: 1;
   }
 
   // Enable text selection inside the title and description elements.
   &-title,
   &-description {
-    span, a {
-      -webkit-user-select: text;
-      user-select: text;
+    user-select: text;
+    cursor: text;
+
+    * {
+      user-select: unset;
+      pointer-events: unset;
+      cursor: text;
     }
-    span { cursor: text; }
   }
 
   &-description {
@@ -103,6 +127,7 @@
     word-wrap: break-word;
     white-space: pre-line;
     padding: var(--spacing);
+    min-height: 0;
   }
 
   &-meta {
@@ -112,20 +137,33 @@
     padding: 0 var(--spacing) var(--spacing);
   }
 
+  &-meta-item:not(.without-truncation) {
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
   &-meta-item {
-    a {
-      -webkit-user-select: text;
-      user-select: text;
-    }
-    @include ellipsis;
+    display: flex;
+    flex-direction: row;
+    min-width: 0;
     margin-right: var(--spacing);
     font-size: var(--font-size-sm);
+    flex-shrink: 0;
 
     .avatar,
     .octicon {
       display: inline-block;
       margin-right: var(--spacing-third);
       vertical-align: bottom; // For some reason, `bottom` places the text in the middle
+    }
+
+    .sha {
+      user-select: text;
+    }
+
+    .tags {
+      @include ellipsis;
+      flex-shrink: 1;
     }
   }
 

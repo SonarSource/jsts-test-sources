@@ -1,5 +1,5 @@
 ---
-order: 24
+order: 25
 title:
   en-US: Nested tables
   zh-CN: 嵌套子表格
@@ -13,42 +13,68 @@ title:
 
 Showing more detailed info of every row.
 
-````jsx
+```tsx
+import { DownOutlined } from '@ant-design/icons';
+import type { TableColumnsType } from 'antd';
+import { Badge, Dropdown, Menu, Space, Table } from 'antd';
+import React from 'react';
 
-import { Table, Badge, Menu, Dropdown, Icon } from 'antd';
+interface DataType {
+  key: React.Key;
+  name: string;
+  platform: string;
+  version: string;
+  upgradeNum: number;
+  creator: string;
+  createdAt: string;
+}
+
+interface ExpandedDataType {
+  key: React.Key;
+  date: string;
+  name: string;
+  upgradeNum: string;
+}
 
 const menu = (
-  <Menu>
-    <Menu.Item>
-      Action 1
-    </Menu.Item>
-    <Menu.Item>
-      Action 2
-    </Menu.Item>
-  </Menu>
+  <Menu
+    items={[
+      { key: '1', label: 'Action 1' },
+      { key: '2', label: 'Action 2' },
+    ]}
+  />
 );
 
-function NestedTable() {
+const App: React.FC = () => {
   const expandedRowRender = () => {
-    const columns = [
+    const columns: TableColumnsType<ExpandedDataType> = [
       { title: 'Date', dataIndex: 'date', key: 'date' },
       { title: 'Name', dataIndex: 'name', key: 'name' },
-      { title: 'Status', key: 'state', render: () => <span><Badge status="success" />Finished</span> },
+      {
+        title: 'Status',
+        key: 'state',
+        render: () => (
+          <span>
+            <Badge status="success" />
+            Finished
+          </span>
+        ),
+      },
       { title: 'Upgrade Status', dataIndex: 'upgradeNum', key: 'upgradeNum' },
       {
         title: 'Action',
         dataIndex: 'operation',
         key: 'operation',
         render: () => (
-          <span className={'table-operation'}>
-            <a href="#">Pause</a>
-            <a href="#">Stop</a>
+          <Space size="middle">
+            <a>Pause</a>
+            <a>Stop</a>
             <Dropdown overlay={menu}>
-              <a href="#">
-                More <Icon type="down" />
+              <a>
+                More <DownOutlined />
               </a>
             </Dropdown>
-          </span>
+          </Space>
         ),
       },
     ];
@@ -56,35 +82,29 @@ function NestedTable() {
     const data = [];
     for (let i = 0; i < 3; ++i) {
       data.push({
-        key: i,
+        key: i.toString(),
         date: '2014-12-24 23:12:00',
         name: 'This is production name',
         upgradeNum: 'Upgraded: 56',
       });
     }
-    return (
-      <Table
-        columns={columns}
-        dataSource={data}
-        pagination={false}
-      />
-    );
+    return <Table columns={columns} dataSource={data} pagination={false} />;
   };
 
-  const columns = [
+  const columns: TableColumnsType<DataType> = [
     { title: 'Name', dataIndex: 'name', key: 'name' },
     { title: 'Platform', dataIndex: 'platform', key: 'platform' },
     { title: 'Version', dataIndex: 'version', key: 'version' },
     { title: 'Upgraded', dataIndex: 'upgradeNum', key: 'upgradeNum' },
     { title: 'Creator', dataIndex: 'creator', key: 'creator' },
     { title: 'Date', dataIndex: 'createdAt', key: 'createdAt' },
-    { title: 'Action', key: 'operation', render: () => <a href="#">Publish</a> },
+    { title: 'Action', key: 'operation', render: () => <a>Publish</a> },
   ];
 
-  const data = [];
+  const data: DataType[] = [];
   for (let i = 0; i < 3; ++i) {
     data.push({
-      key: i,
+      key: i.toString(),
       name: 'Screem',
       platform: 'iOS',
       version: '10.3.4.5654',
@@ -95,44 +115,27 @@ function NestedTable() {
   }
 
   return (
-    <Table
-      className="components-table-demo-nested"
-      columns={columns}
-      expandedRowRender={expandedRowRender}
-      dataSource={data}
-    />
+    <>
+      <Table
+        columns={columns}
+        expandable={{ expandedRowRender, defaultExpandedRowKeys: ['0'] }}
+        dataSource={data}
+      />
+      <Table
+        columns={columns}
+        expandable={{ expandedRowRender, defaultExpandedRowKeys: ['0'] }}
+        dataSource={data}
+        size="middle"
+      />
+      <Table
+        columns={columns}
+        expandable={{ expandedRowRender, defaultExpandedRowKeys: ['0'] }}
+        dataSource={data}
+        size="small"
+      />
+    </>
   );
-}
+};
 
-ReactDOM.render(<NestedTable />, mountNode);
-````
-
-````css
-.components-table-demo-nested .ant-table-expanded-row > td:last-child {
-  padding: 0 48px 0 8px;
-}
-
-.components-table-demo-nested .ant-table-expanded-row > td:last-child .ant-table-thead th {
-  border-bottom: 1px solid #e9e9e9;
-}
-
-.components-table-demo-nested .ant-table-expanded-row > td:last-child .ant-table-thead th:first-child {
-  padding-left: 0;
-}
-
-.components-table-demo-nested .ant-table-expanded-row > td:last-child .ant-table-row td:first-child {
-  padding-left: 0;
-}
-
-.components-table-demo-nested .ant-table-expanded-row .ant-table-row:last-child td {
-  border: none;
-}
-
-.components-table-demo-nested .ant-table-expanded-row .ant-table-thead > tr > th {
-  background: none;
-}
-
-.components-table-demo-nested .table-operation a:not(:last-child) {
-  margin-right: 24px;
-}
-````
+export default App;
+```

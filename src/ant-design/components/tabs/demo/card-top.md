@@ -13,43 +13,83 @@ title:
 
 Should be used at the top of container, needs to override styles.
 
-````jsx
+```tsx
 import { Tabs } from 'antd';
-const TabPane = Tabs.TabPane;
+import React from 'react';
 
-ReactDOM.render(
+const { TabPane } = Tabs;
+
+const App: React.FC = () => (
   <div className="card-container">
     <Tabs type="card">
-      <TabPane tab="Tab 1" key="1">Content of Tab Pane 1</TabPane>
-      <TabPane tab="Tab 2" key="2">Content of Tab Pane 2</TabPane>
-      <TabPane tab="Tab 3" key="3">Content of Tab Pane 3</TabPane>
+      <TabPane tab="Tab Title 1" key="1">
+        <p>Content of Tab Pane 1</p>
+        <p>Content of Tab Pane 1</p>
+        <p>Content of Tab Pane 1</p>
+      </TabPane>
+      <TabPane tab="Tab Title 2" key="2">
+        <p>Content of Tab Pane 2</p>
+        <p>Content of Tab Pane 2</p>
+        <p>Content of Tab Pane 2</p>
+      </TabPane>
+      <TabPane tab="Tab Title 3" key="3">
+        <p>Content of Tab Pane 3</p>
+        <p>Content of Tab Pane 3</p>
+        <p>Content of Tab Pane 3</p>
+      </TabPane>
     </Tabs>
   </div>
-, mountNode);
-````
+);
 
-````css
-#components-tabs-demo-card-top .code-box-demo {
-  background: #ececec;
-  overflow: hidden;
-  padding: 24px;
+export default App;
+```
+
+```css
+.card-container p {
+  margin: 0;
 }
-
-.card-container > .ant-tabs-card > .ant-tabs-content {
+.card-container > .ant-tabs-card .ant-tabs-content {
   height: 120px;
   margin-top: -16px;
 }
-
-.card-container > .ant-tabs-card > .ant-tabs-content > .ant-tabs-tabpane {
-  background: #fff;
+.card-container > .ant-tabs-card .ant-tabs-content > .ant-tabs-tabpane {
   padding: 16px;
+  background: #fff;
 }
-
-.card-container > .ant-tabs-card > .ant-tabs-bar .ant-tabs-tab {
+.card-container > .ant-tabs-card > .ant-tabs-nav::before {
+  display: none;
+}
+.card-container > .ant-tabs-card .ant-tabs-tab,
+[data-theme='compact'] .card-container > .ant-tabs-card .ant-tabs-tab {
+  background: transparent;
   border-color: transparent;
 }
-
-.card-container > .ant-tabs-card > .ant-tabs-bar .ant-tabs-tab-active {
+.card-container > .ant-tabs-card .ant-tabs-tab-active,
+[data-theme='compact'] .card-container > .ant-tabs-card .ant-tabs-tab-active {
+  background: #fff;
   border-color: #fff;
 }
-````
+#components-tabs-demo-card-top .code-box-demo {
+  padding: 24px;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+[data-theme='compact'] .card-container > .ant-tabs-card .ant-tabs-content {
+  height: 120px;
+  margin-top: -8px;
+}
+[data-theme='dark'] .card-container > .ant-tabs-card .ant-tabs-tab {
+  background: transparent;
+  border-color: transparent;
+}
+[data-theme='dark'] #components-tabs-demo-card-top .code-box-demo {
+  background: #000;
+}
+[data-theme='dark'] .card-container > .ant-tabs-card .ant-tabs-content > .ant-tabs-tabpane {
+  background: #141414;
+}
+[data-theme='dark'] .card-container > .ant-tabs-card .ant-tabs-tab-active {
+  background: #141414;
+  border-color: #141414;
+}
+```

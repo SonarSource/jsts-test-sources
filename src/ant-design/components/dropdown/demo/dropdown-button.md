@@ -7,51 +7,83 @@ title:
 
 ## zh-CN
 
-左边是按钮，右边是额外的相关功能菜单。
+左边是按钮，右边是额外的相关功能菜单。可设置 `icon` 属性来修改右边的图标。
 
 ## en-US
 
-A button is on the left, and a related functional menu is on the right.
+A button is on the left, and a related functional menu is on the right. You can set the icon property to modify the icon of right.
 
-````jsx
-import { Menu, Dropdown, Button, Icon, message } from 'antd';
+```tsx
+import { DownOutlined, UserOutlined } from '@ant-design/icons';
+import type { MenuProps } from 'antd';
+import { Button, Dropdown, Menu, message, Space, Tooltip } from 'antd';
+import React from 'react';
 
-function handleButtonClick(e) {
+const handleButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
   message.info('Click on left button.');
   console.log('click left button', e);
-}
+};
 
-function handleMenuClick(e) {
+const handleMenuClick: MenuProps['onClick'] = e => {
   message.info('Click on menu item.');
   console.log('click', e);
-}
+};
 
 const menu = (
-  <Menu onClick={handleMenuClick}>
-    <Menu.Item key="1">1st menu item</Menu.Item>
-    <Menu.Item key="2">2nd menu item</Menu.Item>
-    <Menu.Item key="3">3d menu item</Menu.Item>
-  </Menu>
+  <Menu
+    onClick={handleMenuClick}
+    items={[
+      {
+        label: '1st menu item',
+        key: '1',
+        icon: <UserOutlined />,
+      },
+      {
+        label: '2nd menu item',
+        key: '2',
+        icon: <UserOutlined />,
+      },
+      {
+        label: '3rd menu item',
+        key: '3',
+        icon: <UserOutlined />,
+      },
+    ]}
+  />
 );
 
-ReactDOM.render(
-  <div>
+const App: React.FC = () => (
+  <Space wrap>
     <Dropdown.Button onClick={handleButtonClick} overlay={menu}>
       Dropdown
     </Dropdown.Button>
-    <Dropdown.Button
-      onClick={handleButtonClick}
-      overlay={menu}
-      disabled
-      style={{ marginLeft: 8 }}
-    >
+    <Dropdown.Button overlay={menu} placement="bottom" icon={<UserOutlined />}>
       Dropdown
     </Dropdown.Button>
+    <Dropdown.Button onClick={handleButtonClick} overlay={menu} disabled>
+      Dropdown
+    </Dropdown.Button>
+    <Dropdown.Button
+      overlay={menu}
+      buttonsRender={([leftButton, rightButton]) => [
+        <Tooltip title="tooltip" key="leftButton">
+          {leftButton}
+        </Tooltip>,
+        React.cloneElement(rightButton as React.ReactElement<any, string>, { loading: true }),
+      ]}
+    >
+      With Tooltip
+    </Dropdown.Button>
     <Dropdown overlay={menu}>
-      <Button style={{ marginLeft: 8 }}>
-        Button <Icon type="down" />
+      <Button>
+        <Space>
+          Button
+          <DownOutlined />
+        </Space>
       </Button>
     </Dropdown>
-  </div>
-, mountNode);
-````
+  </Space>
+);
+
+export default App;
+```

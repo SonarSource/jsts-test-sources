@@ -13,10 +13,11 @@ title:
 
 Replace the default icon with customized text.
 
-````jsx
+```tsx
 import { Alert } from 'antd';
+import React from 'react';
 
-ReactDOM.render(
-  <Alert message="Info Text" type="info" closeText="Close Now" />
-, mountNode);
-````
+const App: React.FC = () => <Alert message="Info Text" type="info" closeText="Close Now" />;
+
+export default App;
+```

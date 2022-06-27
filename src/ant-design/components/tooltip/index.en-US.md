@@ -2,39 +2,46 @@
 category: Components
 type: Data Display
 title: Tooltip
+cover: https://gw.alipayobjects.com/zos/alicdn/Vyyeu8jq2/Tooltp.svg
 ---
 
 A simple text popup tip.
 
 ## When To Use
 
-- The tip shows while mouse enter, and hides while mouse leave. The Tooltip doesn't support complex text and operation.
-- It can provide an explanation of `button/text/operation` that can cover the usage of the default system `title`.
+- The tip is shown on mouse enter, and is hidden on mouse leave. The Tooltip doesn't support complex text or operations.
+- To provide an explanation of a `button/text/operation`. It's often used instead of the html `title` attribute.
 
 ## API
 
-| Property      | Description                                     | Type       | Default |
-|-----------|------------------------------------------|------------|--------|
-| title     | prompt text                                 | string/React.Element | -     |
+| Property | Description                   | Type                         | Default |
+| -------- | ----------------------------- | ---------------------------- | ------- |
+| title    | The text shown in the tooltip | ReactNode \| () => ReactNode | -       |
 
 ### Common API
 
 The following APIs are shared by Tooltip, Popconfirm, Popover.
 
-| Property      | Description                                     | Type       | Default |
-|-----------|------------------------------------------|------------|--------|
-| placement | to set the position, which can be one of `top` `left` `right` `bottom` `topLeft` `topRight` `bottomLeft` `bottomRight` `leftTop` `leftBottom` `rightTop` `rightBottom` | string     | top    |
-| getPopupContainer | to set the container of the tip, while the default is to create a `div` element in `body`. Use `getTooltipContainer` if you are using `antd@<2.5.2` | Function(triggerNode) | () => document.body |
-| arrowPointAtCenter | whether arrow pointed at the center of target, supported after `antd@1.11+` | boolean | `false` |
-| visible   | make the float card visible or not                     | boolean       | false  |
-| onVisibleChange | callback of the visible attribute changed            | (visible) => void | none     |
-| mouseEnterDelay | delay time to show when mouse enter.unit: s | number | 0 |
-| mouseLeaveDelay | delay time to hide when mouse leave.unit: s | number | 0.1 |
-| trigger | triggering mode: can be hover, focus, or click. | string | hover |
-| overlayClassName | class name of the card                            | string | none     |
-| overlayStyle | style of the card                            | object | none    |
-
+| Property | Description | Type | Default | Version |
+| --- | --- | --- | --- | --- |
+| align | This value will be merged into placement's config, please refer to the settings [rc-tooltip](https://github.com/react-component/tooltip) | object | - |  |
+| arrowPointAtCenter | Whether the arrow is pointed at the center of target | boolean | false |  |
+| autoAdjustOverflow | Whether to adjust popup placement automatically when popup is off screen | boolean | true |  |
+| color | The background color | string | - | 4.3.0 |
+| defaultVisible | Whether the floating tooltip card is visible by default | boolean | false |  |
+| destroyTooltipOnHide | Whether destroy tooltip when hidden, parent container of tooltip will be destroyed when `keepParent` is false | boolean \| { keepParent?: boolean } | false |  |
+| getPopupContainer | The DOM container of the tip, the default behavior is to create a `div` element in `body` | function(triggerNode) | () => document.body |  |
+| mouseEnterDelay | Delay in seconds, before tooltip is shown on mouse enter | number | 0.1 |  |
+| mouseLeaveDelay | Delay in seconds, before tooltip is hidden on mouse leave | number | 0.1 |  |
+| overlayClassName | Class name of the tooltip card | string | - |  |
+| overlayStyle | Style of the tooltip card | object | - |  |
+| overlayInnerStyle | Style of the tooltip inner content | object | - |  |
+| placement | The position of the tooltip relative to the target, which can be one of `top` `left` `right` `bottom` `topLeft` `topRight` `bottomLeft` `bottomRight` `leftTop` `leftBottom` `rightTop` `rightBottom` | string | `top` |  |
+| trigger | Tooltip trigger mode. Could be multiple by passing an array | `hover` \| `focus` \| `click` \| `contextMenu` \| Array&lt;string> | `hover` |  |
+| visible | Whether the floating tooltip card is visible or not | boolean | false |  |
+| zIndex | Config `z-index` of Tooltip | number | - |  |
+| onVisibleChange | Callback executed when visibility of the tooltip card is changed | (visible) => void | - |  |
 
 ## Note
 
-Please ensure that the child node of `Tooltip` accepts `onMouseEnter`, `onMouseLeave`, `onFocus`, `onClick` event.
+Please ensure that the child node of `Tooltip` accepts `onMouseEnter`, `onMouseLeave`, `onFocus`, `onClick` events.

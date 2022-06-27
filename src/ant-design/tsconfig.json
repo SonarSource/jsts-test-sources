@@ -1,17 +1,24 @@
 {
   "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "antd": ["components/index.tsx"],
+      "antd/es/*": ["components/*"]
+    },
     "strictNullChecks": true,
+    "module": "esnext",
     "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "experimentalDecorators": true,
-    "jsx": "preserve",
+    "jsx": "react",
+    "jsxFactory": "React.createElement",
+    "jsxFragmentFactory": "React.Fragment",
+    "noUnusedParameters": true,
+    "noUnusedLocals": true,
+    "noImplicitAny": true,
     "target": "es6",
-    "lib": [
-      "dom",
-      "es7"
-    ]
+    "lib": ["dom", "es2017"],
+    "skipLibCheck": true
   },
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules", "lib", "es"]
 }

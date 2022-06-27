@@ -14,47 +14,58 @@ title:
 
 Fixed Header is generally used to fix the top navigation to facilitate page switching.
 
-````jsx
-import { Layout, Menu, Breadcrumb } from 'antd';
+```tsx
+import { Breadcrumb, Layout, Menu } from 'antd';
+import React from 'react';
+
 const { Header, Content, Footer } = Layout;
 
-ReactDOM.render(
+const App: React.FC = () => (
   <Layout>
-    <Header style={{ position: 'fixed', width: '100%' }}>
+    <Header style={{ position: 'fixed', zIndex: 1, width: '100%' }}>
       <div className="logo" />
       <Menu
         theme="dark"
         mode="horizontal"
         defaultSelectedKeys={['2']}
-        style={{ lineHeight: '64px' }}
-      >
-        <Menu.Item key="1">nav 1</Menu.Item>
-        <Menu.Item key="2">nav 2</Menu.Item>
-        <Menu.Item key="3">nav 3</Menu.Item>
-      </Menu>
+        items={new Array(3).fill(null).map((_, index) => ({
+          key: String(index + 1),
+          label: `nav ${index + 1}`,
+        }))}
+      />
     </Header>
-    <Content style={{ padding: '0 50px', marginTop: 64 }}>
-      <Breadcrumb style={{ margin: '12px 0' }}>
+    <Content className="site-layout" style={{ padding: '0 50px', marginTop: 64 }}>
+      <Breadcrumb style={{ margin: '16px 0' }}>
         <Breadcrumb.Item>Home</Breadcrumb.Item>
         <Breadcrumb.Item>List</Breadcrumb.Item>
         <Breadcrumb.Item>App</Breadcrumb.Item>
       </Breadcrumb>
-      <div style={{ background: '#fff', padding: 24, minHeight: 380 }}>Content</div>
+      <div className="site-layout-background" style={{ padding: 24, minHeight: 380 }}>
+        Content
+      </div>
     </Content>
-    <Footer style={{ textAlign: 'center' }}>
-      Ant Design ©2016 Created by Ant UED
-    </Footer>
+    <Footer style={{ textAlign: 'center' }}>Ant Design ©2018 Created by Ant UED</Footer>
   </Layout>
-, mountNode);
-````
+);
 
-````css
+export default App;
+```
+
+```css
 #components-layout-demo-fixed .logo {
+  float: left;
   width: 120px;
   height: 31px;
-  background: #333;
-  border-radius: 6px;
   margin: 16px 24px 16px 0;
-  float: left;
+  background: rgba(255, 255, 255, 0.2);
 }
-````
+.site-layout .site-layout-background {
+  background: #fff;
+}
+```
+
+<style>
+[data-theme="dark"] .site-layout .site-layout-background {
+  background: #141414;
+}
+</style>

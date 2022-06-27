@@ -7,33 +7,32 @@ title:
 
 ## zh-CN
 
-试下复制 `露西,杰克` 到输入框里。只在 tags 和 multiple 模式下可用。
+试下复制 `露西,杰克` 并粘贴到输入框里。只在 tags 和 multiple 模式下可用。
 
 ## en-US
 
-Try to copy `Lucy,Jack` to the input. Only available in tags and multiple mode.
+Try to copy `Lucy,Jack` and paste to the input. Only available in tags and multiple mode.
 
-````jsx
+```tsx
 import { Select } from 'antd';
-const Option = Select.Option;
+import React from 'react';
 
-const children = [];
+const { Option } = Select;
+
+const children: React.ReactNode[] = [];
 for (let i = 10; i < 36; i++) {
   children.push(<Option key={i.toString(36) + i}>{i.toString(36) + i}</Option>);
 }
 
-function handleChange(value) {
+const handleChange = (value: string) => {
   console.log(`selected ${value}`);
-}
+};
 
-ReactDOM.render(
-  <Select
-    mode="tags"
-    style={{ width: '100%' }}
-    onChange={handleChange}
-    tokenSeparators={[',']}
-  >
+const App: React.FC = () => (
+  <Select mode="tags" style={{ width: '100%' }} onChange={handleChange} tokenSeparators={[',']}>
     {children}
   </Select>
-, mountNode);
-````
+);
+
+export default App;
+```
