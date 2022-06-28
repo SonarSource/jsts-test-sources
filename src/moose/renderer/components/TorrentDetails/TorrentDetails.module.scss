@@ -1,0 +1,103 @@
+$buttonColor: rgba(255, 255, 255, 0.2);
+$posterWidth: 184px;
+
+.torrentDetails {
+  height: 300px;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.55);
+  border-top: 1px solid #000;
+  display: grid;
+  grid-template-columns: $posterWidth repeat(10, 1fr) 30px;
+  grid-template-rows: repeat(9, 1fr);
+  grid-column-gap: 0;
+  grid-row-gap: 0;
+  padding: 15px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.poster {
+  grid-area: 1 / 1 / 10 / 2;
+  height: 100%;
+  border-radius: 2px;
+  overflow: hidden;
+  background-color: rgba(0, 0, 0, 0.28);
+  width: $posterWidth;
+}
+.header {
+  grid-area: 1 / 2 / 1 / 13;
+  padding-left: 15px;
+  margin: 0 0 10px;
+  font-weight: normal;
+  font-size: 16px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.subtitle {
+  cursor: pointer;
+  opacity: 0.3;
+}
+
+.subtitlePresent {
+  opacity: 1;
+}
+
+.animatedWrapper {
+  grid-area: 2/2/10/13;
+  margin-left: 15px;
+  display: flex;
+  flex-direction: column;
+
+  & > span {
+    display: flex;
+    font-size: 13px;
+    line-height: 20px;
+    opacity: 0.7;
+  }
+}
+
+.files {
+  grid-area: 2 / 2 / 6 / 13;
+  margin-top: 15px;
+  margin-left: 15px;
+  border-radius: 2px;
+  overflow: auto;
+  display: flex;
+  flex: 1;
+
+  table {
+    font-size: 12px;
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  th {
+    text-align: left;
+  }
+
+  td {
+    background-color: rgba(255, 255, 255, 0.08);
+    padding: 3px 6px;
+  }
+
+  td[data-id="play"] {
+    text-align: center;
+    padding: 0;
+  }
+
+  tbody tr {
+    cursor: pointer;
+    transition: all 200ms;
+  }
+
+  tbody tr:hover {
+    background-color: rgba(103, 58, 183, 0.33);
+  }
+}
+
+.sub {
+  margin-bottom: 6px;
+  font-size: 14px;
+  opacity: 0.85;
+}

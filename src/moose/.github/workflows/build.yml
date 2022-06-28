@@ -1,0 +1,34 @@
+# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+name: Publish
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: macOS-latest
+
+    strategy:
+      matrix:
+        node-version: [12.13.1]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm i -g yarn && yarn install --frozen-lockfile && npm run build:mac && npm run build:linux
+        env:
+          CI: true
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          FETCH_SUBTITLES: ${{ secrets.FETCH_SUBTITLES }}
+          TMDB_API: ${{ secrets.TMDB_API }}
+          APPLEID: ${{ secrets.APPLEID }}
+          APPLEIDPASS: ${{ secrets.APPLEIDPASS }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          UA_ID: ${{ secrets.UA_ID }}

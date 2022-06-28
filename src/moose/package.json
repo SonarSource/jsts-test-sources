@@ -1,0 +1,92 @@
+{
+  "name": "moose",
+  "description": "A torrent client to stream and download torrents. Play music, view images and stream videos.",
+  "version": "0.6.2",
+  "author": {
+    "name": "Ritesh Kumar"
+  },
+  "private": true,
+  "main": "app/background.js",
+  "scripts": {
+    "dev": "nextron",
+    "postinstall": "electron-builder install-app-deps && patch-package",
+    "build:mac": "nextron build --mac --x64",
+    "build:win": "nextron build --win --x64",
+    "build:linux": "nextron build --linux"
+  },
+  "dependencies": {
+    "axios": "^0.19.2",
+    "body-parser": "^1.19.0",
+    "chromecasts": "^1.9.1",
+    "cors": "^2.8.5",
+    "dlnacasts": "^0.1.0",
+    "electron-log": "^4.2.2",
+    "electron-serve": "^1.0.0",
+    "electron-store": "^6.0.0",
+    "electron-unhandled": "^3.0.2",
+    "electron-util": "^0.14.2",
+    "express": "^4.17.1",
+    "get-port": "^5.1.1",
+    "internal-ip": "^6.0.0",
+    "mime": "^2.4.5",
+    "range-parser": "^1.2.1",
+    "universal-analytics": "^0.4.23",
+    "uuid": "^8.2.0",
+    "vlc-command": "^1.2.0",
+    "webtorrent": "^0.114.1"
+  },
+  "devDependencies": {
+    "@mdi/js": "^5.2.45",
+    "@mdi/react": "^1.3.0",
+    "@types/express": "^4.17.7",
+    "@types/lodash": "^4.14.157",
+    "@types/node": "^14.0.23",
+    "@types/react": "^16.9.43",
+    "@types/react-table": "^7.0.19",
+    "@types/webtorrent": "^0.107.1",
+    "babel-loader": "^8.1.0",
+    "buffer": "^5.6.0",
+    "classnames": "^2.2.6",
+    "dotenv": "^8.2.0",
+    "electron": "^9.0.5",
+    "electron-builder": "^22.6.1",
+    "electron-notarize": "^1.0.0",
+    "electron-updater": "^4.3.1",
+    "husky": "^4.2.3",
+    "imagemin-lint-staged": "^0.4.0",
+    "lint-staged": "^10.2.11",
+    "lodash": "^4.17.19",
+    "mitt": "^2.1.0",
+    "next": "9.4.4",
+    "nextron": "^5.15.0",
+    "opensubtitles-api": "^5.1.2",
+    "parse-torrent-title": "^1.3.0",
+    "patch-package": "^6.2.2",
+    "plyr": "^3.6.2",
+    "prettier": "^2.0.5",
+    "pretty-bytes": "^5.3.0",
+    "pretty-ms": "^7.0.0",
+    "pump": "^3.0.0",
+    "react": "16.13.1",
+    "react-color": "^2.18.1",
+    "react-dom": "16.13.1",
+    "react-dropzone": "^11.0.2",
+    "react-spring": "^8.0.27",
+    "react-table": "^7.3.0",
+    "react-tiny-popover": "^5.1.0",
+    "sass": "^1.26.10",
+    "simplebar-react": "^2.2.1",
+    "srt-webvtt": "^1.0.1",
+    "typescript": "3.9.7",
+    "webpack": "^4.43.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,md,html,css}": "prettier --write",
+    "*.{png,jpeg,jpg,gif,svg}": "imagemin-lint-staged"
+  }
+}

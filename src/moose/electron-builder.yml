@@ -1,0 +1,37 @@
+appId: com.riteshkr.moose
+productName: moose
+afterSign: scripts/notarize.js
+directories:
+  output: dist
+  buildResources: resources
+files:
+  - from: .
+    filter:
+      - package.json
+      - app
+publish:
+  provider: github
+  owner: ritz078
+  repo: moose
+mac:
+  icon: resources/moose.icns
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: resources/entitlements.mac.plist
+  entitlementsInherit: resources/entitlements.mac.plist
+fileAssociations:
+  ext: torrent
+  icon: resources/file-moose.icns
+protocols:
+  name: open-magnet
+  schemes:
+    - magnet
+dmg:
+#  https://kilianvalkhof:com/2019/electron/notarizing-your-electron-application/:
+  sign: false
+linux:
+  target: appImage
+  category: AudioVideo
+  mimeTypes:
+    - application/x-bittorrent
+

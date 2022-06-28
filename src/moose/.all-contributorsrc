@@ -1,0 +1,55 @@
+{
+  "projectName": "moose",
+  "projectOwner": "ritz078",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": true,
+  "commitConvention": "angular",
+  "contributors": [
+    {
+      "login": "ritz078",
+      "name": "Ritesh Kumar",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/5389035?v=4",
+      "profile": "https://riteshkr.com",
+      "contributions": [
+        "code",
+        "design",
+        "ideas",
+        "infra"
+      ]
+    },
+    {
+      "login": "ateev",
+      "name": "Ateev",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/2234088?v=4",
+      "profile": "http://www.ateev.in",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "vinodf2f",
+      "name": "Vinod Yevatikar",
+      "avatar_url": "https://avatars.githubusercontent.com/u/41716058?v=4",
+      "profile": "https://github.com/vinodf2f",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "hierror",
+      "name": "Hierro Duarte",
+      "avatar_url": "https://avatars.githubusercontent.com/u/13907494?v=4",
+      "profile": "https://github.com/hierror",
+      "contributions": [
+        "code"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "skipCi": true
+}

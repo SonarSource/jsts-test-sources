@@ -1,0 +1,21 @@
+.pane {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.castMessageContainer {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.disconnectLink {
+  color: skyblue;
+  cursor: pointer;
+}
+
+.disconnectLink:hover {
+  text-decoration: underline;
+}

@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@utils/*": ["utils/*"],
+      "@components/*": ["components/*"],
+      "@styles/*": ["styles/*"],
+      "@contexts/*": ["contexts/*"],
+      "@enums/*": ["enums/*"],
+      "@hooks/*": ["hooks/*"]
+    }
+  }
+}

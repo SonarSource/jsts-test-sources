@@ -1,0 +1,25 @@
+.miniplayer {
+  background-color: rgba(0, 0, 0, 0.13);
+  border-top: 1px solid #383838;
+  font-size: 12px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0 15px;
+  justify-content: space-between;
+  height: 37px;
+
+  opacity: 0.6;
+  transition: all 200ms;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  & > div:first-of-type {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    margin-right: 15px;
+  }
+}

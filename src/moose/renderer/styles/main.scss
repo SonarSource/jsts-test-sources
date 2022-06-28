@@ -1,0 +1,46 @@
+@import url("https://fonts.googleapis.com/css?family=Lato&display=swap");
+
+@import "~simplebar/dist/simplebar.min.css";
+@import "~plyr/dist/plyr.css";
+
+body,
+html {
+  margin: 0;
+  padding: 0;
+  -webkit-box-sizing: border-box;
+  font-family: "Lato", sans-serif;
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+.player-error .plyr__controls {
+  display: none;
+}
+
+.plyr--audio {
+  height: 36px !important;
+  opacity: 0.65;
+  transform: scale(0.8);
+  transform-origin: right;
+  width: 75%;
+  transition: all 200ms !important;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  .plyr__controls {
+    padding: 2px !important;
+    color: #ffffff !important;
+    background-color: transparent !important;
+  }
+
+  input[type="range"] {
+    color: white !important;
+  }
+}
+
+.sketch-picker {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+}

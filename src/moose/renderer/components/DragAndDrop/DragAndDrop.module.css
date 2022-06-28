@@ -1,0 +1,11 @@
+.dragAndDrop {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  flex-direction: column;
+}
+
+.dragAndDrop:focus {
+  outline: none;
+}
