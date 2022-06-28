@@ -1,0 +1,30 @@
+version: "3"
+
+services:
+  app:
+    image: codelit/courselit-app:${TAG?'TAG environment variable is not defined'}
+    environment:
+      - NODE_ENV=production
+      - JWT_SECRET=${JWT_SECRET}
+      - DB_CONNECTION_STRING=${DB_CONNECTION_STRING}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASS=${EMAIL_PASS}
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_FROM=${EMAIL_FROM}
+      - MEDIALIT_APIKEY=${MEDIALIT_APIKEY}
+    expose:
+      - "3000"
+    container_name: app 
+    restart: on-failure
+
+  proxy:
+    image: codelit/courselit-proxy:${TAG?'TAG environment variable is not defined'}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "./Caddyfile:/etc/caddy/Caddyfile"
+    depends_on:
+      - app
+    container_name: proxy
+    restart: on-failure
