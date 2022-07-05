@@ -10,5 +10,10 @@
       "@enums/*": ["enums/*"],
       "@hooks/*": ["hooks/*"]
     }
-  }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx"
+  ]
 }
