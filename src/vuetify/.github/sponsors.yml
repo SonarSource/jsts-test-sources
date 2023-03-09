@@ -1,0 +1,13 @@
+- label: 'P: sponsor'
+  members:
+
+- label: 'P: elite sponsor'
+  members:
+    # Framework
+    - shaydoc
+    - seanogdev
+    - samternent
+    - LucasLeandro1204
+    - Vercadium
+    - gkubisa
+    - davidohalloran

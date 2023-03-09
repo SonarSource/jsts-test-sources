@@ -1,0 +1,29 @@
+<template>
+  <div>
+    <v-progress-linear
+      color="red-lighten-2"
+      buffer-value="0"
+      stream
+    ></v-progress-linear>
+    <br>
+    <v-progress-linear
+      model-value="20"
+      color="teal"
+      buffer-value="0"
+      stream
+    ></v-progress-linear>
+    <br>
+    <v-progress-linear
+      buffer-value="50"
+      stream
+      color="cyan"
+    ></v-progress-linear>
+    <br>
+    <v-progress-linear
+      model-value="40"
+      buffer-value="60"
+      stream
+      color="orange"
+    ></v-progress-linear>
+  </div>
+</template>

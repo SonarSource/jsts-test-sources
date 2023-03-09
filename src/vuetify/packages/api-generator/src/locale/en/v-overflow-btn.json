@@ -1,0 +1,8 @@
+{
+  "props": {
+    "editable": "Creates an editable button",
+    "overflow": "Creates an overflow button",
+    "segmented": "Creates a segmented button",
+    "persistentPlaceholder": "Forces label to always be visible"
+  }
+}
