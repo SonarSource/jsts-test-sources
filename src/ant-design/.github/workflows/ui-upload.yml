@@ -31,7 +31,7 @@ jobs:
 
       - name: Save commit id
         id: commit
-        run: echo "::set-output name=id::$(<commit.txt)"
+        run: echo "id=$(<commit.txt)" >> "$GITHUB_OUTPUT"
 
       - name: Download branch artifact
         uses: dawidd6/action-download-artifact@v2
@@ -41,7 +41,7 @@ jobs:
 
       - name: Save branch id
         id: branch
-        run: echo "::set-output name=id::$(<branch.txt)"
+        run: echo "id=$(<branch.txt)" >> "$GITHUB_OUTPUT"
 
       - name: Download snapshots artifact
         uses: dawidd6/action-download-artifact@v2
