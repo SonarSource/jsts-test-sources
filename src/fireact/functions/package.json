@@ -1,7 +1,8 @@
 {
-  "name": "@fireactjs/saas-cloud-functions",
+  "name": "functions",
   "description": "Cloud Functions for Firebase",
   "scripts": {
+    "lint": "eslint .",
     "serve": "firebase emulators:start --only functions",
     "shell": "firebase functions:shell",
     "start": "npm run shell",
@@ -9,23 +10,19 @@
     "logs": "firebase functions:log"
   },
   "engines": {
-    "node": "18"
+    "node": "10"
   },
-  "main": "lib/index.js",
   "dependencies": {
-    "firebase-admin": "^11.8.0",
-    "firebase-functions": "^4.3.1",
+    "crypto": "^1.0.1",
+    "firebase-admin": "^9.5.0",
+    "firebase-functions": "^3.16.0",
     "mailgun-js": "^0.22.0",
-    "stripe": "^11.1.0"
+    "stripe": "^8.90.0"
   },
   "devDependencies": {
-    "firebase-functions-test": "^3.1.0"
+    "eslint": "^8.4.1",
+    "eslint-plugin-promise": "^4.0.1",
+    "firebase-functions-test": "^0.2.0"
   },
-  "private": false,
-  "version": "1.2.0",
-  "directories": {
-    "lib": "lib"
-  },
-  "author": "Chaoming Li",
-  "license": "ISC"
+  "private": true
 }
