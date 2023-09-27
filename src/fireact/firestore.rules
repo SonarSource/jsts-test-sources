@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    match /users/{userId} {
+      allow read, update, create: if request.auth.uid == userId;
+    }
+    match /users/{userId}/paymentMethods/{paymentMethodId} {
+      allow read, update, create, delete: if request.auth.uid == userId;
+    }
+    match /subscriptions/{subscriptionId} {
+      allow read: if request.auth.uid != null && (request.auth.uid in resource.data.permissions.access || request.auth.uid == resource.data.ownerId);
+      allow update: if request.auth.uid != null && (request.auth.uid in resource.data.permissions.admin || request.auth.uid == resource.data.ownerId) && (!request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(['currency', 'ownerId', 'paymentCycle', 'paymentMethod', 'plan', 'price', 'stripeItems', 'stripeSubscriptionId', 'subscriptionCreated', 'subscriptionCurrentPeriodEnd', 'subscriptionCurrentPeriodStart', 'subscriptionEnded', 'subscriptionStatus']));
+    }
+    match /subscriptions/{subscriptionId}/invoices/{invoiceId} {
+      allow read: if request.auth.uid != null && (request.auth.uid in get(/databases/$(database)/documents/subscriptions/$(subscriptionId)).data.permissions.admin || request.auth.uid == get(/databases/$(database)/documents/subscriptions/$(subscriptionId)).data.ownerId);
+    }
+    match /invites/{inviteId} {
+      allow read, delete: if request.auth.uid != null && request.auth.token.email == resource.data.email;
+		}
+  }
+}

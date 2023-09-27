@@ -1,0 +1,63 @@
+{
+  "name": "wangyi-music",
+  "version": "0.1.0",
+  "homepage": "https://sanyuan0704.github.io/cloud-music",
+  "private": true,
+  "dependencies": {
+    "axios": "^0.21.1",
+    "better-scroll": "^2.0.0-beta.4",
+    "create-keyframe-animation": "^0.1.0",
+    "immutable": "^4.0.0-rc.12",
+    "lyric-parser": "^1.0.1",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0",
+    "react-lazyload": "^2.6.5",
+    "react-redux": "^7.1.3",
+    "react-router": "^5.1.2",
+    "react-router-config": "^5.1.1",
+    "react-router-dom": "^5.1.2",
+    "react-transition-group": "^4.2.1",
+    "redux": "^4.0.5",
+    "redux-immutable": "^4.0.0",
+    "redux-thunk": "^2.3.0",
+    "styled-components": "^4.4.1",
+    "swiper": "^4.5.1",
+    "vite": "^2.7.13"
+  },
+  "scripts": {
+    "start:server": "cd NeteaseCloudMusicApi && cross-env PORT=3300 node app.js",
+    "start:react": "vite",
+    "start": "concurrently \"npm run start:server\" \"npm run start:react\"",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node scripts/test.js",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@ewas/cli": "^0.0.19",
+    "@vitejs/plugin-react": "^1.1.4",
+    "babel-plugin-transform-react-jsx": "^6.24.1",
+    "chalk": "^5.0.0",
+    "concurrently": "^4.1.1",
+    "esbuild-darwin-arm64": "0.13.15",
+    "glob": "^7.2.0",
+    "vite-plugin-react-js-support": "^1.0.7",
+    "vite-plugin-require": "^0.0.8"
+  }
+}

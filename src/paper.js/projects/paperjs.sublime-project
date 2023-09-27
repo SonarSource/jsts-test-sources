@@ -1,0 +1,37 @@
+{
+  "folders":
+  [
+    {
+      "path": "../src"
+    },
+    {
+      "path": "../test"
+    },
+    {
+      "path": "../examples"
+    },
+    {
+      "path": "../gulp",
+      "folder_exclude_patterns": ["jsdoc"]
+    },
+    {
+      "path": "../packages",
+    },
+    {
+      "path": "../travis",
+    },
+    {
+      "path": "..",
+      "name": "root",
+      "folder_exclude_patterns": ["*"]
+    }
+  ],
+  "SublimeLinter":
+  {
+    "linters": {
+      "jshint": {
+        "@disable": false
+      }
+    }
+  }
+}

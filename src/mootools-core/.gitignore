@@ -1,0 +1,9 @@
+/build/
+/dist/
+/node_modules/
+/*.log
+mootools-core.tmproj
+mootools-core.esproj
+.DS_Store
+*~
+*.swp
