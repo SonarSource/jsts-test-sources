@@ -1,0 +1,3 @@
+# JavaScript and TypeScript Test Sources
+
+This repository holds a copy of the public repositories that are analyzed by the [SonarJS](https://github.com/SonarSource/SonarJS) JavaScript and TypeScript ruling test suite. This is a convenient repository that allows the SonarJS maintainers to fetch one single `git` submodule whenever they need to run the ruling test suite. This is by no mean a _project_ repository. 
