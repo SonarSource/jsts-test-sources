@@ -1,0 +1,6 @@
+{
+  "name": "reddit-mobile",
+  "dependencies": {
+    "react": "19.1.0"
+  }
+}
