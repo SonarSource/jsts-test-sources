@@ -1,0 +1,80 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  pr-title:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if ! echo "$TITLE" | grep -qP '^(chore|ci|docs|feat|fix|perf|refactor|test):'; then
+            echo "::error::PR title must start with chore:, ci:, docs:, feat:, fix:, perf:, refactor: or test:"
+            exit 1
+          fi
+
+  test:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        deno: ["v2.x", "canary"]
+        os: [macOS-latest, windows-latest, ubuntu-latest]
+        include:
+          - os: ubuntu-latest
+            cache_path: ~/.cache/deno/
+          - os: macos-latest
+            cache_path: ~/Library/Caches/deno/
+          - os: windows-latest
+            cache_path: ~\AppData\Local\deno\
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          cache: true
+          deno-version: ${{ matrix.deno }}
+
+      - name: Install dependencies
+        run: deno install
+
+      - name: Verify formatting
+        if: startsWith(matrix.os, 'ubuntu') && matrix.deno == 'v2.x'
+        run: deno fmt --check
+
+      - name: Run linter
+        if: startsWith(matrix.os, 'ubuntu') && matrix.deno == 'v2.x'
+        run: deno lint
+
+      - name: Spell-check
+        if: startsWith(matrix.os, 'ubuntu') && matrix.deno == 'v2.x'
+        uses: crate-ci/typos@master
+
+      - name: Type check project
+        run: deno task check:types
+
+      - name: Run tests
+        run: deno task test
+
+      - name: Check docs
+        run: deno task check:docs
+
+      - name: Build fresh.deno.dev
+        if: startsWith(matrix.os, 'ubuntu') && matrix.deno == 'v2.x'
+        run: deno task build-www
+
+      - name: Check links
+        if: startsWith(matrix.os, 'ubuntu') && matrix.deno == 'v2.x'
+        run: deno task check:links

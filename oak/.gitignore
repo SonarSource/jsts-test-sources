@@ -1,0 +1,7 @@
+!.vscode
+.tool-versions
+oak.bundle.js
+cov.lcov
+junit.xml
+cov/
+npm/
