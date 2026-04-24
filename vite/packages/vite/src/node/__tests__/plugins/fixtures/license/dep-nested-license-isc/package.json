@@ -1,7 +1,0 @@
-{
-  "name": "@vitejs/test-dep-nested-license-isc",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "license": "ISC"
-}

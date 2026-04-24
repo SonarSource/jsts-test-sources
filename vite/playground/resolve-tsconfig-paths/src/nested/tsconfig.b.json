@@ -1,8 +1,0 @@
-{
-  "include": ["./b.ts"],
-  "compilerOptions": {
-    "paths": {
-      "@imported": ["./b-imported.ts"]
-    }
-  }
-}

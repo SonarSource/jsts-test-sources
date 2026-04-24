@@ -1,7 +1,0 @@
-{
-  "name": "@vitejs/test-dep-licence-cc0",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "license": "CC0-1.0"
-}
