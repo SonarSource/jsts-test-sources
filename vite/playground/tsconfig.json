@@ -1,0 +1,23 @@
+{
+  "include": ["**/vite*config*", "**/*.ts"],
+  "exclude": ["**/dist/**", "./legacy/**", "./resolve-tsconfig-paths/**"],
+  "compilerOptions": {
+    "checkJs": true,
+    "target": "es2023",
+    "module": "preserve",
+    "strict": false,
+    "noEmit": true,
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "skipLibCheck": true,
+    "noUnusedLocals": true,
+    "jsx": "preserve",
+    "types": ["vite/client", "node"],
+    "paths": {
+      "~utils": ["./test-utils.ts"]
+    }
+  }
+}
